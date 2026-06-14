@@ -1,0 +1,17 @@
+export const BALL_PHYSICS = {
+  radius: 7,
+  artTextureSize: 32,
+  contactRadius: 17,
+  pickupRadius: 22,
+  groundFrictionPerFrame: 0.978,
+  wallRestitution: 0.74,
+  maxWallReboundSpeed: 9.8,
+  verticalGravityPerFrame: 0.34,
+  verticalBounce: 0.22,
+  minBounceVelocity: 0.9,
+  maxVisualHeight: 28,
+  maxHeightScaleBonus: 0.48,
+  spinDecayPerFrame: 0.985,
+  rollingSpinPerSpeed: 0.045,
+  maxSpinPerFrame: 0.18,
+} as const;

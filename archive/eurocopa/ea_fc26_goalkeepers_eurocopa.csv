@@ -1,0 +1,1047 @@
+id,rank,overallRating,firstName,lastName,commonName,birthdate,height,weight,skillMoves,weakFootAbility,preferredFoot,position,positionType,alternatePositions,nationality,team,leagueName,playStyles,playStylesPlus,age,gkDiving,gkHandling,gkKicking,gkPositioning,gkReflexes
+230621,18,89,Gianluigi,Donnarumma,,1999-02-25,196,90,1,3,1,GK,Defense,,Italy,Manchester City,Premier League,Footwork,Deflector+,27,90,83,70,87,90
+192119,28,89,Thibaut,Courtois,,1992-05-11,200,96,1,3,2,GK,Defense,,Belgium,Real Madrid,LALIGA EA SPORTS,"Far Throw,Rush Out",Cross Claimer+,33,85,89,76,88,90
+200389,43,88,Jan,Oblak,,1993-01-07,188,87,1,3,1,GK,Defense,,Slovenia,Atlético de Madrid,LALIGA EA SPORTS,"Far Throw,Far Reach",Cross Claimer+,33,85,90,78,86,87
+177683,58,87,Yann,Sommer,,1988-12-17,183,77,1,4,1,GK,Defense,,Switzerland,Lombardia FC,Serie A Enilive,,Far Reach+,37,83,82,85,87,89
+215698,70,87,Mike,Maignan,,1995-07-03,191,89,1,4,1,GK,Defense,,France,Milano FC,Serie A Enilive,"Long Ball Pass,Footwork,Deflector",Far Throw+,30,84,83,85,84,88
+220901,74,87,David,Raya Martin,David Raya,1995-09-15,183,75,1,3,1,GK,Defense,,Spain,Arsenal,Premier League,Footwork,Cross Claimer+,30,86,84,87,85,87
+192448,101,86,Marc-André,ter Stegen,,1992-04-30,187,85,1,4,1,GK,Defense,,Germany,FC Barcelona,LALIGA EA SPORTS,"Long Ball Pass,Footwork,Rush Out",,33,84,84,89,84,85
+235073,103,86,Gregor,Kobel,,1997-12-06,195,88,1,3,1,GK,Defense,,Switzerland,Borussia Dortmund,Bundesliga,"Far Throw,Deflector",Rush Out+,28,87,83,64,86,87
+230869,125,85,Unai,Simón Mendibil,Unai Simón,1997-06-11,190,89,1,3,1,GK,Defense,,Spain,Athletic Club,LALIGA EA SPORTS,"Pinged Pass,Footwork,Rush Out",,28,84,80,76,84,85
+185122,129,85,Péter,Gulácsi,,1990-05-06,193,86,1,2,1,GK,Defense,,Hungary,RB Leipzig,Bundesliga,Footwork,,35,83,83,74,87,84
+193080,133,85,David,De Gea Quintana,De Gea,1990-11-07,192,76,1,2,1,GK,Defense,,Spain,Fiorentina,Serie A Enilive,"Far Throw,Footwork",,35,85,78,71,84,87
+204935,173,84,Jordan,Pickford,,1994-03-07,185,77,1,4,2,GK,Defense,,England,Everton,Premier League,"Long Ball Pass,Far Throw,Footwork",,32,84,78,88,81,87
+186153,194,84,Wojciech,Szczęsny,,1990-04-18,196,90,1,3,1,GK,Defense,,Poland,FC Barcelona,LALIGA EA SPORTS,Far Throw,,35,82,83,75,84,84
+262621,198,84,Giorgi,Mamardashvili,,2000-09-29,199,88,1,3,2,GK,Defense,,Georgia,Liverpool,Premier League,"Far Throw,Footwork,Cross Claimer",,25,84,81,72,84,84
+167495,203,84,Manuel,Neuer,,1986-03-27,193,93,1,4,1,GK,Defense,,Germany,FC Bayern München,Bundesliga,"Long Ball Pass,Far Throw",Pinged Pass+,39,81,81,90,86,81
+234577,211,84,Diogo,Meireles Costa,Diogo Costa,1999-09-19,187,84,1,2,1,GK,Defense,,Portugal,FC Porto,Liga Portugal,"Long Ball Pass,Far Throw,Rush Out",,26,83,78,82,83,86
+252154,215,84,Marco,Carnesecchi,,2000-07-01,191,83,1,3,1,GK,Defense,,Italy,Bergamo Calcio,Serie A Enilive,Rush Out,,25,86,83,71,85,86
+259532,254,83,Joan,García Pons,Joan García,2001-05-04,191,79,1,3,1,GK,Defense,,Spain,FC Barcelona,LALIGA EA SPORTS,Cross Claimer,,24,81,82,77,83,86
+227127,256,83,Alejandro,Remiro Gargallo,Álex Remiro,1995-03-24,191,79,1,4,1,GK,Defense,,Spain,Real Sociedad,LALIGA EA SPORTS,"Long Ball Pass,Far Throw,Footwork",,30,83,78,80,84,84
+251752,262,83,Lucas,Chevalier,,2001-11-06,189,84,1,3,1,GK,Defense,,France,Paris SG,Ligue 1 McDonald's,"Footwork,Rush Out",,24,84,79,73,80,86
+193698,275,83,Oliver,Baumann,,1990-06-02,187,82,1,2,1,GK,Defense,,Germany,TSG Hoffenheim,Bundesliga,"Footwork,Deflector",,35,83,81,78,80,83
+199641,278,83,Matz,Sels,,1992-02-26,188,75,1,2,1,GK,Defense,,Belgium,Nott'm Forest,Premier League,Far Reach,,34,82,80,79,83,83
+230872,334,82,Mile,Svilar,,1999-08-27,189,77,1,3,1,GK,Defense,,Serbia,AS Roma,Serie A Enilive,"Cross Claimer,Rush Out",,26,80,80,77,82,85
+240091,349,82,Guglielmo,Vicario,,1996-10-07,194,76,1,4,1,GK,Defense,,Italy,Spurs,Premier League,Footwork,,29,83,78,78,80,84
+224987,353,82,Ivan,Provedel,,1994-03-17,192,84,1,2,1,GK,Defense,,Italy,Latium,Serie A Enilive,"Long Ball Pass,Footwork,Deflector",,32,83,79,80,83,84
+192984,361,82,Koen,Casteels,,1992-06-25,197,86,1,2,2,GK,Defense,,Belgium,Al Qadsiah,ROSHN Saudi League,"Long Ball Pass,Footwork,Rush Out",,33,82,79,74,83,85
+225116,365,82,Alex,Meret,,1997-03-22,192,82,1,3,2,GK,Defense,,Italy,SSC Napoli,Serie A Enilive,,,28,81,79,74,84,85
+235840,461,81,Michele,Di Gregorio,,1997-07-27,187,82,1,3,1,GK,Defense,,Italy,Juventus,Serie A Enilive,Footwork,,28,82,78,79,83,85
+233306,479,81,Dean,Henderson,,1997-03-12,188,85,1,3,1,GK,Defense,,England,Crystal Palace,Premier League,Footwork,,29,82,78,77,80,82
+223885,487,81,Alexander,Nübel,,1996-09-30,193,86,1,4,1,GK,Defense,,Germany,VfB Stuttgart,Bundesliga,"Footwork,Deflector",,29,81,76,84,78,82
+188943,504,81,Kevin,Trapp,,1990-07-08,189,84,1,4,1,GK,Defense,,Germany,Paris FC,Ligue 1 McDonald's,"Far Throw,Footwork",,35,82,80,74,76,84
+203841,513,81,Nick,Pope,,1992-04-19,199,90,1,3,1,GK,Defense,,England,Newcastle Utd,Premier League,Footwork,,33,81,81,68,78,82
+223952,516,81,David,Soria Solís,David Soria,1993-04-04,192,85,1,3,1,GK,Defense,,Spain,Getafe CF,LALIGA EA SPORTS,"Long Ball Pass,Footwork",,32,81,79,74,80,82
+243952,521,81,Andriy,Lunin,,1999-02-11,191,78,1,3,1,GK,Defense,,Ukraine,Real Madrid,LALIGA EA SPORTS,Footwork,,27,80,78,79,80,82
+210385,531,81,Rui Tiago,Dantas da Silva,Rui Silva,1994-02-07,191,91,1,3,2,GK,Defense,,Portugal,Sporting CP,Liga Portugal,"Footwork,Deflector",,32,82,78,77,81,84
+210676,545,81,Wladimiro,Falcone,,1995-04-12,196,85,1,2,1,GK,Defense,,Italy,Lecce,Serie A Enilive,"Footwork,Rush Out",,30,83,81,75,76,84
+204883,605,80,Brice,Samba,,1994-04-25,187,90,1,3,2,GK,Defense,,France,Stade Rennais FC,Ligue 1 McDonald's,"Long Ball Pass,Footwork",,31,78,80,80,80,80
+192563,609,80,Bernd,Leno,,1992-03-04,189,83,1,3,1,GK,Defense,,Germany,Fulham,Premier League,"Footwork,Rush Out",,34,80,79,76,80,81
+241671,617,80,Dominik,Livaković,,1995-01-09,188,79,1,2,1,GK,Defense,,Croatia,Girona FC,LALIGA EA SPORTS,"Far Throw,Footwork",,31,80,76,71,80,83
+226300,621,80,Uğurcan,Çakır,,1996-04-05,191,82,1,3,1,GK,Defense,,Turkey,Galatasaray,Trendyol Süper Lig,"Long Ball Pass,Far Throw,Footwork",,29,81,76,74,80,79
+250753,630,80,Anatoliy,Trubin,,2001-08-01,199,86,1,2,1,GK,Defense,,Ukraine,SL Benfica,Liga Portugal,Footwork,,24,77,76,77,83,84
+201269,645,80,Frederik,Rønnow,,1992-08-04,188,81,1,2,1,GK,Defense,,Denmark,Union Berlin,Bundesliga,Cross Claimer,,33,80,80,69,78,82
+269626,663,80,Đorđe,Petrović,,1999-10-08,194,89,1,2,1,GK,Defense,,Serbia,AFC Bournemouth,Premier League,Footwork,,26,80,78,73,78,82
+241727,687,80,Predrag,Rajković,,1995-10-31,191,85,1,2,1,GK,Defense,,Serbia,Al Ittihad,ROSHN Saudi League,"Far Throw,Footwork",,30,78,78,76,79,84
+200159,760,79,Stefan,Ortega,,1992-11-06,185,88,1,4,1,GK,Defense,,Germany,Manchester City,Premier League,"Footwork,Far Reach",,33,78,77,85,78,81
+224836,787,79,Vanja,Milinković-Savić,,1997-02-20,202,99,1,3,1,GK,Defense,,Serbia,SSC Napoli,Serie A Enilive,"Long Ball Pass,Far Throw,Footwork",,29,79,77,84,81,79
+199987,802,79,Jasper,Cillessen,,1989-04-22,186,85,1,3,1,GK,Defense,,Holland,N.E.C. Nijmegen,Eredivisie,Deflector,,36,78,78,71,78,80
+221087,807,79,Pau,López Sabata,Pau López,1994-12-13,189,77,1,3,2,GK,Defense,,Spain,Real Betis,LALIGA EA SPORTS,"Far Throw,Deflector",,31,77,77,78,79,79
+163587,816,79,Kasper,Schmeichel,,1986-11-05,189,90,1,3,1,GK,Defense,,Denmark,Celtic,Scottish Prem,"Long Ball Pass,Footwork,Deflector",,39,78,77,81,79,79
+224003,818,79,Sergio,Herrera Pirón,Sergio Herrera,1993-06-06,192,82,1,3,1,GK,Defense,,Spain,CA Osasuna,LALIGA EA SPORTS,"Long Ball Pass,Far Throw,Footwork,Cross Claimer",,32,79,78,75,77,80
+189908,822,79,Łukasz,Skorupski,,1991-05-05,188,90,1,3,1,GK,Defense,,Poland,Bologna,Serie A Enilive,Far Throw,,34,79,76,68,78,83
+206585,823,79,Kepa,Arrizabalaga,Kepa,1994-10-03,189,89,1,4,1,GK,Defense,,Spain,Arsenal,Premier League,Footwork,,31,77,78,82,77,81
+246657,827,79,Álvaro,Valles Rosa,Álvaro Valles,1997-07-25,191,82,1,4,1,GK,Defense,,Spain,Real Betis,LALIGA EA SPORTS,"Cross Claimer,Deflector",,28,78,78,78,80,80
+228383,837,79,Kamil,Grabara,,1999-01-08,195,85,1,3,1,GK,Defense,,Poland,VfL Wolfsburg,Bundesliga,"Far Throw,Footwork,Cross Claimer",,27,80,76,73,78,84
+227290,846,79,Marko,Dmitrović,,1992-01-24,194,91,1,2,2,GK,Defense,,Serbia,RCD Espanyol,LALIGA EA SPORTS,"Far Throw,Footwork",,34,76,79,78,80,80
+238186,917,79,Marcin,Bułka,,1999-10-04,199,99,1,2,1,GK,Defense,,Poland,Neom,ROSHN Saudi League,Footwork,,26,79,76,71,79,81
+228789,993,78,Robert,Lynch Sánchez,Robert Sánchez,1997-11-18,197,90,1,4,1,GK,Defense,,Spain,Chelsea,Premier League,"Footwork,Cross Claimer",,28,79,77,75,77,79
+258498,1001,78,Bart,Verbruggen,,2002-08-18,193,89,1,4,1,GK,Defense,,Holland,Brighton,Premier League,Footwork,,23,79,76,76,75,81
+190113,1002,78,Mert,Günok,,1989-03-01,196,92,1,3,1,GK,Defense,,Turkey,Beşiktaş,Trendyol Süper Lig,"Far Throw,Footwork,Cross Claimer",,37,76,76,79,77,78
+198009,1007,78,Mattia,Perin,,1992-11-10,188,77,1,3,1,GK,Defense,,Italy,Juventus,Serie A Enilive,,,33,78,78,71,79,78
+224251,1069,78,Robin,Zentner,,1994-10-28,194,96,1,3,1,GK,Defense,,Germany,1. FSV Mainz 05,Bundesliga,"Far Throw,Footwork",,31,81,74,59,72,83
+265526,1080,78,Guillaume,Restes,,2005-03-11,188,82,1,3,2,GK,Defense,,France,Toulouse FC,Ligue 1 McDonald's,Footwork,,21,78,74,80,77,80
+200110,1082,78,Marco,Bizot,,1991-03-10,193,88,1,2,1,GK,Defense,,Holland,Aston Villa,Premier League,"Long Ball Pass,Far Throw,Footwork,Deflector",,35,78,75,72,79,78
+205812,1089,78,Pietro,Terracciano,,1990-03-08,193,78,1,2,1,GK,Defense,,Italy,Milano FC,Serie A Enilive,"Footwork,Rush Out",,36,79,75,72,78,82
+211738,1109,78,Mark,Flekken,,1993-06-13,195,87,1,4,1,GK,Defense,,Holland,Leverkusen,Bundesliga,"Long Ball Pass,Footwork",,32,79,76,80,76,80
+199833,1177,78,Lars,Unnerstall,,1990-07-20,198,103,1,1,1,GK,Defense,,Germany,FC Twente,Eredivisie,Footwork,,35,78,77,65,78,81
+221610,1178,78,Dénes,Dibusz,,1990-11-16,188,81,1,3,1,GK,Defense,,Hungary,Ferencvárosi TC,Magyar Liga,Cross Claimer,,35,78,73,75,77,81
+263139,1191,78,Dominik,Greif,,1997-04-06,197,82,1,3,1,GK,Defense,,Slovakia,OL,Ligue 1 McDonald's,Far Throw,,28,77,76,78,77,77
+254803,1215,78,Senne,Lammens,,2002-07-07,193,92,1,4,1,GK,Defense,,Belgium,Man Utd,Premier League,"Footwork,Cross Claimer",,23,79,77,71,79,77
+193105,1309,77,Alphonse,Areola,,1993-02-27,195,94,1,3,1,GK,Defense,,France,West Ham,Premier League,"Far Throw,Footwork",,33,78,75,74,76,78
+242818,1314,77,Finn,Dahmen,,1998-03-27,188,80,1,3,1,GK,Defense,,Germany,FC Augsburg,Bundesliga,Footwork,,27,76,70,81,76,80
+233934,1317,77,Aaron,Ramsdale,,1998-05-14,191,77,1,3,1,GK,Defense,,England,Newcastle Utd,Premier League,"Cross Claimer,Deflector",,27,77,76,80,74,79
+262659,1327,77,Noah,Atubolu,,2002-05-25,190,99,1,3,1,GK,Defense,,Germany,SC Freiburg,Bundesliga,"Footwork,Far Reach",,23,76,73,75,74,79
+167948,1329,77,Hugo,Lloris,,1986-12-26,188,82,1,1,2,GK,Defense,,France,LAFC,MLS,Deflector,,39,78,76,69,77,77
+193314,1330,77,Aitor,Fernández,Aitor,1991-05-03,182,78,1,2,1,GK,Defense,,Spain,CA Osasuna,LALIGA EA SPORTS,,,34,77,74,68,76,80
+224041,1341,77,Marvin,Schwäbe,,1995-04-25,190,86,1,3,1,GK,Defense,,Germany,1. FC Köln,Bundesliga,"Far Throw,Footwork",,30,77,74,75,75,82
+200059,1353,77,Colin,Coosemans,,1992-08-03,186,84,1,4,1,GK,Defense,,Belgium,RSC Anderlecht,1A Pro League,Footwork,,33,78,75,74,77,80
+212442,1362,77,José Pedro,Malheiro de Sá,José Sá,1993-01-17,192,84,1,2,1,GK,Defense,,Portugal,Wolves,Premier League,"Footwork,Rush Out",,33,77,75,70,76,77
+246267,1372,77,Dominik,Kotarski,,2000-02-10,189,80,1,3,1,GK,Defense,,Croatia,F.C. København,3F Superliga,Footwork,,26,79,72,76,73,80
+258466,1379,77,Leo,Román Riquelme,Leo Román,2000-07-06,189,83,1,3,1,GK,Defense,,Spain,RCD Mallorca,LALIGA EA SPORTS,Cross Claimer,,25,76,75,72,75,78
+258485,1380,77,Filip,Jörgensen,,2002-04-16,192,85,1,3,1,GK,Defense,,Denmark,Chelsea,Premier League,"Far Throw,Footwork",,23,77,76,72,77,78
+224241,1390,77,Nick,Olij,,1995-08-01,184,78,1,2,1,GK,Defense,,Holland,PSV,Eredivisie,"Long Ball Pass,Far Throw,Far Reach",,30,82,75,62,74,80
+220407,1400,77,Martin,Dúbravka,,1989-01-15,190,80,1,2,1,GK,Defense,,Slovakia,Burnley,Premier League,"Far Throw,Footwork,Cross Claimer",,37,76,76,78,75,79
+239364,1417,77,Philipp,Köhn,,1998-04-02,190,80,1,2,1,GK,Defense,,Switzerland,AS Monaco,Ligue 1 McDonald's,Cross Claimer,,27,78,74,69,75,78
+239254,1422,77,Berke,Özer,,2000-05-25,190,73,1,3,1,GK,Defense,,Turkey,LOSC Lille,Ligue 1 McDonald's,Footwork,,25,77,73,70,76,79
+258534,1439,77,Diego José,Conde Alcolado,Diego Conde,1998-10-28,188,78,1,3,1,GK,Defense,,Spain,Villarreal CF,LALIGA EA SPORTS,Footwork,,27,75,75,68,76,79
+189117,1457,77,Roman,Bürki,,1990-11-14,187,85,1,2,1,GK,Defense,,Switzerland,St. Louis CITY SC,MLS,"Far Throw,Far Reach",,35,79,75,60,73,79
+235413,1474,77,Radosław,Majecki,,1999-11-16,193,78,1,3,1,GK,Defense,,Poland,Stade Brestois 29,Ligue 1 McDonald's,,,26,77,75,71,76,78
+222464,1594,76,Antonio,Sivera Salvá,Sivera,1996-08-11,185,79,1,3,1,GK,Defense,,Spain,D. Alavés,LALIGA EA SPORTS,"Footwork,Cross Claimer",,29,76,74,77,75,78
+199482,1607,76,Anthony,Lopes,,1990-10-01,184,81,1,2,2,GK,Defense,,Portugal,FC Nantes,Ligue 1 McDonald's,Footwork,,35,78,72,65,75,79
+240987,1615,76,Michael,Cooper,,1999-10-08,185,75,1,3,1,GK,Defense,,England,Sheffield Utd,EFL Championship,"Long Ball Pass,Far Throw,Footwork",,26,76,74,77,75,77
+246158,1627,76,Mads,Hermansen,,2000-07-11,185,81,1,2,1,GK,Defense,,Denmark,West Ham,Premier League,"Footwork,Deflector",,25,76,75,76,76,77
+205377,1633,76,Donovan,Léon,,1992-11-03,187,94,1,2,1,GK,Defense,,France,AJ Auxerre,Ligue 1 McDonald's,"Footwork,Rush Out",,33,76,71,81,75,79
+225149,1634,76,Jean,Butez,,1995-06-08,189,75,1,4,1,GK,Defense,,France,Como,Serie A Enilive,"Long Ball Pass,Cross Claimer",,30,75,75,78,75,77
+263063,1643,76,James,Trafford,,2002-10-10,192,90,1,3,1,GK,Defense,,England,Manchester City,Premier League,"Long Ball Pass,Far Throw,Footwork,Cross Claimer",,23,77,74,72,74,78
+204549,1669,76,Davy,Roef,,1994-02-06,187,84,1,3,1,GK,Defense,,Belgium,KAA Gent,1A Pro League,"Footwork,Cross Claimer",,32,75,73,73,77,75
+223550,1670,76,Jonas,Omlin,,1994-01-10,190,85,1,3,1,GK,Defense,,Switzerland,M'gladbach,Bundesliga,Far Reach,,32,77,76,68,73,78
+255303,1678,76,Elia,Caprile,,2001-08-25,191,74,1,3,1,GK,Defense,,Italy,Cagliari,Serie A Enilive,"Far Throw,Cross Claimer,Deflector",,24,75,73,72,74,78
+223686,1684,76,Timon,Wellenreuther,,1995-12-03,188,80,1,4,1,GK,Defense,,Germany,Feyenoord,Eredivisie,"Cross Claimer,Deflector",,30,77,74,69,73,76
+216065,1690,76,Marco,Sportiello,,1992-05-10,192,87,1,2,1,GK,Defense,,Italy,Bergamo Calcio,Serie A Enilive,,,33,75,72,74,79,76
+227370,1700,76,Michael,Zetterer,,1995-07-12,187,79,1,5,1,GK,Defense,,Germany,Frankfurt,Bundesliga,"Long Ball Pass,Far Throw,Footwork",,30,76,71,81,73,77
+242879,1701,76,Maarten,Vandevoordt,,2002-02-26,192,81,1,3,1,GK,Defense,,Belgium,RB Leipzig,Bundesliga,"Long Ball Pass,Far Throw,Footwork,Cross Claimer",,24,78,75,75,74,77
+215502,1707,76,Bartłomiej,Drągowski,,1997-08-19,191,74,1,3,1,GK,Defense,,Poland,Panathinaikos,Hellas Liga,Deflector,,28,77,73,75,73,78
+206075,1736,76,Sam,Johnstone,,1993-03-25,193,85,1,3,1,GK,Defense,,England,Wolves,Premier League,Deflector,,32,77,76,69,74,77
+215363,1737,76,Lorenzo,Montipò,,1996-02-20,191,82,1,3,1,GK,Defense,,Italy,Hellas Verona,Serie A Enilive,"Footwork,Far Reach",,30,75,72,69,74,82
+221909,1746,76,Jindřich,Staněk,,1996-04-27,192,90,1,2,1,GK,Defense,,Czech Republic,Slavia Praha,Česká Liga,Footwork,,29,74,71,78,76,78
+246139,1750,76,Ignacio,Peña Sotorres,Iñaki Peña,1999-03-02,184,78,1,3,1,GK,Defense,,Spain,Elche CF,LALIGA EA SPORTS,Footwork,,27,75,73,77,75,78
+263880,1759,76,Julen,Agirrezabala,Agirrezabala,2000-12-26,187,80,1,3,2,GK,Defense,,Spain,Valencia CF,LALIGA EA SPORTS,Cross Claimer,,25,76,74,78,77,75
+211908,1959,75,Günay,Güvenç,,1991-07-25,187,85,1,4,1,GK,Defense,,Turkey,Galatasaray,Trendyol Süper Lig,,,34,75,72,76,75,75
+203042,1994,75,Jack,Butland,,1993-03-10,196,95,1,4,1,GK,Defense,,England,Rangers,Scottish Prem,"Footwork,Deflector",,33,76,74,72,75,76
+234341,2052,75,İrfan Can,Eğribayat,,1998-06-30,193,79,1,2,1,GK,Defense,,Turkey,Fenerbahçe,Trendyol Süper Lig,Deflector,,27,75,74,73,73,75
+232229,2066,75,Justin,Bijlow,,1998-01-22,188,84,1,2,1,GK,Defense,,Holland,Feyenoord,Eredivisie,"Cross Claimer,Rush Out",,28,77,72,75,73,76
+236033,2067,75,Daniel,Cárdenas Líndez,Dani Cárdenas,1997-03-28,186,74,1,3,1,GK,Defense,,Spain,Rayo Vallecano,LALIGA EA SPORTS,,,28,74,73,73,75,76
+186148,2072,75,Ron-Robert,Zieler,,1989-02-12,187,82,1,3,1,GK,Defense,,Germany,1. FC Köln,Bundesliga,Deflector,,37,73,71,70,77,75
+235629,2084,75,Ortwin,De Wolf,,1997-04-23,190,83,1,3,2,GK,Defense,,Belgium,KV Mechelen,1A Pro League,"Footwork,Cross Claimer",,28,76,73,76,75,77
+241050,2085,75,Alexander,Meyer,,1991-04-13,195,88,1,3,1,GK,Defense,,Germany,Borussia Dortmund,Bundesliga,Long Ball Pass,,34,72,71,79,74,76
+162328,2113,75,Remko,Pasveer,,1983-11-08,187,88,1,4,1,GK,Defense,,Holland,Ajax,Eredivisie,Cross Claimer,,42,72,78,79,80,68
+242948,2124,75,Matěj,Kovář,,2000-05-17,196,89,1,4,1,GK,Defense,,Czech Republic,PSV,Eredivisie,,,25,74,75,78,77,75
+220383,2130,75,Aarón,Escandell,Aarón,1995-09-27,185,71,1,4,1,GK,Defense,,Spain,R. Oviedo,LALIGA EA SPORTS,Pinged Pass,,30,72,76,75,73,74
+231237,2133,75,Peter,Vindahl,,1998-02-16,194,86,1,3,1,GK,Defense,,Denmark,Sparta Praha,Česká Liga,Rush Out,,28,77,70,77,70,78
+269511,2167,75,Martin,Jedlička,,1998-01-24,187,83,1,2,1,GK,Defense,,Czech Republic,Viktoria Plzeň,Česká Liga,Deflector,,28,74,76,70,73,77
+234790,2180,75,Juan,Soriano Oropesa,Juan Soriano,1997-08-23,184,82,1,2,2,GK,Defense,,Spain,CD Leganés,LALIGA HYPERMOTION,Far Throw,,28,75,71,69,74,77
+73580,2186,75,Antonín,Kinský,,2003-03-13,190,80,1,4,1,GK,Defense,,Czech Republic,Spurs,Premier League,,,23,76,76,76,74,75
+243647,2196,75,Altay,Bayındır,,1998-04-14,198,88,1,2,1,GK,Defense,,Turkey,Man Utd,Premier League,,,27,77,72,70,75,77
+235018,2227,75,Moritz,Nicolas,,1997-10-21,193,89,1,2,1,GK,Defense,,Germany,M'gladbach,Bundesliga,,,28,77,76,70,75,78
+208375,2249,75,Marius,Müller,,1993-07-12,192,93,1,2,1,GK,Defense,,Germany,VfL Wolfsburg,Bundesliga,Footwork,,32,75,73,62,76,78
+243311,2271,75,Josep,Martínez Riera,Josep Martínez,1998-05-27,191,78,1,3,1,GK,Defense,,Spain,Lombardia FC,Serie A Enilive,"Far Throw,Cross Claimer",,27,75,71,67,76,74
+146296,2437,74,Andrés Eduardo,Fernández Moreno,Andrés Fernández,1986-12-16,187,82,1,3,1,GK,Defense,,Spain,UD Almería,LALIGA HYPERMOTION,"Far Throw,Rush Out",,39,73,73,74,74,75
+259065,2444,74,Arnau,Tenas Ureña,Arnau Tenas,2001-05-30,185,85,1,2,1,GK,Defense,,Spain,Villarreal CF,LALIGA EA SPORTS,,,24,73,70,81,72,77
+265628,2480,74,Dmytro,Riznyk,,1999-01-30,191,77,1,3,1,GK,Defense,,Ukraine,Shakhtar Donetsk,Ukrayina Liha,,,27,75,67,78,77,76
+173426,2505,74,Simon,Mignolet,,1988-03-06,193,87,1,3,1,GK,Defense,,Belgium,Club Brugge,1A Pro League,"Long Ball Pass,Footwork,Cross Claimer",,38,73,73,70,75,74
+230727,2510,74,Gautier,Larsonneur,,1997-02-23,181,70,1,2,1,GK,Defense,,France,AS Saint-Étienne,Ligue 2 BKT,"Footwork,Cross Claimer",,29,72,72,72,73,75
+211515,2521,74,Pierluigi,Gollini,,1995-03-18,194,94,1,2,1,GK,Defense,,Italy,AS Roma,Serie A Enilive,,,31,74,72,71,74,76
+222951,2523,74,Marek,Rodák,,1996-12-13,194,81,1,3,1,GK,Defense,,Slovakia,Al Ettifaq,ROSHN Saudi League,,,29,76,71,73,71,76
+269271,2543,74,Filip,Stanković,,2002-02-25,187,79,1,3,1,GK,Defense,,Serbia,Venezia,Serie BKT,,,24,74,73,70,71,75
+188400,2546,74,Thomas,Kaminski,,1992-10-23,190,78,1,3,1,GK,Defense,,Belgium,Charlton Ath,EFL Championship,"Long Ball Pass,Footwork,Deflector",,33,73,74,70,73,76
+190243,2547,74,Marwin,Hitz,,1987-09-18,194,91,1,3,1,GK,Defense,,Switzerland,FC Basel 1893,Brack Super League,"Long Ball Pass,Far Throw",,38,72,73,75,77,73
+204513,2549,74,Maxime,Dupé,,1993-03-04,188,88,1,3,1,GK,Defense,,France,OGC Nice,Ligue 1 McDonald's,,,33,76,73,72,71,74
+234102,2566,74,Ionuț Andrei,Radu,,1997-05-28,188,70,1,2,1,GK,Defense,,Romania,Celta,LALIGA EA SPORTS,Cross Claimer,,28,74,71,69,70,77
+202873,2579,74,Kevin,Müller,,1991-03-15,190,94,1,2,1,GK,Defense,,Germany,Heidenheim,Bundesliga,"Long Ball Pass,Far Throw,Footwork",,35,71,71,69,74,77
+236515,2582,74,Álvaro,Fernández Llorente,Álvaro,1998-04-13,186,75,1,3,2,GK,Defense,,Spain,Sevilla FC,LALIGA EA SPORTS,,,27,75,71,68,73,76
+200726,2592,74,Benjamin,Lecomte,,1991-04-26,186,78,1,3,2,GK,Defense,,France,Fulham,Premier League,"Long Ball Pass,Far Throw,Footwork",,34,73,72,75,73,75
+212197,2607,74,Daniel,Heuer Fernandes,,1992-11-13,188,81,1,4,1,GK,Defense,,Portugal,Hamburger SV,Bundesliga,"Long Ball Pass,Deflector",,33,74,70,75,73,75
+235312,2646,74,Alfonso,Herrero Peinador,Alfonso Herrero,1994-04-21,183,83,1,3,1,GK,Defense,,Spain,Málaga CF,LALIGA HYPERMOTION,"Far Throw,Footwork",,31,73,73,62,73,75
+263887,2649,74,Jonas,Urbig,,2003-08-08,189,83,1,4,1,GK,Defense,,Germany,FC Bayern München,Bundesliga,"Footwork,Cross Claimer",,22,74,70,79,74,76
+212151,2654,74,Thomas,Strakosha,,1995-03-19,193,84,1,1,1,GK,Defense,,Albania,AEK Athens,Hellas Liga,,,30,76,71,66,72,76
+254502,2660,74,Stefano,Turati,,2001-09-05,188,85,1,2,1,GK,Defense,,Italy,Sassuolo,Serie A Enilive,,,24,75,71,71,74,78
+266282,2672,74,Kristijan,Kahlina,,1992-07-24,188,74,1,2,1,GK,Defense,,Croatia,Charlotte FC,MLS,Far Throw,,33,75,72,71,76,77
+263798,2758,74,Robin,Roefs,,2003-01-17,192,72,1,3,2,GK,Defense,,Holland,Sunderland,Premier League,"Footwork,Far Reach",,23,76,74,68,70,76
+194730,3009,73,Juan Carlos,Martín Corral,Juan Carlos,1988-01-20,186,85,1,3,1,GK,Defense,,Spain,Girona FC,LALIGA EA SPORTS,Far Throw,,38,72,73,72,71,73
+210358,3018,73,Alberto,Brignoli,,1991-08-19,188,81,1,3,2,GK,Defense,,Italy,AEK Athens,Hellas Liga,"Far Throw,Cross Claimer",,34,72,71,78,75,73
+211101,3025,73,Rubén,Blanco Veiga,Rubén Blanco,1995-07-25,188,70,1,3,1,GK,Defense,,Spain,OM,Ligue 1 McDonald's,,,30,76,72,73,70,74
+239559,3028,73,Jeffrey,de Lange,,1998-04-01,190,80,1,4,1,GK,Defense,,Holland,OM,Ligue 1 McDonald's,"Long Ball Pass,Far Throw",,27,73,69,74,73,73
+237525,3066,73,Arnaud,Bodart,,1998-03-11,186,80,1,2,1,GK,Defense,,Belgium,LOSC Lille,Ligue 1 McDonald's,Far Reach,,28,76,70,68,73,73
+198513,3082,73,Cláudio Pires,de Morais Ramos,Cláudio Ramos,1991-11-16,183,83,1,3,1,GK,Defense,,Portugal,FC Porto,Liga Portugal,"Far Throw,Footwork,Far Reach",,34,78,72,64,72,72
+193786,3120,73,Francesco,Bardi,,1992-01-18,188,80,1,2,1,GK,Defense,,Italy,Palermo,Serie BKT,"Footwork,Far Reach",,34,74,71,70,71,74
+188836,3135,73,Jason,Steele,,1990-08-18,188,79,1,2,1,GK,Defense,,England,Brighton,Premier League,Footwork,,35,74,72,78,73,72
+193336,3136,73,Vid,Belec,,1990-06-06,193,84,1,3,1,GK,Defense,,Slovenia,APOEL FC,Liga Cyprus,Cross Claimer,,35,72,71,69,73,75
+195668,3137,73,Joel,Robles Blázquez,Joel Robles,1990-06-17,195,90,1,2,1,GK,Defense,,Spain,Estoril Praia,Liga Portugal,Footwork,,35,74,71,69,70,74
+206218,3140,73,Paul,Nardi,,1994-05-18,187,77,1,3,1,GK,Defense,,France,QPR,EFL Championship,Footwork,,31,74,68,68,72,76
+244262,3145,73,Dinko,Horkaš,,1999-03-10,189,82,1,2,1,GK,Defense,,Croatia,UD Las Palmas,LALIGA HYPERMOTION,,,27,73,72,70,72,73
+215522,3152,73,Alexander,Schlager,,1996-02-01,184,77,1,3,1,GK,Defense,,Austria,RB Salzburg,Ö. Bundesliga,"Footwork,Far Reach",,30,72,71,69,73,76
+214680,3179,73,Gauthier,Gallon,,1993-04-23,187,80,1,2,1,GK,Defense,,France,Stade Rennais FC,Ligue 1 McDonald's,Deflector,,32,74,71,72,73,75
+194911,3206,73,Adrián,San Miguel Castillo,Adrián,1987-01-03,190,78,1,2,1,GK,Defense,,Spain,Real Betis,LALIGA EA SPORTS,Footwork,,39,68,76,72,75,68
+243675,3216,73,Kjell,Scherpen,,2000-01-23,206,85,1,4,1,GK,Defense,,Holland,R. Union St.-G.,1A Pro League,"Far Throw,Cross Claimer",,26,76,69,70,72,74
+219836,3221,73,Rubén,Yáñez Alabart,Rubén Yáñez,1993-10-12,188,80,1,3,1,GK,Defense,,Spain,R. Sporting,LALIGA HYPERMOTION,Cross Claimer,,32,73,71,64,70,77
+248478,3224,73,Diant,Ramaj,,2001-09-19,188,82,1,5,1,GK,Defense,,Germany,Heidenheim,Bundesliga,"Pinged Pass,Long Ball Pass,Deflector",,24,74,70,81,72,76
+234371,3240,73,Rémy,Descamps,,1996-06-25,196,82,1,3,2,GK,Defense,,France,OL,Ligue 1 McDonald's,,,29,74,68,65,73,76
+243294,3245,73,Tobe,Leysen,,2002-03-09,189,84,1,2,2,GK,Defense,,Belgium,OH Leuven,1A Pro League,"Long Ball Pass,Footwork,Cross Claimer",,24,73,70,69,73,77
+204092,3256,73,Janis,Blaswich,,1991-05-02,193,89,1,3,1,GK,Defense,,Germany,Leverkusen,Bundesliga,Cross Claimer,,34,73,68,65,76,73
+200316,3279,73,Timo,Horn,,1993-05-12,192,90,1,1,2,GK,Defense,,Germany,VfL Bochum 1848,Bundesliga 2,,,32,74,76,58,68,73
+186569,3288,73,Sven,Ulreich,,1988-08-03,192,87,1,2,1,GK,Defense,,Germany,FC Bayern München,Bundesliga,,,37,74,69,62,73,76
+222572,3305,73,Iván,Villar Martínez,Iván Villar,1997-07-09,186,76,1,2,1,GK,Defense,,Spain,Celta,LALIGA EA SPORTS,Cross Claimer,,28,72,71,71,72,76
+223175,3321,73,Okan,Kocuk,,1995-07-27,188,78,1,2,1,GK,Defense,,Turkey,Samsunspor,Trendyol Süper Lig,Footwork,,30,76,72,66,70,76
+223909,3322,73,Alex,Palmer,,1996-08-10,191,85,1,3,1,GK,Defense,,England,Ipswich,EFL Championship,"Long Ball Pass,Footwork,Cross Claimer",,29,74,72,72,72,73
+271949,3329,73,Nediljko,Labrović,,1999-10-10,196,91,1,2,1,GK,Defense,,Croatia,FC Augsburg,Bundesliga,,,26,73,68,63,73,76
+232007,3339,73,Mateusz,Lis,,1997-02-27,192,83,1,2,1,GK,Defense,,Poland,Göztepe,Trendyol Süper Lig,Footwork,,29,75,73,68,75,74
+246417,3354,73,Anthony,Patterson,,2000-05-10,189,87,1,3,1,GK,Defense,,England,Sunderland,Premier League,"Far Throw,Far Reach",,25,73,71,72,70,75
+270821,3360,73,Mike,Penders,,2005-07-31,200,95,1,2,2,GK,Defense,,Belgium,Strasbourg,Ligue 1 McDonald's,,,20,77,72,76,69,75
+236583,3390,73,Jiří,Pavlenka,,1992-04-14,196,81,1,3,1,GK,Defense,,Czech Republic,PAOK FC,Hellas Liga,Footwork,,33,76,70,62,68,77
+255266,3405,73,Obed,Nkambadio,,2003-02-07,190,86,1,2,1,GK,Defense,,France,Paris FC,Ligue 1 McDonald's,,,23,73,70,67,71,76
+262265,3406,73,Matthieu,Epolo,,2005-01-15,187,77,1,2,1,GK,Defense,,Belgium,Standard Liège,1A Pro League,"Footwork,Far Reach",,21,76,70,66,70,73
+205530,3662,72,Mirko,Pigliacelli,,1993-06-30,184,83,1,4,1,GK,Defense,,Italy,Catanzaro,Serie BKT,"Long Ball Pass,Far Throw,Footwork",,32,72,71,83,70,72
+228279,3683,72,Joël,Drommel,,1996-11-16,193,90,1,3,1,GK,Defense,,Holland,Sparta Rotterdam,Eredivisie,"Far Throw,Cross Claimer",,29,73,71,75,71,74
+248073,3699,72,Ștefan,Târnovanu,,2000-05-09,197,87,1,2,1,GK,Defense,,Romania,FCSB,SUPERLIGA,"Long Ball Pass,Far Throw,Footwork",,25,72,69,68,74,74
+263339,3705,72,Carl,Rushworth,,2001-07-02,191,86,1,2,2,GK,Defense,,England,Coventry City,EFL Championship,Far Throw,,24,72,70,71,71,73
+240751,3725,72,Gaëtan,Poussin,,1999-01-13,186,82,1,2,1,GK,Defense,,France,Red Star FC,Ligue 2 BKT,,,27,75,66,63,73,77
+228505,3744,72,Patrick,Pentz,,1997-01-02,182,80,1,4,2,GK,Defense,,Austria,Brøndby IF,3F Superliga,"Long Ball Pass,Footwork,Deflector",,29,71,70,70,70,74
+209987,3759,72,Marcel,Schuhen,,1993-01-13,188,85,1,3,1,GK,Defense,,Germany,SV Darmstadt 98,Bundesliga 2,"Far Throw,Footwork,Rush Out",,33,73,69,67,71,74
+244316,3764,72,Luís Manuel,Arantes Maximiano,Luís Maximiano,1999-01-05,190,82,1,2,1,GK,Defense,,Portugal,UD Almería,LALIGA HYPERMOTION,Deflector,,27,71,70,69,69,73
+190745,3768,72,Marco,Silvestri,,1991-03-02,191,87,1,3,1,GK,Defense,,Italy,Cremonese,Serie A Enilive,Footwork,,35,72,71,57,73,74
+194934,3769,72,Daniel,Jiménez López,Dani Jiménez,1990-03-05,179,72,1,3,1,GK,Defense,,Spain,SD Huesca,LALIGA HYPERMOTION,,,36,72,70,70,73,71
+216325,3772,72,Angus,Gunn,,1996-01-22,196,77,1,3,1,GK,Defense,,Scotland,Nott'm Forest,Premier League,"Footwork,Deflector",,30,73,71,70,70,74
+205288,3836,72,Fernando,Martínez Rubio,Fernando,1990-06-10,183,88,1,2,1,GK,Defense,,Spain,UD Almería,LALIGA HYPERMOTION,"Far Throw,Far Reach",,35,71,70,71,71,71
+220048,3839,72,Simone,Scuffet,,1996-05-31,190,87,1,2,1,GK,Defense,,Italy,Pisa,Serie A Enilive,,,29,72,70,64,71,75
+252179,3851,72,Jakub,Markovič,,2001-07-13,187,78,1,3,1,GK,Defense,,Czech Republic,Slavia Praha,Česká Liga,,,24,71,72,74,69,73
+234833,3859,72,Florian,Müller,,1997-11-13,190,88,1,4,2,GK,Defense,,Germany,SC Freiburg,Bundesliga,,,28,72,67,71,68,79
+262862,3873,72,Pascal,Loretz,,2003-06-01,191,81,1,3,1,GK,Defense,,Switzerland,FC Luzern,Brack Super League,"Long Ball Pass,Far Throw,Footwork,Cross Claimer",,22,72,70,68,72,73
+242288,3887,72,Ivica,Ivušić,,1995-02-01,195,88,1,2,1,GK,Defense,,Croatia,Hajduk Split,Liga Hrvatska,Cross Claimer,,31,72,71,72,70,72
+256726,3891,72,Marvin,Keller,,2002-07-03,189,87,1,3,1,GK,Defense,,Switzerland,BSC Young Boys,Brack Super League,,,23,73,70,70,73,74
+225395,3923,72,Jokin,Ezkieta Mendiburu,Ezkieta,1996-08-17,193,80,1,3,1,GK,Defense,,Spain,R. Racing Club,LALIGA HYPERMOTION,"Far Throw,Footwork,Cross Claimer",,29,71,70,67,69,75
+186680,3947,72,Raúl,Fdez-Cavada Mateos,Raúl Fernández,1988-03-13,195,92,1,2,1,GK,Defense,,Spain,D. Alavés,LALIGA EA SPORTS,Footwork,,38,71,73,67,74,71
+242656,3957,72,Illan,Meslier,,2000-03-02,196,74,1,3,2,GK,Defense,,France,Leeds United,Premier League,"Far Throw,Footwork,Cross Claimer",,26,71,72,70,70,73
+235304,3962,72,Bartosz,Mrozek,,2000-02-23,191,82,1,3,1,GK,Defense,,Poland,Lech Poznań,PKO BP Ekstraklasa,"Far Throw,Footwork",,26,71,70,68,73,73
+247866,3963,72,Cezary,Miszta,,2001-10-30,192,80,1,2,1,GK,Defense,,Poland,Rio Ave FC,Liga Portugal,Footwork,,24,71,72,70,71,75
+245370,3989,72,Ersin,Destanoğlu,,2001-01-01,195,88,1,2,1,GK,Defense,,Turkey,Beşiktaş,Trendyol Süper Lig,Cross Claimer,,25,70,72,68,72,71
+258585,3991,72,Ivor,Pandur,,2000-03-25,185,85,1,3,1,GK,Defense,,Croatia,Hull City,EFL Championship,Cross Claimer,,25,72,70,64,69,77
+239816,4002,72,Nico,Mantl,,2000-02-06,193,88,1,3,1,GK,Defense,,Germany,Arouca,Liga Portugal,,,26,72,71,69,70,75
+244810,4052,72,Tobias,Lawal,,2000-06-07,195,84,1,3,1,GK,Defense,,Austria,KRC Genk,1A Pro League,"Footwork,Deflector",,25,77,68,67,70,74
+258390,4055,72,Ivo,Grbić,,1996-01-18,195,93,1,3,1,GK,Defense,,Croatia,Karagümrük SK,Trendyol Süper Lig,,,30,73,69,70,69,73
+258936,4056,72,Lukas,Hornicek,,2002-07-13,194,90,1,2,1,GK,Defense,,Czech Republic,SC Braga,Liga Portugal,,,23,72,67,69,75,75
+270038,4069,72,Justin,Hammel,,2000-12-12,185,84,1,2,1,GK,Defense,,Switzerland,GC Zürich,Brack Super League,"Long Ball Pass,Footwork,Rush Out",,25,75,70,70,70,77
+251292,4124,72,Florian,Kastenmeier,,1997-06-28,192,85,1,3,1,GK,Defense,,Germany,Düsseldorf,Bundesliga 2,"Long Ball Pass,Far Throw,Footwork,Deflector",,28,73,65,71,69,75
+244218,4133,72,Jari,De Busser,,1999-10-21,190,78,1,4,1,GK,Defense,,Belgium,Go Ahead Eagles,Eredivisie,Far Reach,,26,74,69,65,71,75
+244676,4142,72,Jasper,Schendelaar,,2000-09-02,187,87,1,3,1,GK,Defense,,Holland,PEC Zwolle,Eredivisie,,,25,73,69,66,69,75
+210715,4454,71,Andreas,Hansen,,1995-08-11,186,73,1,3,1,GK,Defense,,Denmark,FC Nordsjælland,3F Superliga,"Far Throw,Footwork,Cross Claimer",,30,70,71,77,71,72
+237704,4520,71,João Manuel,Neves Virgínia,João Virgínia,1999-10-10,192,84,1,3,2,GK,Defense,,Portugal,Sporting CP,Liga Portugal,,,26,73,72,66,67,73
+193272,4554,71,Samuel,Şahin-Radlinger,,1992-11-07,198,86,1,2,1,GK,Defense,,Austria,FK Austria Wien,Ö. Bundesliga,"Far Throw,Footwork,Rush Out",,33,70,72,65,70,72
+236758,4599,71,Oliver,Christensen,,1999-03-22,190,82,1,2,1,GK,Defense,,Denmark,SK Sturm Graz,Ö. Bundesliga,,,26,72,69,69,69,74
+198350,4616,71,Daniel,Bentley,,1993-07-13,188,73,1,3,1,GK,Defense,,England,Wolves,Premier League,,,32,71,67,69,70,72
+239898,4624,71,Nicolas,Schmid,,1997-02-22,195,81,1,4,1,GK,Defense,,Austria,Portsmouth,EFL Championship,Footwork,,29,70,70,69,70,72
+212735,4639,71,Enzo,Basilio,,1994-10-03,187,75,1,3,1,GK,Defense,,France,AS Nancy Lorraine,Ligue 2 BKT,"Footwork,Rush Out",,31,69,67,68,70,74
+204234,4652,71,Edgar,Badia Guardiola,Edgar Badia,1992-02-12,180,70,1,3,1,GK,Defense,,Spain,Cultural Leonesa,LALIGA HYPERMOTION,"Far Throw,Footwork",,34,69,69,70,71,70
+251136,4657,71,Horațiu,Moldovan,,1998-01-20,189,72,1,2,1,GK,Defense,,Romania,R. Oviedo,LALIGA EA SPORTS,,,28,71,69,66,71,73
+204842,4669,71,Yanick,Brecher,,1993-05-25,196,88,1,3,1,GK,Defense,,Switzerland,FC Zürich,Brack Super League,"Far Throw,Footwork",,32,70,70,67,72,72
+269694,4678,71,Radek,Vitek,,2003-10-24,198,90,1,3,1,GK,Defense,,Czech Republic,Bristol City,EFL Championship,"Footwork,Cross Claimer",,22,70,68,65,69,73
+172553,4701,71,Jonas,Lössl,,1989-02-01,195,89,1,2,1,GK,Defense,,Denmark,FC Midtjylland,3F Superliga,"Long Ball Pass,Far Throw,Cross Claimer",,37,71,73,68,72,70
+210832,4702,71,Mattijs,Branderhorst,,1993-12-31,192,87,1,3,1,GK,Defense,,Holland,Fortuna Sittard,Eredivisie,,,32,72,69,66,70,72
+222514,4704,71,Freddie,Woodman,,1997-03-04,188,83,1,2,1,GK,Defense,,England,Liverpool,Premier League,"Long Ball Pass,Footwork,Rush Out",,29,72,69,62,68,71
+272958,4743,71,Rome-Jayden,Owusu-Oduro,,2004-07-02,188,82,1,3,1,GK,Defense,,Holland,AZ,Eredivisie,"Cross Claimer,Far Reach",,21,70,67,67,70,73
+240311,4749,71,Luca,Zidane,,1998-05-13,183,78,1,3,1,GK,Defense,,France,Granada CF,LALIGA HYPERMOTION,"Long Ball Pass,Far Throw,Footwork",,27,72,70,66,71,70
+223603,4764,71,Fabian,Bredlow,,1995-03-02,190,87,1,4,2,GK,Defense,,Germany,VfB Stuttgart,Bundesliga,,,31,71,67,66,68,74
+254099,4776,71,Carlos,Marín Tomás,Carlos Marín,1997-02-20,187,79,1,3,1,GK,Defense,,Spain,Córdoba CF,LALIGA HYPERMOTION,Footwork,,29,74,70,66,71,74
+258311,4778,71,Kacper,Trelowski,,2003-08-19,190,77,1,2,1,GK,Defense,,Poland,Raków,PKO BP Ekstraklasa,,,22,73,67,68,71,71
+271918,4780,71,Robin,Risser,,2004-12-02,193,82,1,3,1,GK,Defense,,France,RC Lens,Ligue 1 McDonald's,,,21,71,72,64,67,71
+256938,4796,71,Niklas,Hedl,,2001-03-17,188,78,1,2,1,GK,Defense,,Austria,SK Rapid,Ö. Bundesliga,"Long Ball Pass,Footwork,Far Reach",,25,73,70,69,69,73
+235931,4804,71,Muhammed,Şengezer,,1997-01-05,192,80,1,2,1,GK,Defense,,Turkey,Başakşehir,Trendyol Süper Lig,Cross Claimer,,29,71,68,66,70,72
+210772,4823,71,Patrick,Drewes,,1993-02-04,194,90,1,2,1,GK,Defense,,Germany,Borussia Dortmund,Bundesliga,"Far Throw,Footwork",,33,73,70,67,71,70
+223898,4850,71,Paul,Bernardoni,,1997-04-18,193,92,1,2,2,GK,Defense,,France,Amiens SC,Ligue 2 BKT,"Footwork,Cross Claimer",,28,72,69,68,71,70
+244274,4853,71,Adrian,Šemper,,1998-01-12,194,89,1,2,1,GK,Defense,,Croatia,Pisa,Serie A Enilive,Far Throw,,28,72,68,66,70,72
+199909,4861,71,Pavao,Pervan,,1987-11-13,194,88,1,4,1,GK,Defense,,Austria,VfL Wolfsburg,Bundesliga,,,38,71,72,66,67,72
+201299,4875,71,Nicola,Leali,,1993-02-17,188,78,1,2,1,GK,Defense,,Italy,Genoa,Serie A Enilive,,,33,75,71,61,65,72
+276839,4884,71,Sebastiano,Desplanches,,2003-03-11,189,80,1,3,1,GK,Defense,,Italy,Pescara,Serie BKT,Cross Claimer,,23,72,67,68,70,74
+189296,4885,71,Etrit,Berisha,,1989-03-10,194,92,1,2,2,GK,Defense,,Albania,BK Häcken,Allsvenskan,Cross Claimer,,37,68,70,67,71,72
+266803,4892,71,Răzvan,Sava,,2002-06-21,197,83,1,2,1,GK,Defense,,Romania,Udinese,Serie A Enilive,Cross Claimer,,23,71,70,65,71,74
+269301,4894,71,Nicolas,Kristof,,1999-12-20,185,87,1,5,1,GK,Defense,,Austria,SV Elversberg,Bundesliga 2,Footwork,,26,71,70,70,70,72
+241859,4953,71,Ron-Thorben,Hoffmann,,1999-04-04,192,86,1,3,1,GK,Defense,,Germany,Braunschweig,Bundesliga 2,Far Throw,,26,68,69,62,71,73
+260978,4964,71,Johannes,Schenk,,2003-01-13,191,85,1,3,1,GK,Defense,,Germany,Preußen Münster,Bundesliga 2,,,23,71,69,67,70,73
+270060,5121,70,Samuel,Jumpe Soares,Samuel Soares,2002-06-15,190,94,1,2,1,GK,Defense,,Portugal,SL Benfica,Liga Portugal,Far Throw,,23,69,67,83,68,72
+219637,5181,70,Ander,Cantero Armendariz,Cantero,1995-01-09,189,82,1,3,2,GK,Defense,,Spain,Burgos CF,LALIGA HYPERMOTION,"Long Ball Pass,Far Throw,Footwork,Cross Claimer",,31,69,69,68,70,71
+203775,5206,70,Loris,Karius,,1993-06-22,189,90,1,3,1,GK,Defense,,Germany,FC Schalke 04,Bundesliga 2,,,32,72,65,70,70,72
+219244,5218,70,David,von Ballmoos,,1994-12-30,192,90,1,3,1,GK,Defense,,Switzerland,FC Lugano,Brack Super League,Far Throw,,31,71,71,72,70,69
+204966,5247,70,Adrián,Ortolá Vaño,Adrián Ortolá,1993-08-20,187,74,1,4,2,GK,Defense,,Spain,En Avant Guingamp,Ligue 2 BKT,,,32,71,69,73,67,71
+188524,5288,70,Volkan,Babacan,,1988-08-11,192,86,1,2,1,GK,Defense,,Turkey,Başakşehir,Trendyol Süper Lig,Deflector,,37,70,68,67,76,67
+220720,5304,70,Andrea,Fulignati,,1994-10-31,190,88,1,3,1,GK,Defense,,Italy,Empoli,Serie BKT,"Long Ball Pass,Rush Out",,31,69,67,71,72,70
+200209,5345,70,Nicolai,Larsen,,1991-03-09,187,83,1,2,1,GK,Defense,,Denmark,Silkeborg IF,3F Superliga,"Footwork,Rush Out",,35,67,69,71,71,72
+217096,5348,70,Joe,Lumley,,1995-02-15,191,73,1,3,1,GK,Defense,,England,Bristol City,EFL Championship,Cross Claimer,,31,71,66,74,68,72
+228562,5351,70,Raphael,Sallinger,,1995-12-08,196,85,1,3,1,GK,Defense,,Austria,Hibernian,Scottish Prem,"Long Ball Pass,Footwork,Cross Claimer",,30,68,70,72,68,73
+273621,5375,70,James,Beadle,,2004-07-16,201,85,1,3,1,GK,Defense,,England,Birmingham City,EFL Championship,"Footwork,Cross Claimer",,21,70,69,68,70,71
+162220,5377,70,Sinan,Bolat,,1988-09-03,186,83,1,4,1,GK,Defense,,Turkey,KVC Westerlo,1A Pro League,"Far Throw,Footwork,Cross Claimer",,37,67,73,71,70,68
+225868,5381,70,David,Gil Mohedano,David Gil,1994-01-11,186,81,1,2,2,GK,Defense,,Spain,Cádiz CF,LALIGA HYPERMOTION,Footwork,,32,70,69,68,69,70
+206307,5436,70,Jérémy,Frick,,1993-03-08,192,90,1,2,2,GK,Defense,,Switzerland,Servette FC,Brack Super League,"Far Throw,Cross Claimer",,33,71,68,68,69,70
+224977,5458,70,Alessandro,Micai,,1993-07-24,186,77,1,3,1,GK,Defense,,Italy,CFR 1907 Cluj,SUPERLIGA,,,32,68,69,66,67,72
+231073,5461,70,Boris,Radunović,,1996-05-26,194,84,1,3,1,GK,Defense,,Serbia,Cagliari,Serie A Enilive,,,29,73,65,68,68,75
+239772,5463,70,Jakub,Stolarczyk,,2000-12-19,194,89,1,2,1,GK,Defense,,Poland,Leicester City,EFL Championship,,,25,72,69,69,70,73
+253428,5467,70,Vítězslav,Jaroš,,2001-07-23,190,88,1,3,1,GK,Defense,,Czech Republic,Ajax,Eredivisie,,,24,72,70,70,68,70
+189324,5473,70,Alex,McCarthy,,1989-12-03,193,79,1,2,1,GK,Defense,,England,Southampton,EFL Championship,,,36,71,70,62,68,72
+228410,5475,70,Daniel,Iversen,,1997-07-19,193,80,1,2,1,GK,Defense,,Denmark,Preston,EFL Championship,Footwork,,28,70,69,66,68,70
+238060,5476,70,Nathan,Trott,,1998-11-21,188,78,1,2,2,GK,Defense,,England,Cardiff City,EFL League One,"Footwork,Cross Claimer",,27,72,68,68,68,73
+261144,5481,70,Ivan,Nevistić,,1998-07-31,193,88,1,2,1,GK,Defense,,Croatia,Dinamo Zagreb,Liga Hrvatska,Footwork,,27,70,66,69,68,75
+240657,5493,70,Federico,Ravaglia,,1999-11-11,196,88,1,3,1,GK,Defense,,Italy,Bologna,Serie A Enilive,,,26,72,67,67,69,75
+269795,5500,70,Martin,Delavallée,,2004-03-18,180,77,1,2,1,GK,Defense,,Belgium,Sp. Charleroi,1A Pro League,Far Throw,,22,70,69,66,68,68
+245822,5517,70,Doğan,Alemdar,,2002-10-29,189,73,1,2,1,GK,Defense,,Turkey,Stade Rennais FC,Ligue 1 McDonald's,Cross Claimer,,23,70,69,69,71,69
+196316,5560,70,Brice,Maubleu,,1989-12-01,192,83,1,3,1,GK,Defense,,France,AS Saint-Étienne,Ligue 2 BKT,"Far Throw,Footwork",,36,69,67,66,70,71
+232123,5580,70,Luka,Gugeshashvili,,1999-04-29,196,91,1,1,2,GK,Defense,,Georgia,PAOK FC,Hellas Liga,,,26,75,68,70,67,70
+204246,5597,70,Marcus,Bettinelli,,1992-05-24,194,82,1,3,1,GK,Defense,,England,Manchester City,Premier League,,,33,70,70,69,71,71
+234779,5615,70,José Antonio,Caro Díaz,Caro,1994-05-03,184,83,1,3,1,GK,Defense,,Spain,UD Las Palmas,LALIGA HYPERMOTION,"Far Throw,Footwork,Cross Claimer",,31,69,65,66,72,70
+204269,5644,70,Zander,Clark,,1992-06-26,193,80,1,2,1,GK,Defense,,Scotland,Hearts,Scottish Prem,Deflector,,33,70,66,69,70,73
+232410,5656,70,Florian,Escales,,1996-02-03,184,78,1,2,2,GK,Defense,,France,FC Annecy,Ligue 2 BKT,"Far Throw,Footwork",,30,74,71,66,70,68
+236330,5677,70,Valentin,Cojocaru,,1995-10-01,195,84,1,2,1,GK,Defense,,Romania,Pogoń Szczecin,PKO BP Ekstraklasa,"Long Ball Pass,Far Throw,Deflector",,30,71,67,67,68,69
+257480,5759,70,Matheo,Raab,,1998-12-18,186,82,1,3,1,GK,Defense,,Germany,Union Berlin,Bundesliga,,,27,70,69,67,70,70
+259362,5760,70,Jon Mikel,Magunagoitia Blasco,Magunagoitia,2000-08-06,183,79,1,3,1,GK,Defense,,Spain,SD Eibar,LALIGA HYPERMOTION,Footwork,,25,69,68,67,68,72
+262417,5761,70,Daniel Alexis,Leite Figueira,Daniel Figueira,1998-07-20,189,84,1,3,1,GK,Defense,,Portugal,Gil Vicente,Liga Portugal,,,27,68,67,68,70,71
+202886,5767,70,Benjamin,Siegrist,,1992-01-31,196,85,1,3,1,GK,Defense,,Switzerland,Genoa,Serie A Enilive,,,34,69,68,59,72,68
+235266,5783,70,Christian,Früchtl,,2000-01-28,193,88,1,2,2,GK,Defense,,Germany,Lecce,Serie A Enilive,"Far Throw,Cross Claimer",,26,73,68,67,66,71
+240856,5853,70,Bilal,Bayazıt,,1999-04-08,185,76,1,2,1,GK,Defense,,Turkey,Kayserispor,Trendyol Süper Lig,"Long Ball Pass,Far Reach",,26,69,65,62,70,73
+229692,6074,69,Jannik,Huth,,1994-04-15,185,80,1,4,1,GK,Defense,,Germany,SC Freiburg,Bundesliga,Footwork,,31,71,64,74,67,71
+202617,6142,69,Václav,Hladký,,1990-11-14,192,80,1,3,1,GK,Defense,,Czech Republic,Burnley,Premier League,,,35,69,69,69,68,70
+190778,6192,69,Jeroen,Zoet,,1991-01-06,188,87,1,4,1,GK,Defense,,Holland,AZ,Eredivisie,,,35,68,71,70,69,67
+228607,6212,69,Dominik,Reimann,,1997-06-18,186,82,1,3,1,GK,Defense,,Germany,1. FC Magdeburg,Bundesliga 2,"Long Ball Pass,Footwork",,28,69,66,73,71,71
+229637,6265,69,Gökhan,Akkan,,1995-01-01,188,80,1,2,1,GK,Defense,,Turkey,Gençlerbirliği,Trendyol Süper Lig,Rush Out,,31,70,66,66,69,72
+210006,6280,69,Thomas,Dähne,,1994-01-04,193,93,1,4,1,GK,Defense,,Germany,1860 München,3. Liga,,,32,72,67,67,65,72
+244001,6285,69,Timon,Weiner,,1999-01-18,190,84,1,4,1,GK,Defense,,Germany,Holstein Kiel,Bundesliga 2,Footwork,,27,70,67,66,65,72
+194372,6296,69,Ertuğrul,Taşkıran,,1989-11-05,191,83,1,2,1,GK,Defense,,Turkey,Alanyaspor,Trendyol Süper Lig,Far Throw,,36,70,68,62,66,69
+199101,6297,69,Raúl,Lizoain Cruz,Raúl Lizoain,1991-01-27,188,83,1,2,2,GK,Defense,,Spain,Albacete BP,LALIGA HYPERMOTION,Footwork,,35,67,68,67,70,67
+238070,6307,69,Jamie,Cumming,,1999-09-04,185,79,1,3,1,GK,Defense,,England,Oxford United,EFL Championship,"Far Throw,Footwork,Cross Claimer",,26,69,68,68,68,69
+273998,6314,69,André,Nogueira Gomes,André Gomes,2004-10-20,182,80,1,3,2,GK,Defense,,Portugal,FC Alverca,Liga Portugal,Cross Claimer,,21,70,67,77,64,70
+219584,6324,69,Luca,Lezzerini,,1995-03-24,195,86,1,2,1,GK,Defense,,Italy,Fiorentina,Serie A Enilive,,,30,70,67,62,70,71
+240595,6349,69,Aynsley,Pears,,1998-04-23,186,77,1,2,1,GK,Defense,,England,Blackburn Rovers,EFL Championship,"Footwork,Far Reach",,27,71,66,67,67,71
+204354,6364,69,Jak,Alnwick,,1993-06-17,187,82,1,2,2,GK,Defense,,England,Cardiff City,EFL League One,Footwork,,32,69,67,65,70,69
+230858,6370,69,Samuele,Perisan,,1997-08-21,192,83,1,3,2,GK,Defense,,Italy,Empoli,Serie BKT,,,28,68,64,67,67,74
+220944,6400,69,Joe,Wildsmith,,1995-12-28,189,77,1,3,1,GK,Defense,,England,West Brom,EFL Championship,"Footwork,Cross Claimer",,30,68,69,68,69,68
+246671,6405,69,Arthur,Okonkwo,,2001-09-09,196,84,1,2,1,GK,Defense,,England,Wrexham,EFL Championship,"Far Throw,Cross Claimer",,24,68,67,67,69,69
+70118,6412,69,Jonathan,Fischer,,2001-11-09,197,90,1,3,2,GK,Defense,,Denmark,FC Metz,Ligue 1 McDonald's,Footwork,,24,68,67,66,69,69
+72917,6414,69,Kiril,Fesiun,,2002-08-07,191,80,1,3,1,GK,Defense,,Ukraine,Shakhtar Donetsk,Ukrayina Liha,Cross Claimer,,23,70,67,68,71,71
+189342,6417,69,Carlo,Pinsoglio,,1990-03-16,194,85,1,2,2,GK,Defense,,Italy,Juventus,Serie A Enilive,,,36,70,70,62,69,70
+209532,6421,69,Daniel,Bachmann,,1994-07-09,191,81,1,3,1,GK,Defense,,Austria,RC Deportivo,LALIGA HYPERMOTION,"Footwork,Deflector",,31,70,68,62,67,71
+222546,6423,69,Leopold,Zingerle,,1994-04-10,182,76,1,3,1,GK,Defense,,Germany,RB Leipzig,Bundesliga,,,31,70,66,66,68,71
+240283,6430,69,Vojtěch,Vorel,,1996-06-18,190,74,1,3,1,GK,Defense,,Czech Republic,Sparta Praha,Česká Liga,,,29,71,67,70,68,72
+204308,6456,69,Hendrik,Van Crombrugge,,1993-04-30,188,86,1,2,2,GK,Defense,,Belgium,KRC Genk,1A Pro League,Footwork,,32,68,69,69,70,68
+73373,6483,69,Jiří,Letáček,,1999-01-09,196,98,1,2,1,GK,Defense,,Czech Republic,Getafe CF,LALIGA EA SPORTS,,,27,70,68,65,69,71
+205554,6485,69,Lukáš,Zima,,1994-01-09,197,80,1,2,1,GK,Defense,,Czech Republic,FCSB,SUPERLIGA,Cross Claimer,,32,68,68,63,70,69
+233425,6489,69,Elhan,Kastrati,,1997-02-02,189,93,1,3,1,GK,Defense,,Albania,Braunschweig,Bundesliga 2,"Far Throw,Rush Out",,29,69,67,69,69,70
+176994,6509,69,Régis,Gurtner,,1986-12-08,182,82,1,2,1,GK,Defense,,France,RC Lens,Ligue 1 McDonald's,"Long Ball Pass,Footwork",,39,65,66,70,70,66
+267994,6530,69,Sławomir,Abramowicz,,2004-06-09,187,80,1,2,2,GK,Defense,,Poland,Jagiellonia,PKO BP Ekstraklasa,,,21,68,65,68,69,72
+206561,6539,69,Christian,Walton,,1995-11-09,195,72,1,2,2,GK,Defense,,England,Ipswich,EFL Championship,"Footwork,Cross Claimer",,30,70,68,66,68,70
+132740,6557,69,Jesper,Hansen,,1985-03-31,188,81,1,3,1,GK,Defense,,Denmark,AGF,3F Superliga,Footwork,,40,69,68,67,69,67
+244417,6562,69,Julian,Krahl,,2000-01-22,194,82,1,3,1,GK,Defense,,Germany,Kaiserslautern,Bundesliga 2,Footwork,,26,72,67,65,69,72
+258239,6564,69,Mateusz,Kochalski,,2000-07-25,190,88,1,2,1,GK,Defense,,Poland,Qarabağ FK,Liga Azerbaijan,Rush Out,,25,69,65,61,69,73
+231474,6610,69,João Paulo,Santos da Costa,João Costa,1996-02-02,185,80,1,1,1,GK,Defense,,Portugal,FC Porto,Liga Portugal,,,30,70,67,68,70,73
+270756,6624,69,Simone,Ghidotti,,2000-03-19,193,81,1,1,1,GK,Defense,,Italy,Sampdoria,Serie BKT,Footwork,,25,68,67,66,68,69
+248054,6631,69,Laurențiu,Popescu,,1997-01-18,184,85,1,2,1,GK,Defense,,Romania,Univ. Craiova,SUPERLIGA,"Long Ball Pass,Footwork",,29,69,67,67,68,70
+228255,6639,69,Nicolas,Lemaître,,1997-01-12,189,82,1,2,2,GK,Defense,,France,ESTAC Troyes,Ligue 2 BKT,,,29,70,67,64,69,68
+243538,6643,69,Karlo,Letica,,1997-02-11,201,96,1,3,1,GK,Defense,,Croatia,Lausanne-Sport,Brack Super League,"Far Throw,Footwork,Cross Claimer",,29,69,65,65,70,70
+251995,6645,69,João Pedro,Oliveira Gonçalves,João Gonçalves,2000-11-05,188,80,1,2,1,GK,Defense,,Portugal,AVS Futebol SAD,Liga Portugal,Footwork,,25,69,68,67,70,69
+242802,6664,69,Miguel,San Román Ferrándiz,San Román,1997-07-14,189,79,1,3,1,GK,Defense,,Spain,CD Leganés,LALIGA HYPERMOTION,,,28,69,69,69,68,70
+243573,6682,69,Anthony,Racioppi,,1998-12-31,188,84,1,2,1,GK,Defense,,Switzerland,FC Sion,Brack Super League,"Long Ball Pass,Cross Claimer",,27,72,67,62,67,71
+262931,6685,69,Tjark,Ernst,,2003-03-15,193,87,1,3,1,GK,Defense,,Germany,Hertha BSC,Bundesliga 2,,,23,73,70,58,67,72
+242514,6696,69,František,Plach,,1992-03-08,192,80,1,2,2,GK,Defense,,Slovakia,Piast Gliwice,PKO BP Ekstraklasa,"Long Ball Pass,Footwork",,34,67,67,66,68,67
+252789,6700,69,Ruslan,Neshcheret,,2002-01-22,190,81,1,3,1,GK,Defense,,Ukraine,Dynamo Kyiv,Ukrayina Liha,,,24,72,66,66,65,72
+234877,6711,69,Fabijan,Buntić,,1997-02-24,194,91,1,2,2,GK,Defense,,Croatia,Qarabağ FK,Liga Azerbaijan,,,29,69,67,68,69,70
+248586,6731,69,Ottó,Hindrich,,2002-08-05,193,76,1,2,1,GK,Defense,,Romania,CFR 1907 Cluj,SUPERLIGA,,,23,68,68,66,68,70
+271532,6737,69,Pablo,Cuñat Campos,Pablo Campos,2002-04-28,188,78,1,3,2,GK,Defense,,Spain,Levante UD,LALIGA EA SPORTS,Footwork,,23,69,68,64,68,71
+235141,6753,69,Phillip,Menzel,,1998-08-18,192,84,1,3,1,GK,Defense,,Germany,Saarbrücken,3. Liga,"Long Ball Pass,Far Throw,Footwork",,27,70,68,66,69,69
+243373,6764,69,Lukas,Jensen,,1999-03-18,198,90,1,2,1,GK,Defense,,Denmark,Millwall,EFL Championship,"Far Throw,Footwork,Rush Out",,27,69,68,64,69,69
+265520,6807,69,Unai,Marrero Larrañaga,Unai Marrero,2001-10-09,189,82,1,3,1,GK,Defense,,Spain,Real Sociedad,LALIGA EA SPORTS,,,24,70,67,61,66,71
+72755,6833,69,Elias,Bethke,,2003-03-21,191,84,1,3,1,GK,Defense,,Germany,Energie Cottbus,3. Liga,Footwork,,22,67,66,63,70,73
+269269,6855,69,Jakob,Golz,,1998-08-16,187,85,1,3,1,GK,Defense,,Germany,Rot-Weiss Essen,3. Liga,"Far Throw,Footwork",,27,72,64,60,68,73
+189146,7073,68,Dávid,Gróf,,1989-04-17,193,90,1,3,1,GK,Defense,,Hungary,Ferencvárosi TC,Magyar Liga,Far Throw,,36,66,70,66,62,75
+212710,7215,68,Joel,Castro Pereira,Joel Pereira,1996-06-28,188,84,1,2,1,GK,Defense,,Portugal,Reading,EFL League One,Far Throw,,29,69,65,66,66,69
+222411,7251,68,Jérôme,Prior,,1995-08-08,187,86,1,3,2,GK,Defense,,France,Livingston,Scottish Prem,,,30,68,65,66,68,70
+230631,7256,68,Marco,Festa,,1992-06-06,190,85,1,3,1,GK,Defense,,Italy,Mantova,Serie BKT,,,33,67,66,70,70,69
+197928,7348,68,Jonathan,Bond,,1993-05-19,193,84,1,2,1,GK,Defense,,England,Houston Dynamo,MLS,Footwork,,32,68,66,65,68,67
+166963,7363,68,Gökhan,Değirmenci,,1989-03-21,185,79,1,2,1,GK,Defense,,Turkey,Kocaelispor,Trendyol Süper Lig,Far Throw,,36,68,68,63,70,66
+197641,7365,68,Benjamin,Leroy,,1989-04-07,184,75,1,3,1,GK,Defense,,France,FC Lorient,Ligue 1 McDonald's,Footwork,,36,65,66,67,69,69
+199493,7366,68,Diego,Mariño Villar,Diego Mariño,1990-05-09,187,77,1,2,1,GK,Defense,,Spain,Albacete BP,LALIGA HYPERMOTION,,,35,67,67,64,67,67
+199812,7367,68,Ryan,Allsop,,1992-06-17,189,80,1,3,1,GK,Defense,,England,Birmingham City,EFL Championship,"Footwork,Far Reach",,33,66,67,72,66,69
+216110,7368,68,Dawid,Kudła,,1992-03-21,189,84,1,2,1,GK,Defense,,Poland,GKS Katowice,PKO BP Ekstraklasa,Footwork,,33,65,68,69,69,66
+73838,7379,68,Alen,Sherri,,1997-12-15,197,93,1,3,1,GK,Defense,,Albania,Frosinone,Serie BKT,,,28,71,64,68,65,69
+266641,7393,68,Frank,Feller,,2004-01-07,183,76,1,3,1,GK,Defense,,Germany,Heidenheim,Bundesliga,,,22,73,69,69,72,68
+231105,7407,68,Alexandre,Olliero,,1996-02-15,193,85,1,2,1,GK,Defense,,France,Stade de Reims,Ligue 2 BKT,,,30,68,63,66,67,70
+259718,7461,68,Felix,Gebhardt,,2002-03-01,189,83,1,3,1,GK,Defense,,Germany,Jahn Regensburg,3. Liga,"Far Throw,Footwork",,24,67,64,65,66,71
+269434,7463,68,Stijn,van Gassel,,1996-10-18,186,81,1,3,2,GK,Defense,,Holland,Excelsior,Eredivisie,"Far Throw,Footwork",,29,69,66,62,65,72
+210347,7469,68,Ivan,Lučić,,1995-03-23,194,98,1,3,1,GK,Defense,,Austria,Hajduk Split,Liga Hrvatska,,,30,60,65,75,67,71
+219715,7471,68,Raffaele,Di Gennaro,,1993-10-03,186,80,1,2,1,GK,Defense,,Italy,Lombardia FC,Serie A Enilive,,,32,71,67,62,65,69
+234903,7475,68,Gaëtan,Coucke,,1998-12-03,187,83,1,3,1,GK,Defense,,Belgium,Sampdoria,Serie BKT,Footwork,,27,72,68,66,62,70
+204825,7490,68,Ben,Wilson,,1992-08-09,190,76,1,3,1,GK,Defense,,England,Coventry City,EFL Championship,,,33,70,67,62,65,71
+222263,7491,68,Nordin,Jackers,,1997-09-05,187,72,1,2,1,GK,Defense,,Belgium,Club Brugge,1A Pro League,Footwork,,28,67,67,64,66,69
+279565,7546,68,Diogo,de Carvalho Pinto,Diogo Pinto,2004-06-18,195,89,1,3,1,GK,Defense,,Portugal,Estrela Amadora,Liga Portugal,,,21,72,66,68,70,71
+206145,7552,68,Benjamin,Uphoff,,1993-08-08,192,84,1,2,1,GK,Defense,,Germany,FC Hansa Rostock,3. Liga,,,32,67,69,64,68,67
+244020,7555,68,André Filipe,M. Ribeiro Ferreira,André Ferreira,1996-05-29,193,79,1,2,1,GK,Defense,,Portugal,Moreirense FC,Liga Portugal,,,29,68,64,66,69,68
+244256,7556,68,Daniel,Bielica,,1999-04-30,191,76,1,2,1,GK,Defense,,Poland,NAC Breda,Eredivisie,,,26,70,66,65,66,68
+72022,7581,68,Ewen,Jaouen,,2005-12-29,197,82,1,2,1,GK,Defense,,France,Stade de Reims,Ligue 2 BKT,,,20,71,65,66,67,70
+163600,7583,68,John,Ruddy,,1986-10-24,193,97,1,3,1,GK,Defense,,England,Newcastle Utd,Premier League,"Far Throw,Cross Claimer",,39,66,69,66,68,67
+199803,7585,68,Daniel,Batz,,1991-01-12,191,90,1,2,1,GK,Defense,,Germany,1. FSV Mainz 05,Bundesliga,,,35,67,67,64,69,69
+218212,7606,68,Andries,Noppert,,1994-04-07,203,92,1,3,2,GK,Defense,,Holland,sc Heerenveen,Eredivisie,Cross Claimer,,31,69,67,65,67,67
+231720,7607,68,Quentin,Braat,,1997-07-06,194,90,1,2,1,GK,Defense,,France,Rodez AF,Ligue 2 BKT,"Footwork,Cross Claimer",,28,68,65,73,67,68
+235740,7610,68,Alberto,Paleari,,1992-08-29,193,88,1,3,1,GK,Defense,,Italy,Torino,Serie A Enilive,,,33,67,66,66,71,68
+259166,7621,68,Etienne,Green,,2000-07-19,192,78,1,3,1,GK,Defense,,England,FC Fredericia,3F Superliga,,,25,69,68,71,67,69
+222221,7637,68,Alexandru,Buzbuchi,,1993-10-31,190,84,1,2,1,GK,Defense,,Romania,Farul Constanța,SUPERLIGA,Footwork,,32,66,66,65,69,67
+269096,7650,68,Max,Weiß,,2004-06-15,190,84,1,2,1,GK,Defense,,Germany,Burnley,Premier League,Footwork,,21,70,64,67,61,72
+185172,7659,68,Vincenzo,Fiorillo,,1990-01-13,190,79,1,3,1,GK,Defense,,Italy,Carrarese Calcio,Serie BKT,,,36,70,64,61,66,69
+213573,7661,68,Marius,Gersbeck,,1995-06-20,187,83,1,3,2,GK,Defense,,Germany,Hertha BSC,Bundesliga 2,"Far Throw,Cross Claimer",,30,67,70,54,65,70
+253442,7667,68,Fabian,de Keijzer,,2000-05-10,193,83,1,3,1,GK,Defense,,Holland,Heracles Almelo,Eredivisie,Cross Claimer,,25,68,64,68,67,70
+247976,7683,68,Cătălin,Căbuz,,1996-06-18,187,79,1,3,1,GK,Defense,,Romania,FC Hermannstadt,SUPERLIGA,"Long Ball Pass,Far Throw,Footwork,Cross Claimer",,29,68,64,64,64,72
+208776,7699,68,Florian,Stritzel,,1994-01-31,197,92,1,3,1,GK,Defense,,Germany,Wehen Wiesbaden,3. Liga,"Cross Claimer,Deflector",,32,69,68,54,72,69
+257273,7727,68,Jan,Olschowsky,,2001-11-18,184,83,1,3,1,GK,Defense,,Germany,Aleman. Aachen,3. Liga,Footwork,,24,70,68,70,69,68
+269971,7731,68,Albert,Posiadała,,2003-02-25,192,78,1,2,1,GK,Defense,,Poland,Samsunspor,Trendyol Süper Lig,,,23,69,67,64,67,66
+209293,7749,68,Koen,Van Langendonck,,1989-06-09,187,86,1,3,1,GK,Defense,,Belgium,KVC Westerlo,1A Pro League,,,36,67,66,69,70,64
+235460,7767,68,Bahadır,Güngördü,,1996-01-16,190,84,1,2,1,GK,Defense,,Turkey,Konyaspor,Trendyol Süper Lig,"Far Throw,Cross Claimer",,30,71,67,64,67,67
+252911,7776,68,Tim,Schreiber,,2002-04-24,191,87,1,2,1,GK,Defense,,Germany,Dynamo Dresden,Bundesliga 2,Footwork,,23,70,64,61,66,72
+269752,7782,68,Tom,Vandenberghe,,1992-08-17,190,78,1,3,1,GK,Defense,,Belgium,KAA Gent,1A Pro League,"Footwork,Rush Out",,33,69,65,60,70,69
+275325,7783,68,Tommaso,Martinelli,,2006-01-06,196,90,1,3,1,GK,Defense,,Italy,Fiorentina,Serie A Enilive,,,20,69,67,64,69,70
+257638,7799,68,Luca,Philipp,,2000-11-28,192,83,1,2,1,GK,Defense,,Germany,TSG Hoffenheim,Bundesliga,,,25,68,64,64,69,70
+215546,7813,68,Michael,Brouwer,,1993-01-21,189,81,1,3,1,GK,Defense,,Holland,FC Utrecht,Eredivisie,,,33,71,67,65,64,67
+240043,7839,68,Filip,Manojlović,,1996-04-25,197,82,1,3,1,GK,Defense,,Serbia,Djurgårdens IF,Allsvenskan,,,29,70,67,68,64,69
+257752,7869,68,Federico,Del Frate,,1995-12-21,192,83,1,2,2,GK,Defense,,Italy,Entella,Serie BKT,,,30,68,64,58,72,70
+262298,7905,68,Marcel,Lotka,,2001-05-25,190,85,1,3,1,GK,Defense,,Poland,Düsseldorf,Bundesliga 2,"Long Ball Pass,Far Throw,Footwork",,24,68,65,56,69,71
+231413,7913,68,Michael,Verrips,,1996-12-03,195,90,1,3,1,GK,Defense,,Holland,FCV Dender EH,1A Pro League,Footwork,,29,68,66,68,65,68
+257497,7916,68,Nikolas,Polster,,2002-07-07,189,80,1,3,1,GK,Defense,,Austria,Wolfsberger AC,Ö. Bundesliga,,,23,68,66,63,65,71
+262322,8279,67,Nahuel,Noll,,2003-03-17,191,94,1,4,1,GK,Defense,,Germany,Hannover 96,Bundesliga 2,,,23,66,67,61,67,70
+244467,8399,67,Ondřej,Kolář,,1994-10-17,193,81,1,3,1,GK,Defense,,Czech Republic,Slavia Praha,Česká Liga,Far Throw,,31,66,64,71,68,68
+168965,8428,67,Rémy,Riou,,1987-08-06,191,81,1,1,1,GK,Defense,,France,Paris FC,Ligue 1 McDonald's,,,38,66,66,64,68,67
+224947,8432,67,Daniel,Grimshaw,,1998-01-16,185,77,1,2,1,GK,Defense,,England,Norwich,EFL Championship,"Long Ball Pass,Footwork",,28,69,62,69,65,69
+198633,8451,67,Antony,Iannarilli,,1990-12-18,186,79,1,2,1,GK,Defense,,Italy,Avellino,Serie BKT,,,35,64,66,70,66,68
+204502,8454,67,Matt,Ingram,,1993-12-18,191,97,1,3,2,GK,Defense,,England,Oxford United,EFL Championship,,,32,68,65,66,66,69
+211398,8456,67,Marc-Aurèle,Caillard,,1994-05-12,192,88,1,3,1,GK,Defense,,France,LOSC Lille,Ligue 1 McDonald's,,,31,67,66,65,68,68
+224491,8457,67,Christian,Ortag,,1995-01-14,197,82,1,3,1,GK,Defense,,Germany,SSV Ulm 1846,3. Liga,,,31,70,67,60,68,68
+146952,8504,67,Iván,Cuéllar Sacristán,Iván Cuéllar,1984-05-27,187,76,1,3,2,GK,Defense,,Spain,RCD Mallorca,LALIGA EA SPORTS,Cross Claimer,,41,65,67,64,66,67
+163264,8505,67,Tom,Heaton,,1986-04-15,188,85,1,3,1,GK,Defense,,England,Man Utd,Premier League,Far Throw,,39,68,66,65,68,67
+220532,8511,67,Nikita,Contini,,1996-05-21,190,85,1,1,1,GK,Defense,,Ukraine,SSC Napoli,Serie A Enilive,,,29,68,66,61,64,69
+223082,8513,67,Will,Norris,,1993-08-12,195,81,1,4,2,GK,Defense,,England,Wycombe,EFL League One,"Cross Claimer,Rush Out",,32,67,66,66,66,67
+182520,8526,67,Martin,Männel,,1988-03-16,183,80,1,3,1,GK,Defense,,Germany,FC Erzgebirge Aue,3. Liga,"Long Ball Pass,Far Throw,Rush Out",,38,69,67,57,65,68
+193302,8528,67,Filip,Kurto,,1991-06-14,191,82,1,3,1,GK,Defense,,Poland,Macarthur FC,A-League,"Footwork,Rush Out",,34,67,65,60,66,68
+207633,8543,67,Jakob,Haugaard,,1992-05-01,199,87,1,2,2,GK,Defense,,Denmark,Tromsø IL,Eliteserien,"Footwork,Rush Out",,33,65,66,71,66,66
+211946,8545,67,Markus,Kolke,,1990-08-18,187,91,1,2,1,GK,Defense,,Germany,SV Werder Bremen,Bundesliga,"Far Throw,Footwork",,35,66,65,61,69,68
+193247,8553,67,Heinz,Lindner,,1990-07-17,187,80,1,3,1,GK,Defense,,Austria,BSC Young Boys,Brack Super League,"Long Ball Pass,Footwork",,35,66,66,63,70,66
+237615,8560,67,Giacomo,Poluzzi,,1988-02-25,184,74,1,2,1,GK,Defense,,Italy,Südtirol,Serie BKT,"Long Ball Pass,Far Throw,Deflector",,38,65,66,61,71,66
+224130,8574,67,Josh,Vickers,,1995-12-01,193,72,1,3,1,GK,Defense,,England,Derby County,EFL Championship,Cross Claimer,,30,66,67,65,65,67
+261294,8582,67,Calvin,Raatsie,,2002-02-09,188,70,1,3,1,GK,Defense,,Holland,Excelsior,Eredivisie,,,24,65,68,69,65,68
+210940,8591,67,Simone,Perilli,,1995-01-07,195,85,1,2,1,GK,Defense,,Italy,Hellas Verona,Serie A Enilive,,,31,67,67,61,66,64
+240123,8595,67,Luca,Plogmann,,2000-03-10,188,78,1,3,2,GK,Defense,,Germany,Go Ahead Eagles,Eredivisie,,,26,68,67,63,64,69
+256742,8606,67,Lucas,Lund,,2000-03-19,195,81,1,3,1,GK,Defense,,Denmark,Viborg FF,3F Superliga,Rush Out,,25,68,64,67,68,69
+224440,8625,67,Julian,Pollersbeck,,1994-08-16,195,90,1,3,1,GK,Defense,,Germany,Jahn Regensburg,3. Liga,,,31,67,64,68,68,66
+236568,8631,67,Brandon,Austin,,1999-01-08,188,77,1,2,1,GK,Defense,,England,Spurs,Premier League,,,27,69,65,64,65,66
+225203,8646,67,Liam,Kelly,,1996-01-23,184,85,1,3,1,GK,Defense,,Scotland,Rangers,Scottish Prem,"Long Ball Pass,Far Throw,Footwork,Cross Claimer",,30,68,66,67,66,69
+246958,8652,67,Aljaž,Ivačič,,1993-12-29,188,82,1,3,1,GK,Defense,,Slovenia,New England,MLS,"Footwork,Cross Claimer",,32,69,65,62,64,70
+263283,8659,67,Marián,Tvrdoň,,1994-08-18,194,85,1,3,1,GK,Defense,,Slovakia,Viktoria Plzeň,Česká Liga,,,31,69,64,68,68,70
+257914,8672,67,Jonas,Kersken,,2000-09-01,190,88,1,3,1,GK,Defense,,Germany,Arminia Bielefeld,Bundesliga 2,Footwork,,25,67,53,68,70,76
+270463,8675,67,Nikola,Čavlina,,2002-06-02,191,82,1,3,1,GK,Defense,,Croatia,Como,Serie A Enilive,Far Throw,,23,68,59,61,65,73
+240785,8686,67,Michele,Cerofolini,,1999-01-04,188,80,1,1,1,GK,Defense,,Italy,Bari,Serie BKT,Footwork,,27,68,63,62,66,69
+263214,8695,67,Sam,Tickle,,2002-03-31,187,74,1,2,2,GK,Defense,,England,Wigan Athletic,EFL League One,"Footwork,Cross Claimer",,23,67,66,65,67,68
+231841,8703,67,Maxence,Prévot,,1997-04-09,187,81,1,3,1,GK,Defense,,France,OH Leuven,1A Pro League,Cross Claimer,,28,65,68,67,67,63
+241076,8707,67,Steven,Benda,,1998-10-01,192,90,1,3,1,GK,Defense,,Germany,Millwall,EFL Championship,,,27,67,65,61,66,70
+243048,8708,67,Will,Dennis,,2000-07-10,188,84,1,3,1,GK,Defense,,England,AFC Bournemouth,Premier League,,,25,70,65,63,66,69
+251036,8710,67,Marian,Aioani,,1999-11-07,187,82,1,2,1,GK,Defense,,Romania,FC Rapid 1923,SUPERLIGA,"Far Throw,Footwork,Cross Claimer",,26,67,66,66,64,68
+252456,8711,67,Carl,Klaus,,1994-01-16,189,86,1,2,1,GK,Defense,,Germany,Union Berlin,Bundesliga,,,32,67,69,66,65,70
+215417,8722,67,Christian,Mathenia,,1992-03-31,190,89,1,2,1,GK,Defense,,Germany,1. FC Nürnberg,Bundesliga 2,Far Reach,,33,69,66,52,65,70
+228456,8724,67,Juan Manuel,Pérez Ruiz,Juan Pérez,1996-07-15,187,83,1,3,1,GK,Defense,,Spain,SD Huesca,LALIGA HYPERMOTION,,,29,68,65,61,67,71
+232131,8726,67,Henrich,Ravas,,1997-08-16,195,87,1,2,1,GK,Defense,,Slovakia,Cracovia,PKO BP Ekstraklasa,"Footwork,Deflector",,28,66,66,65,66,65
+223957,8741,67,Lucas,Pirard,,1995-03-10,191,85,1,2,1,GK,Defense,,Belgium,Standard Liège,1A Pro League,,,31,67,65,65,66,68
+268875,8751,67,Semuel,Pizzignacco,,2001-09-01,188,76,1,3,1,GK,Defense,,Italy,Monza,Serie BKT,Footwork,,24,68,64,66,62,70
+73285,8754,67,Ivan,Brkić,,1995-06-29,194,90,1,3,1,GK,Defense,,Croatia,Motor Lublin,PKO BP Ekstraklasa,,,30,62,76,67,67,64
+189430,8757,67,Simone,Colombi,,1991-07-01,188,83,1,2,1,GK,Defense,,Italy,Entella,Serie BKT,,,34,68,65,53,67,69
+236613,8761,67,Lennart,Grill,,1999-01-25,192,85,1,3,1,GK,Defense,,Germany,Dynamo Dresden,Bundesliga 2,Footwork,,27,71,60,56,64,72
+262295,8785,67,Igor,Vekić,,1998-05-06,192,86,1,3,1,GK,Defense,,Slovenia,Vejle Boldklub,3F Superliga,Footwork,,27,65,66,68,66,67
+256229,8806,67,Jan,Reichert,,2001-06-28,191,86,1,2,1,GK,Defense,,Germany,1. FC Nürnberg,Bundesliga 2,,,24,68,65,62,67,69
+222908,8847,67,Sebastian,Madejski,,1997-01-02,189,78,1,2,1,GK,Defense,,Poland,Cracovia,PKO BP Ekstraklasa,Footwork,,29,66,62,62,68,68
+72802,8864,67,Alexandru,Roșca,,2003-11-12,186,82,1,3,1,GK,Defense,,Romania,FC Dinamo 1948,SUPERLIGA,,,22,70,64,58,64,70
+251433,8872,67,Ben,Voll,,2000-12-09,195,86,1,3,1,GK,Defense,,Germany,FC St. Pauli,Bundesliga,Rush Out,,25,68,64,65,66,70
+53110,8880,67,Craig,Gordon,,1982-12-31,193,83,1,3,2,GK,Defense,,Scotland,Hearts,Scottish Prem,"Far Throw,Footwork",,43,67,66,63,66,68
+262251,8922,67,Kacper,Tobiasz,,2002-11-04,191,80,1,2,2,GK,Defense,,Poland,Legia Warszawa,PKO BP Ekstraklasa,,,23,67,63,61,66,69
+193013,8926,67,James,Shea,,1991-06-16,181,76,1,2,1,GK,Defense,,England,Luton Town,EFL League One,,,34,67,65,60,67,67
+72937,8957,67,Florian,Wiegele,,2001-03-21,205,87,1,3,2,GK,Defense,,Austria,Viktoria Plzeň,Česká Liga,Cross Claimer,,24,70,64,63,65,66
+252799,8962,67,Tarık,Çetin,,1997-01-08,193,86,1,2,1,GK,Defense,,Turkey,Fenerbahçe,Trendyol Süper Lig,,,29,66,66,62,65,72
+246740,8992,67,Guillaume,Dietsch,,2001-04-17,184,74,1,2,1,GK,Defense,,France,FCV Dender EH,1A Pro League,"Cross Claimer,Deflector",,24,68,66,63,66,67
+268428,9021,67,Mio,Backhaus,,2004-04-16,194,82,1,4,1,GK,Defense,,Germany,SV Werder Bremen,Bundesliga,Cross Claimer,,21,67,63,61,66,71
+204931,9331,66,Joshua,Smits,,1992-11-06,190,67,1,1,1,GK,Defense,,Holland,Adelaide United,A-League,,,33,67,64,66,65,68
+198625,9371,66,Scott,Bain,,1991-11-22,183,84,1,3,1,GK,Defense,,Scotland,Falkirk,Scottish Prem,,,34,65,66,67,61,70
+264116,9427,66,Alejandro,Iturbe Encabo,Iturbe,2003-09-02,186,75,1,3,1,GK,Defense,,Spain,Elche CF,LALIGA EA SPORTS,,,22,66,64,66,65,69
+194150,9441,66,Simon,Moore,,1990-05-19,191,83,1,3,1,GK,Defense,,England,Sunderland,Premier League,Far Throw,,35,67,65,68,64,67
+214088,9445,66,Cameron,Dawson,,1995-07-07,193,69,1,2,1,GK,Defense,,England,Rotherham Utd,EFL League One,Cross Claimer,,30,66,65,64,66,67
+177475,9459,66,Tobias,Sippel,,1988-03-22,183,80,1,2,1,GK,Defense,,Germany,M'gladbach,Bundesliga,,,37,64,62,74,66,64
+226259,9460,66,Lorenzo,Andrenacci,,1995-01-02,183,77,1,2,1,GK,Defense,,Italy,Mantova,Serie BKT,,,31,66,67,60,67,67
+209423,9472,66,Mathieu,Michel,,1991-09-04,189,84,1,2,1,GK,Defense,,France,Montpellier,Ligue 2 BKT,Far Throw,,34,67,65,65,62,68
+225543,9476,66,Brad,Collins,,1997-02-18,184,69,1,3,1,GK,Defense,,England,Burton Albion,EFL League One,,,29,67,63,70,66,67
+176094,9501,66,Przemysław,Tytoń,,1987-01-04,195,88,1,2,1,GK,Defense,,Poland,FC Twente,Eredivisie,Far Throw,,39,65,63,69,63,64
+209830,9502,66,Quentin,Beunardeau,,1994-02-27,184,79,1,2,1,GK,Defense,,France,Red Star FC,Ligue 2 BKT,,,32,65,63,63,64,68
+254276,9512,66,Ennio,van der Gouw,,2001-01-01,195,81,1,3,1,GK,Defense,,Holland,Zulte Waregem,1A Pro League,,,25,63,65,66,67,67
+210642,9528,66,Jannich,Storch,,1993-05-12,189,81,1,2,1,GK,Defense,,Denmark,Randers FC,3F Superliga,Far Reach,,32,67,65,58,66,68
+271191,9550,66,Joe,Whitworth,,2004-02-29,179,70,1,3,1,GK,Defense,,England,Exeter City,EFL League One,"Far Throw,Footwork",,22,65,67,66,64,65
+204034,9556,66,Alexis,Sauvage,,1991-10-30,186,82,1,3,1,GK,Defense,,France,Amiens SC,Ligue 2 BKT,,,34,69,67,63,63,66
+269955,9568,66,Justin,Heekeren,,2000-11-27,196,93,1,5,1,GK,Defense,,Germany,FC Schalke 04,Bundesliga 2,Footwork,,25,66,58,72,66,71
+211604,9576,66,Liam,Roberts,,1994-11-21,194,82,1,2,2,GK,Defense,,England,Mansfield Town,EFL League One,"Far Throw,Footwork,Rush Out",,31,65,64,63,66,66
+220058,9590,66,Dillon,Phillips,,1995-06-11,188,89,1,3,1,GK,Defense,,England,Hull City,EFL Championship,,,30,66,65,62,65,66
+229168,9593,66,Théo,Guivarch,,1995-11-17,195,87,1,2,1,GK,Defense,,France,Clermont Foot 63,Ligue 2 BKT,,,30,66,64,68,67,67
+234803,9612,66,Nathan,Baxter,,1998-11-08,189,88,1,2,1,GK,Defense,,England,Watford,EFL Championship,"Footwork,Deflector",,27,67,66,62,66,67
+243201,9616,66,Álex,Domínguez Romero,Álex Domínguez,1998-07-30,186,82,1,2,1,GK,Defense,,Spain,Toulouse FC,Ligue 1 McDonald's,,,27,67,65,65,63,67
+251285,9622,66,Niclas,Thiede,,1999-04-14,186,85,1,4,2,GK,Defense,,Germany,VfL Bochum 1848,Bundesliga 2,,,26,65,65,61,64,70
+228860,9633,66,Hidde,Jurjus,,1994-02-09,187,77,1,3,1,GK,Defense,,Holland,FC Groningen,Eredivisie,,,32,67,62,63,64,68
+241976,9687,66,Tiago,Magalhães de Sá,Tiago Sá,1995-01-11,185,78,1,2,1,GK,Defense,,Portugal,SC Braga,Liga Portugal,,,31,65,65,63,65,64
+209957,9717,66,Jakob,Busk,,1993-09-12,189,87,1,2,1,GK,Defense,,Denmark,FC Nordsjælland,3F Superliga,Cross Claimer,,32,67,60,61,64,68
+219967,9720,66,Dominik,Hładun,,1995-09-17,190,77,1,3,2,GK,Defense,,Poland,Zagłębie Lubin,PKO BP Ekstraklasa,,,30,69,65,65,64,67
+223925,9721,66,Alexander,Brunst,,1995-07-07,195,88,1,3,1,GK,Defense,,Germany,SV Darmstadt 98,Bundesliga 2,,,30,67,65,61,65,68
+234260,9722,66,Andy,Fisher,,1998-02-12,183,73,1,3,1,GK,Defense,,England,Swansea City,EFL Championship,,,28,66,64,68,65,67
+271114,9734,66,Dennis,Seimen,,2005-12-01,190,89,1,4,2,GK,Defense,,Germany,SC Paderborn 07,Bundesliga 2,,,20,67,61,65,62,69
+202199,9743,66,George,Long,,1993-11-05,193,94,1,3,2,GK,Defense,,England,Southampton,EFL Championship,Far Throw,,32,68,66,66,64,68
+198285,9764,66,Lee,Nicholls,,1992-10-05,191,85,1,2,1,GK,Defense,,England,Huddersfield,EFL League One,Far Throw,,33,65,67,58,65,66
+234658,9768,66,Oscar,Hedvall,,1998-08-09,195,89,1,3,2,GK,Defense,,Denmark,Vålerenga Fotball,Eliteserien,,,27,68,62,69,64,68
+210366,9783,66,Niklas,Lomb,,1993-07-28,186,83,1,3,1,GK,Defense,,Germany,Leverkusen,Bundesliga,,,32,68,58,64,63,70
+246753,9788,66,Mads,Kikkenborg,,1999-10-07,197,93,1,2,1,GK,Defense,,Denmark,RSC Anderlecht,1A Pro League,"Footwork,Cross Claimer",,26,65,66,67,66,68
+256537,9793,66,Lukas,Gütlbauer,,2000-12-06,192,80,1,2,1,GK,Defense,,Austria,Wolfsberger AC,Ö. Bundesliga,,,25,70,61,59,62,68
+275856,9805,66,Nordin,Bakker,,1997-10-31,196,85,1,2,1,GK,Defense,,Holland,sc Heerenveen,Eredivisie,Rush Out,,28,65,65,62,67,65
+198511,9811,66,Michael,Simões Domingues,Mika,1991-03-08,195,90,1,2,2,GK,Defense,,Portugal,Moreirense FC,Liga Portugal,,,35,67,62,64,65,67
+238503,9813,66,Leo,Weinkauf,,1996-07-07,198,94,1,3,1,GK,Defense,,Germany,Hannover 96,Bundesliga 2,Cross Claimer,,29,65,67,53,69,71
+271150,9820,66,Kayne,van Oevelen,,2003-08-07,199,84,1,4,1,GK,Defense,,Holland,FC Volendam,Eredivisie,,,22,66,61,70,67,66
+239573,9832,66,Marco,Bleve,,1995-10-18,184,84,1,3,1,GK,Defense,,Italy,Carrarese Calcio,Serie BKT,,,30,69,66,72,65,68
+271333,9838,66,Thimothée,Lo-Tutala,,2003-02-13,188,93,1,2,1,GK,Defense,,France,Doncaster,EFL League One,Footwork,,23,66,64,63,63,68
+72923,9843,66,Maciej,Kikolski,,2004-02-23,193,84,1,3,1,GK,Defense,,Poland,Widzew Łódź,PKO BP Ekstraklasa,Footwork,,22,66,63,64,66,66
+219937,9848,66,Nils,Körber,,1996-11-13,189,83,1,3,1,GK,Defense,,Germany,Fürth,Bundesliga 2,,,29,68,63,58,64,70
+228369,9849,66,Jack,Walton,,1998-04-23,184,77,1,2,1,GK,Defense,,England,Preston,EFL Championship,Far Reach,,27,67,64,60,67,66
+263272,9876,66,Philipp,Schulze,,2003-01-29,190,82,1,2,1,GK,Defense,,Germany,SC Verl,3. Liga,,,23,63,64,62,65,71
+74726,9885,66,Balázs,Tóth,,1997-09-04,189,80,1,3,2,GK,Defense,,Hungary,Blackburn Rovers,EFL Championship,,,28,68,66,60,62,69
+208679,9888,66,Robin,Himmelmann,,1989-02-05,187,80,1,2,1,GK,Defense,,Germany,Karlsruher SC,Bundesliga 2,Footwork,,37,66,63,59,65,70
+238167,9892,66,Pelle,Boevink,,1998-01-16,190,79,1,3,1,GK,Defense,,Holland,Fürth,Bundesliga 2,Long Ball Pass,,28,64,60,66,64,71
+239203,9893,66,Grégoire,Coudert,,1999-04-03,188,83,1,3,2,GK,Defense,,France,Stade Brestois 29,Ligue 1 McDonald's,,,26,68,64,59,63,68
+242853,9897,66,Sol,Brynn,,2000-10-30,184,80,1,2,1,GK,Defense,,England,Middlesbrough,EFL Championship,"Far Throw,Footwork,Cross Claimer",,25,65,65,62,65,66
+235932,9908,66,Ataberk,Dadakdeniz,,1999-08-05,194,84,1,3,1,GK,Defense,,Turkey,Antalyaspor,Trendyol Süper Lig,Footwork,,26,65,65,61,68,66
+263116,9919,66,Lasse,Rieß,,2001-07-27,192,88,1,3,1,GK,Defense,,Germany,1. FSV Mainz 05,Bundesliga,Far Throw,,24,64,64,62,65,68
+246881,9933,66,João Nuno,Figueiredo Valido,João Valido,2000-03-03,185,77,1,2,1,GK,Defense,,Portugal,Arouca,Liga Portugal,,,26,63,67,69,66,64
+270529,9937,66,Álvaro,Aceves Catalina,Aceves,2003-07-26,190,85,1,3,1,GK,Defense,,Spain,R. Valladolid CF,LALIGA HYPERMOTION,Footwork,,22,66,66,66,66,66
+173165,9956,66,Nicola,Ravaglia,,1988-12-12,184,78,1,2,1,GK,Defense,,Italy,Sampdoria,Serie BKT,,,37,64,64,61,65,68
+263402,9958,66,Théo,De Percin,,2001-02-02,185,81,1,3,1,GK,Defense,,France,AJ Auxerre,Ligue 1 McDonald's,,,25,69,64,65,64,68
+258864,9981,66,Stefan,Drljača,,1999-04-20,193,89,1,3,1,GK,Defense,,Germany,VfB Stuttgart,Bundesliga,"Far Throw,Rush Out",,26,68,62,55,64,71
+197689,9992,66,Andrea,Seculin,,1990-07-14,192,83,1,3,1,GK,Defense,,Italy,Reggiana,Serie BKT,,,35,67,62,54,67,69
+70524,10010,66,Franz,Stolz,,2001-02-14,193,83,1,3,1,GK,Defense,,Austria,FC Rapid 1923,SUPERLIGA,,,25,66,64,64,63,66
+234735,10030,66,Aleksandar,Jovanović,,1992-12-06,192,85,1,1,1,GK,Defense,,Serbia,Kocaelispor,Trendyol Süper Lig,Far Throw,,33,68,60,63,68,66
+194333,10046,66,Rafał,Gikiewicz,,1987-10-26,190,82,1,3,1,GK,Defense,,Poland,Widzew Łódź,PKO BP Ekstraklasa,"Long Ball Pass,Footwork",,38,66,64,59,64,65
+259149,10051,66,Erdem,Canpolat,,2001-04-13,194,85,1,3,1,GK,Defense,,Turkey,Çaykur Rizespor,Trendyol Süper Lig,,,24,64,65,61,65,68
+79276,10057,66,Yevgeniy,Kucherenko,,1999-08-27,192,83,1,1,2,GK,Defense,,Ukraine,Dundee United,Scottish Prem,,,26,69,62,61,65,67
+235806,10075,66,Giacomo,Satalino,,1999-05-20,188,75,1,2,1,GK,Defense,,Italy,Sassuolo,Serie A Enilive,Cross Claimer,,26,68,64,56,66,69
+251034,10076,66,Iustin,Popescu,,1993-09-01,188,80,1,2,1,GK,Defense,,Romania,SC Oțelul Galați,SUPERLIGA,,,32,67,63,64,66,65
+201138,10397,65,Zacharie,Boucher,,1992-03-07,181,78,1,3,1,GK,Defense,,France,ESTAC Troyes,Ligue 2 BKT,,,34,67,61,65,63,68
+248091,10510,65,David,Lazar,,1991-08-08,184,82,1,3,1,GK,Defense,,Romania,FC Argeș,SUPERLIGA,,,34,65,64,61,65,65
+200696,10533,65,Hobie,Verhulst,,1993-04-02,193,92,1,3,2,GK,Defense,,Holland,AZ,Eredivisie,Far Throw,,32,64,63,70,65,65
+223571,10536,65,Guillermo,Vallejo Delgado,Guille Vallejo,1995-04-22,183,72,1,3,1,GK,Defense,,Spain,AD Ceuta FC,LALIGA HYPERMOTION,,,30,67,65,63,63,64
+216779,10577,65,Francesco,Ruberto,,1993-03-19,187,82,1,3,1,GK,Defense,,Switzerland,FC Sion,Brack Super League,,,32,68,66,64,61,65
+208894,10592,65,Filip,Bednarek,,1992-09-26,188,81,1,2,1,GK,Defense,,Poland,Sparta Rotterdam,Eredivisie,,,33,65,63,64,65,65
+224543,10615,65,Maksymilian,Stryjek,,1996-07-18,188,82,1,3,1,GK,Defense,,Poland,Kilmarnock,Scottish Prem,Deflector,,29,66,65,62,64,66
+236378,10639,65,Alessandro,Plizzari,,2000-03-12,191,73,1,3,1,GK,Defense,,Italy,Venezia,Serie BKT,,,26,66,66,59,62,69
+228912,10654,65,Bobby,Allain,,1991-11-28,185,77,1,2,1,GK,Defense,,France,Grenoble Foot 38,Ligue 2 BKT,,,34,63,65,67,66,64
+258948,10661,65,Ángel,Fortuño Viñas,Fortuño,2001-11-05,183,77,1,3,1,GK,Defense,,Spain,RCD Espanyol,LALIGA EA SPORTS,,,24,63,64,64,65,65
+193870,10689,65,Pedro José,da Silva Trigueira,Pedro Trigueira,1988-01-04,192,84,1,3,1,GK,Defense,,Portugal,AVS Futebol SAD,Liga Portugal,,,38,63,62,64,65,62
+229227,10692,65,Rafał,Leszczyński,,1992-04-26,187,82,1,4,1,GK,Defense,,Poland,Wisła Płock,PKO BP Ekstraklasa,Far Throw,,33,64,63,66,64,66
+162297,10708,65,Daniele,Padelli,,1985-10-25,191,82,1,2,1,GK,Defense,,Italy,Udinese,Serie A Enilive,,,40,62,65,56,70,62
+231681,10709,65,Will,Mannion,,1998-05-05,186,74,1,2,1,GK,Defense,,England,Charlton Ath,EFL Championship,,,27,63,67,64,65,64
+232417,10710,65,Nicolas,Kocik,,1998-08-04,193,80,1,3,1,GK,Defense,,France,Le Mans FC,Ligue 2 BKT,,,27,62,64,63,66,67
+240784,10711,65,Josef,Bursik,,2000-07-12,190,75,1,2,2,GK,Defense,,England,Portsmouth,EFL Championship,Cross Claimer,,25,64,63,64,63,66
+257374,10716,65,Cosmin,Dur-Bozoancă,,1998-02-15,182,84,1,1,2,GK,Defense,,Romania,SC Oțelul Galați,SUPERLIGA,,,28,64,63,63,66,64
+221531,10729,65,Marko,Maroši,,1993-10-23,193,80,1,3,1,GK,Defense,,Slovakia,Port Vale,EFL League One,Long Ball Pass,,32,64,63,61,65,65
+276806,10742,65,Owen,Goodman,,2003-11-27,193,84,1,3,2,GK,Defense,,England,Huddersfield,EFL League One,,,22,64,63,64,64,66
+234383,10748,65,Markus,Schubert,,1998-06-12,187,84,1,3,1,GK,Defense,,Germany,SC Paderborn 07,Bundesliga 2,,,27,67,63,62,60,67
+257395,10751,65,Melvin,Zinga,,2002-03-16,187,76,1,2,2,GK,Defense,,France,Angers SCO,Ligue 1 McDonald's,,,24,65,67,69,64,69
+276347,10756,65,Jakub,Surovčík,,2002-06-28,197,92,1,2,2,GK,Defense,,Slovakia,Sparta Praha,Česká Liga,,,23,68,65,69,61,66
+235820,10768,65,Paul,Gartler,,1997-03-10,187,75,1,2,1,GK,Defense,,Austria,SK Rapid,Ö. Bundesliga,,,29,66,65,64,65,65
+239410,10769,65,Mirko,Kos,,1997-04-12,183,80,1,3,1,GK,Defense,,Austria,FK Austria Wien,Ö. Bundesliga,,,28,65,63,58,63,67
+246240,10786,65,Hans Christian,Bernat,,2000-11-13,192,88,1,3,1,GK,Defense,,Denmark,Karlsruher SC,Bundesliga 2,"Long Ball Pass,Far Throw",,25,65,62,66,63,66
+256488,10788,65,Matthew,Cox,,2003-05-02,182,74,1,3,1,GK,Defense,,England,Brentford,Premier League,,,22,67,63,65,65,66
+256953,10790,65,Xavier,Dziekoński,,2003-10-06,188,80,1,2,1,GK,Defense,,Poland,Korona Kielce,PKO BP Ekstraklasa,"Footwork,Cross Claimer",,22,65,65,63,63,68
+202457,10801,65,Luuk,Koopmans,,1993-11-18,190,84,1,3,1,GK,Defense,,Holland,Fortuna Sittard,Eredivisie,Cross Claimer,,32,65,64,63,64,65
+243925,10808,65,Morten,Behrens,,1997-04-01,193,89,1,3,1,GK,Defense,,Germany,Preußen Münster,Bundesliga 2,,,28,66,68,64,65,66
+275733,10850,65,Niklas,Steffen,,2001-01-19,187,80,1,2,1,GK,Defense,,Switzerland,FC Thun,Brack Super League,,,25,69,62,64,60,68
+208214,10853,65,Théo,Defourny,,1992-04-25,194,85,1,2,1,GK,Defense,,Belgium,Sp. Charleroi,1A Pro League,"Far Throw,Footwork",,33,65,62,62,64,64
+248696,10858,65,Marcus,Bundgaard,,2001-08-05,197,84,1,2,1,GK,Defense,,Denmark,Sønderjyske,3F Superliga,,,24,65,63,63,66,64
+258085,10859,65,Eduardo,Dos Santos Haesler,Dudu,1999-02-10,196,89,1,2,1,GK,Defense,,Germany,Viktoria Köln,3. Liga,,,27,69,63,65,61,66
+244551,10880,65,Filip,Majchrowicz,,2000-02-09,194,99,1,3,1,GK,Defense,,Poland,Radomiak Radom,PKO BP Ekstraklasa,,,26,69,58,63,65,63
+272427,10886,65,Alberto,Flores López,Alberto Flores,2003-11-10,186,80,1,3,2,GK,Defense,,Spain,Sevilla FC,LALIGA EA SPORTS,,,22,65,66,63,63,64
+245865,10896,65,Stefan,Bajic,,2001-12-23,191,84,1,3,1,GK,Defense,,France,Strasbourg,Ligue 1 McDonald's,,,24,66,65,65,64,65
+277330,10906,65,Rafał,Mamla,,2003-12-22,195,93,1,1,1,GK,Defense,,Poland,Korona Kielce,PKO BP Ekstraklasa,,,22,65,66,67,61,66
+219705,10914,65,Damian,Węglarz,,1996-03-21,189,81,1,2,1,GK,Defense,,Poland,Arka Gdynia,PKO BP Ekstraklasa,,,29,64,64,61,62,66
+244720,10919,65,Brent,Gabriël,,1999-01-27,190,75,1,3,1,GK,Defense,,Belgium,Zulte Waregem,1A Pro League,,,27,67,62,57,64,69
+252773,10924,65,Josh,Griffiths,,2001-09-05,198,87,1,3,1,GK,Defense,,England,West Brom,EFL Championship,Footwork,,24,65,63,62,63,66
+70959,10937,65,Raul,Balbarau,,2001-04-07,189,79,1,2,1,GK,Defense,,Romania,FC Petrolul,SUPERLIGA,,,24,64,62,63,62,66
+222820,10960,65,Esteban,Salles,,1994-03-02,187,78,1,2,1,GK,Defense,,France,Pau FC,Ligue 2 BKT,,,32,66,64,63,65,64
+254297,10985,65,Zafer,Görgen,,2000-06-21,189,79,1,3,1,GK,Defense,,Turkey,Gaziantep,Trendyol Süper Lig,Cross Claimer,,25,66,63,60,64,69
+258763,10986,65,Maxime,Delanghe,,2001-05-23,190,80,1,3,1,GK,Defense,,Belgium,Cercle Brugge,1A Pro League,Footwork,,24,64,63,64,66,68
+241179,11000,65,Cristian,Rivero Sabater,Cristian Rivero,1998-03-21,188,75,1,3,1,GK,Defense,,Spain,Valencia CF,LALIGA EA SPORTS,Far Throw,,27,65,62,63,62,66
+271385,11010,65,Edoardo,Corvi,,2001-03-23,187,70,1,1,1,GK,Defense,,Italy,Parma,Serie A Enilive,,,24,66,63,65,58,68
+76408,11014,65,Gašper,Tratnik,,2000-01-04,191,84,1,3,1,GK,Defense,,Slovenia,Motor Lublin,PKO BP Ekstraklasa,,,26,63,65,61,65,63
+204922,11016,65,Andreas,Leitner,,1994-03-25,184,72,1,4,1,GK,Defense,,Austria,SV Oberbank Ried,Ö. Bundesliga,,,31,65,64,61,64,66
+264424,11025,65,Ivan,Filipović,,1994-11-13,197,92,1,2,1,GK,Defense,,Croatia,Dinamo Zagreb,Liga Hrvatska,,,31,66,61,60,64,68
+233101,11035,65,Roy,Kortsmit,,1992-08-26,190,75,1,1,1,GK,Defense,,Holland,NAC Breda,Eredivisie,,,33,66,61,60,64,65
+241525,11050,65,Taye,Ashby-Hammond,,1999-03-21,190,87,1,2,1,GK,Defense,,England,Stevenage,EFL League One,,,26,64,64,62,64,65
+237553,11057,65,Abdullah,Yiğiter,,2000-02-20,189,79,1,2,1,GK,Defense,,Turkey,Antalyaspor,Trendyol Süper Lig,Cross Claimer,,26,66,64,61,63,67
+270996,11096,65,Adam,Stejskal,,2002-03-28,189,81,1,3,1,GK,Defense,,Czech Republic,WSG Tirol,Ö. Bundesliga,Footwork,,23,68,62,56,64,67
+271661,11098,65,Yann,Lienard,,2003-03-16,194,80,1,3,1,GK,Defense,,France,AS Monaco,Ligue 1 McDonald's,,,23,65,61,60,63,66
+276518,11429,64,Marcel,Łubik,,2004-05-19,190,85,1,3,2,GK,Defense,,Poland,Górnik Zabrze,PKO BP Ekstraklasa,,,21,64,62,60,63,64
+225134,11433,64,Alex,Bass,,1998-04-01,191,81,1,3,1,GK,Defense,,England,Peterborough,EFL League One,"Long Ball Pass,Footwork,Cross Claimer",,27,64,62,63,62,65
+205747,11477,64,Martin,Sourzac,,1992-03-25,186,81,1,2,1,GK,Defense,,France,AS Nancy Lorraine,Ligue 2 BKT,,,33,63,64,62,63,66
+79922,11493,64,Ármin,Pécsi,,2005-02-24,190,85,1,2,1,GK,Defense,,Hungary,Liverpool,Premier League,,,21,64,62,63,63,67
+228935,11576,64,Marcel,Engelhardt,,1993-04-05,191,89,1,2,1,GK,Defense,,Germany,Holstein Kiel,Bundesliga 2,,,32,69,58,61,64,67
+184040,11602,64,Martin,Hansen,,1990-06-15,188,85,1,3,1,GK,Defense,,Denmark,Odense BK,3F Superliga,Cross Claimer,,35,62,63,61,63,64
+205352,11604,64,Jordan,Archer,,1993-04-12,191,80,1,2,1,GK,Defense,,Scotland,Portsmouth,EFL Championship,,,32,64,63,64,65,64
+238489,11606,64,Tim,Boss,,1993-06-28,186,79,1,3,1,GK,Defense,,Germany,SV Elversberg,Bundesliga 2,,,32,67,62,60,62,64
+262056,11648,64,Theo,Sander,,2005-01-08,192,84,1,3,1,GK,Defense,,Denmark,Odense BK,3F Superliga,Cross Claimer,,21,66,62,67,63,66
+271146,11651,64,Alessandro,Sorrentino,,2002-04-03,190,80,1,3,1,GK,Defense,,Italy,Padova,Serie BKT,,,23,64,64,60,66,67
+262944,11676,64,Lukas,Jungwirth,,2004-04-30,193,78,1,2,1,GK,Defense,,Austria,LASK,Ö. Bundesliga,,,21,66,62,61,59,66
+213407,11684,64,Matt,Macey,,1994-09-09,201,81,1,2,1,GK,Defense,,England,Colchester,EFL League Two,,,31,65,64,64,63,64
+220482,11685,64,Bogdan,Sarnavskyi,,1995-01-29,189,75,1,3,1,GK,Defense,,Ukraine,Lechia Gdańsk,PKO BP Ekstraklasa,,,31,61,60,56,63,66
+225751,11686,64,Aston,Oxborough,,1998-05-09,196,98,1,3,1,GK,Defense,,England,Motherwell,Scottish Prem,Cross Claimer,,27,65,62,62,62,64
+279703,11700,64,Francisco Diogo,Pereira Silva,Francisco Silva,2005-11-20,193,86,1,3,1,GK,Defense,,Portugal,Sporting CP,Liga Portugal,,,20,64,59,64,65,65
+169798,11706,64,Ben,Hinchliffe,,1987-09-10,185,73,1,3,1,GK,Defense,,England,Stockport,EFL League One,"Cross Claimer,Far Reach",,38,65,60,62,65,66
+183513,11707,64,Jens,Grahl,,1988-09-22,192,88,1,2,1,GK,Defense,,Germany,Frankfurt,Bundesliga,,,37,68,60,58,62,66
+211299,11711,64,Kelle,Roos,,1992-05-31,196,90,1,4,1,GK,Defense,,Holland,Notts County,EFL League Two,,,33,65,61,62,64,64
+265763,11748,64,Maximilian,Braune,,2003-07-01,187,76,1,3,1,GK,Defense,,Germany,MSV Duisburg,3. Liga,,,22,67,62,64,60,69
+268544,11750,64,Murphy,Cooper,,2001-12-27,185,75,1,2,1,GK,Defense,,England,Barnsley,EFL League One,"Far Reach,Deflector",,24,65,65,60,61,64
+186611,11757,64,Mauro,Vigorito,,1990-05-22,187,79,1,2,1,GK,Defense,,Italy,Como,Serie A Enilive,,,35,63,63,60,65,65
+212453,11758,64,Germán,Parreño Boix,Germán Parreño,1993-02-16,191,78,1,3,1,GK,Defense,,Spain,RC Deportivo,LALIGA HYPERMOTION,,,33,62,65,66,64,62
+237188,11780,64,Nathan,Bishop,,1999-10-15,185,72,1,3,1,GK,Defense,,England,AFC Wimbledon,EFL League One,,,26,65,62,60,63,65
+258511,11784,64,Emre,Bilgin,,2004-02-26,188,85,1,2,2,GK,Defense,,Turkey,Beşiktaş,Trendyol Süper Lig,,,22,68,63,58,65,67
+188202,11795,64,Yannick,Thoelen,,1990-07-18,188,81,1,2,1,GK,Defense,,Belgium,Royal Antwerp FC,1A Pro League,,,35,64,64,62,64,61
+201847,11809,64,Louis,Bostyn,,1993-10-04,196,86,1,3,1,GK,Defense,,Belgium,Zulte Waregem,1A Pro League,,,32,66,63,59,66,62
+211953,11811,64,René,Vollath,,1990-03-20,185,75,1,3,1,GK,Defense,,Germany,1860 München,3. Liga,"Long Ball Pass,Far Throw",,35,63,62,59,63,66
+242983,11814,64,Jon,McCracken,,2000-05-24,190,77,1,2,1,GK,Defense,,Scotland,Dundee FC,Scottish Prem,Footwork,,25,65,62,60,63,67
+269707,11819,64,Gabriel,Kobylak,,2002-02-20,190,84,1,2,1,GK,Defense,,Poland,Legia Warszawa,PKO BP Ekstraklasa,,,24,63,62,62,67,66
+76012,11824,64,Vladyslav,Krapyvtsov,,2005-06-25,188,75,1,3,1,GK,Defense,,Ukraine,Girona FC,LALIGA EA SPORTS,,,20,64,64,62,64,64
+211105,11827,64,Nicolai,Flø,,1995-09-25,190,87,1,2,2,GK,Defense,,Denmark,Sønderjyske,3F Superliga,Deflector,,30,64,65,55,63,65
+268912,11834,64,Martin,Turk,,2003-08-21,190,82,1,2,2,GK,Defense,,Slovenia,Estoril Praia,Liga Portugal,,,22,66,56,57,63,71
+222876,11843,64,Jordan,Smith,,1994-12-08,183,75,1,4,2,GK,Defense,,England,Hibernian,Scottish Prem,,,31,65,65,61,61,63
+75825,11856,64,Christian,Zawieschitzky,,2007-05-02,184,73,1,2,1,GK,Defense,,Austria,RB Salzburg,Ö. Bundesliga,,,18,63,59,61,63,69
+257304,11860,64,Ammar,Helac,,1998-06-13,190,87,1,2,1,GK,Defense,,Austria,TSV Hartberg,Ö. Bundesliga,,,27,65,64,58,63,67
+80045,11894,64,Radoslaw,Zelezny,,2006-09-06,193,85,1,2,2,GK,Defense,,Poland,AS Roma,Serie A Enilive,,,19,63,68,60,64,64
+80146,11895,64,Joeri,Heerkens,,2006-05-08,193,79,1,3,1,GK,Defense,,Holland,Ajax,Eredivisie,,,19,65,60,66,66,68
+263763,11908,64,Szymon,Weirauch,,2004-03-05,193,76,1,2,1,GK,Defense,,Poland,Lechia Gdańsk,PKO BP Ekstraklasa,Footwork,,22,64,60,61,63,67
+271211,11927,64,Jankat,Yılmaz,,2004-08-16,193,75,1,3,2,GK,Defense,,Turkey,Galatasaray,Trendyol Süper Lig,,,21,66,63,58,65,68
+278045,11928,64,Aitor,Fraga Torres,Fraga,2003-03-12,194,83,1,2,1,GK,Defense,,Spain,Real Sociedad B,LALIGA HYPERMOTION,,,23,63,63,62,64,64
+79686,11934,64,Diogo José,N. e Jesus Ferreira,Diogo Ferreira,2007-02-10,191,84,1,1,2,GK,Defense,,Portugal,SL Benfica,Liga Portugal,,,19,64,60,51,63,65
+72534,11959,64,Jakob,Meierhofer,,1997-11-06,187,77,1,3,1,GK,Defense,,Austria,Grazer AK,Ö. Bundesliga,,,28,64,61,64,64,64
+76202,11960,64,Ștefan,Lefter,,2004-11-18,187,80,1,3,1,GK,Defense,,Romania,FC Univ. Cluj,SUPERLIGA,,,21,67,62,57,62,64
+235835,11965,64,Alessandro,Confente,,1998-06-07,194,74,1,1,1,GK,Defense,,Italy,SS Juve Stabia,Serie BKT,,,27,61,62,59,65,65
+273882,11975,64,Bernt,Klaverboer,,2005-09-26,191,78,1,2,1,GK,Defense,,Holland,sc Heerenveen,Eredivisie,,,20,66,62,64,62,64
+240597,11980,64,Zach,Hemming,,2000-03-07,188,70,1,2,1,GK,Defense,,England,Chesterfield,EFL League Two,"Footwork,Cross Claimer",,26,65,62,61,64,63
+259530,11986,64,Alfonso,Pastor Vacas,Alfonso Pastor,2000-10-04,190,80,1,2,1,GK,Defense,,Spain,Rio Ave FC,Liga Portugal,,,25,69,63,63,59,66
+237232,11993,64,Batuhan,Şen,,1999-02-03,192,81,1,2,1,GK,Defense,,Turkey,Galatasaray,Trendyol Süper Lig,Cross Claimer,,27,64,63,62,63,66
+250897,11996,64,Mustafa Burak,Bozan,,2000-08-23,190,80,1,3,1,GK,Defense,,Turkey,Gaziantep,Trendyol Süper Lig,,,25,65,63,64,65,66
+279605,12011,64,Pol,Tristán Jiménez,Tristán,2002-03-18,188,73,1,4,1,GK,Defense,,Spain,RCD Espanyol,LALIGA EA SPORTS,,,24,61,64,62,61,65
+79024,12032,64,Tom,Opitz,,2003-11-13,192,85,1,2,1,GK,Defense,,Germany,TSV Havelse,3. Liga,,,22,63,65,61,62,63
+239499,12046,64,Kai,Eisele,,1995-06-25,190,80,1,4,1,GK,Defense,,Germany,FC Ingolstadt 04,3. Liga,,,30,67,63,62,62,65
+273047,12051,64,Andreas,Jungdal,,2002-02-02,195,82,1,2,1,GK,Defense,,Denmark,KVC Westerlo,1A Pro League,Cross Claimer,,24,67,61,57,63,67
+73986,12056,64,William,Lykke,,2004-09-28,188,82,1,3,2,GK,Defense,,Denmark,FC Nordsjælland,3F Superliga,,,21,62,65,63,62,63
+223174,12107,64,Onurcan,Piri,,1994-09-28,190,82,1,2,1,GK,Defense,,Turkey,Kayserispor,Trendyol Süper Lig,,,31,65,64,57,64,65
+275624,12114,64,Deniz,Dilmen,,2005-05-06,198,76,1,2,2,GK,Defense,,Turkey,Başakşehir,Trendyol Süper Lig,,,20,65,64,57,59,67
+253110,12137,64,Jan,de Boer,,2000-05-20,199,95,1,2,1,GK,Defense,,Holland,Bryne FK,Eliteserien,,,25,63,62,63,64,62
+268631,12147,64,Harry,Tyrer,,2001-12-06,194,88,1,2,1,GK,Defense,,England,Everton,Premier League,,,24,65,61,62,62,65
+275317,12148,64,Mathieu,Patouillet,,2004-02-20,188,75,1,3,1,GK,Defense,,France,Al Hilal,ROSHN Saudi League,,,22,65,61,57,62,67
+233725,12173,64,Thijmen,Nijhuis,,1998-07-25,197,83,1,3,1,GK,Defense,,Holland,SV Waldhof,3. Liga,Rush Out,,27,65,59,60,63,64
+254328,12359,63,Louie,Moulden,,2002-01-06,191,79,1,4,1,GK,Defense,,England,Norwich,EFL Championship,,,24,61,60,70,63,65
+223968,12502,63,Vaso,Vasić,,1990-04-26,187,87,1,3,1,GK,Defense,,Serbia,FC Luzern,Brack Super League,,,35,63,63,64,64,63
+263619,12538,63,Vic,Chambaere,,2003-01-10,191,77,1,3,1,GK,Defense,,Belgium,R. Union St.-G.,1A Pro League,,,23,68,62,62,62,65
+203215,12544,63,Alex,Cairns,,1993-01-04,183,72,1,3,2,GK,Defense,,England,Leeds United,Premier League,"Long Ball Pass,Footwork",,33,63,61,62,62,63
+203824,12558,63,Remi,Matthews,,1994-02-10,192,78,1,3,1,GK,Defense,,England,Crystal Palace,Premier League,,,32,64,63,62,62,63
+73487,12583,63,Mathys,Niflore,,2007-03-02,188,74,1,3,1,GK,Defense,,France,USL Dunkerque,Ligue 2 BKT,,,19,64,63,62,62,67
+199705,12587,63,Maxime,Hautbois,,1991-01-03,181,75,1,2,1,GK,Defense,,France,Laval MFC,Ligue 2 BKT,,,35,61,65,62,62,64
+213677,12615,63,Ben,Killip,,1995-11-24,188,74,1,3,1,GK,Defense,,England,Portsmouth,EFL Championship,,,30,63,62,60,63,64
+225342,12632,63,Jack,Stevens,,1997-08-02,188,77,1,3,1,GK,Defense,,England,Reading,EFL League One,"Footwork,Cross Claimer",,28,63,62,63,62,63
+203175,12653,63,Lee,Burge,,1993-01-09,185,76,1,2,2,GK,Defense,,England,Northampton,EFL League One,,,33,62,61,61,63,64
+210422,12664,63,Krzysztof,Kamiński,,1990-11-26,191,81,1,3,1,GK,Defense,,Poland,Pogoń Szczecin,PKO BP Ekstraklasa,Cross Claimer,,35,63,60,64,65,64
+218873,12665,63,Tim,Paterok,,1992-08-05,192,79,1,2,1,GK,Defense,,Germany,Saarbrücken,3. Liga,,,33,66,62,62,63,66
+276944,12688,63,Tommy,Simkin,,2004-12-08,190,82,1,2,1,GK,Defense,,England,Leyton Orient,EFL League One,,,21,63,61,60,61,63
+236663,12699,63,Ellery,Balcombe,,1999-10-15,190,92,1,3,1,GK,Defense,,England,Brentford,Premier League,,,26,64,62,61,60,64
+240346,12701,63,Shamal,George,,1998-01-06,191,79,1,3,1,GK,Defense,,England,St. Mirren,Scottish Prem,,,28,64,60,60,62,65
+253688,12703,63,Mihai,Popa,,2000-10-12,190,82,1,2,1,GK,Defense,,Romania,Torino,Serie A Enilive,,,25,63,62,60,59,65
+278071,12710,63,Arnau,Rafús Aulet,Arnau Rafús,2003-04-27,190,75,1,3,1,GK,Defense,,Spain,Cultural Leonesa,LALIGA HYPERMOTION,,,22,65,63,70,63,64
+200525,12717,63,Sam,Walker,,1991-10-02,198,85,1,2,1,GK,Defense,,England,Bradford City,EFL League One,"Cross Claimer,Rush Out",,34,63,61,59,61,63
+215693,12719,63,Thomas,Mikkelsen,,1983-08-27,190,85,1,2,1,GK,Defense,,Denmark,Brøndby IF,3F Superliga,,,42,62,64,63,65,63
+224761,12720,63,Tomasz,Loska,,1996-01-26,190,79,1,2,1,GK,Defense,,Poland,Górnik Zabrze,PKO BP Ekstraklasa,,,30,65,60,59,61,67
+173895,12752,63,Simon,Eastwood,,1989-06-26,188,90,1,3,1,GK,Defense,,England,Oxford United,EFL Championship,Footwork,,36,63,63,63,63,63
+219482,12756,63,Ryan,Fulton,,1996-05-23,191,70,1,3,2,GK,Defense,,Scotland,Hearts,Scottish Prem,,,29,63,62,63,62,65
+222503,12757,63,Harry,Isted,,1997-03-05,186,74,1,3,1,GK,Defense,,England,Burton Albion,EFL League One,,,29,63,62,63,61,63
+259973,12777,63,Pietro,Boer,,2002-05-12,193,80,1,2,1,GK,Defense,,Italy,SS Juve Stabia,Serie BKT,,,23,64,64,61,60,68
+271583,12783,63,Giovanni,Garofani,,2002-10-20,188,82,1,3,2,GK,Defense,,Italy,Carrarese Calcio,Serie BKT,,,23,66,65,58,58,65
+258792,12804,63,George,Wickens,,2001-11-08,194,81,1,2,1,GK,Defense,,England,Lincoln City,EFL League One,,,24,63,63,64,61,64
+169493,12807,63,Frank,Fielding,,1988-04-04,180,76,1,3,1,GK,Defense,,England,Stoke City,EFL Championship,,,37,61,62,59,63,65
+76567,12823,63,Ignacio,Miras Blanco,Nacho Miras,1997-07-19,187,80,1,3,1,GK,Defense,,Spain,KV Mechelen,1A Pro League,,,28,60,62,65,63,65
+259067,12837,63,André Filipe,Eusébio Paulo,André Paulo,1996-12-18,188,76,1,2,1,GK,Defense,,Portugal,FC Alverca,Liga Portugal,,,29,63,61,62,63,64
+271411,12843,63,Oliwier,Zych,,2004-06-28,193,86,1,3,1,GK,Defense,,Poland,Raków,PKO BP Ekstraklasa,,,21,62,64,69,64,61
+261755,12857,63,Daan,Reiziger,,2001-06-18,184,68,1,3,1,GK,Defense,,Holland,SC Telstar,Eredivisie,,,24,59,63,62,61,64
+259057,12869,63,Leonardo,Loria,,1999-03-28,195,89,1,3,1,GK,Defense,,Italy,Spezia,Serie BKT,,,26,65,63,60,63,65
+276900,12877,63,Hugo Alberto,Pires Cunha,Hugo Cunha,2001-09-06,198,91,1,3,1,GK,Defense,,Portugal,FC Famalicão,Liga Portugal,,,24,68,60,65,61,68
+277967,12878,63,Jakub,Mądrzyk,,2003-12-04,191,80,1,3,1,GK,Defense,,Poland,Raków,PKO BP Ekstraklasa,,,22,66,61,58,61,62
+266906,12899,63,Silas,Ostrzinski,,2003-11-19,198,93,1,2,1,GK,Defense,,Germany,Borussia Dortmund,Bundesliga,Cross Claimer,,22,65,60,59,62,65
+240791,12910,63,Marcos,Lavín Rodríguez,Marcos Lavín,1996-09-02,190,79,1,3,1,GK,Defense,,Spain,USL Dunkerque,Ligue 2 BKT,,,29,60,64,56,63,65
+269560,12922,63,Toni,Stahl,,1999-09-17,194,80,1,3,1,GK,Defense,,Germany,FC Schweinfurt 05,3. Liga,,,26,64,62,62,61,65
+271757,12923,63,Rubén,Gómez Peris,Rubén Gómez,2002-01-24,182,75,1,3,1,GK,Defense,,Spain,Villarreal CF,LALIGA EA SPORTS,,,24,63,62,61,63,61
+276198,12926,63,Áron,Yaakobishvili,,2006-03-06,185,70,1,3,1,GK,Defense,,Hungary,FC Andorra,LALIGA HYPERMOTION,,,20,66,63,62,61,62
+277239,12928,63,Adrián,Suárez Ortega,Adri Suárez,2004-12-13,195,74,1,4,1,GK,Defense,,Spain,UD Las Palmas,LALIGA HYPERMOTION,,,21,63,63,61,59,63
+79933,12946,63,Daniel,Antosch,,2000-03-07,193,83,1,1,1,GK,Defense,,Austria,SCR Altach,Ö. Bundesliga,,,26,62,63,65,62,64
+235880,12961,63,Leonardo,Marson,,1998-01-05,194,92,1,3,2,GK,Defense,,Italy,Avellino,Serie BKT,,,28,66,62,62,62,64
+240218,12962,63,Alexander,Weidinger,,1997-06-18,197,91,1,3,1,GK,Defense,,Germany,Jahn Regensburg,3. Liga,,,28,64,61,63,64,62
+263023,12965,63,Niklas,Sauter,,2003-04-06,187,79,1,2,1,GK,Defense,,Germany,VfL Osnabrück,3. Liga,,,22,66,62,57,59,65
+235274,12973,63,Miłosz,Mleczko,,1999-03-01,191,84,1,3,1,GK,Defense,,Poland,Bruk-Bet,PKO BP Ekstraklasa,,,27,63,63,59,62,62
+275032,12995,63,Novak,Mićović,,2001-10-25,190,77,1,2,1,GK,Defense,,Serbia,LA Galaxy,MLS,,,24,63,63,61,60,62
+73213,13025,63,Miguel de Jesús,Narváez López,Miguel Narváez,2002-04-29,188,79,1,3,1,GK,Defense,,Spain,R. Oviedo,LALIGA EA SPORTS,,,23,64,65,56,59,62
+251910,13030,63,Romain,Matthys,,1998-07-10,183,80,1,3,1,GK,Defense,,Belgium,CD Castellón,LALIGA HYPERMOTION,,,27,65,59,54,66,65
+268583,13035,63,Filip,Marschall,,2003-04-24,195,87,1,2,1,GK,Defense,,England,Stevenage,EFL League One,Footwork,,22,63,62,63,61,62
+271920,13037,63,Egoitz,Arana Aizpurua,Arana,2002-02-19,197,80,1,3,1,GK,Defense,,Spain,Real Sociedad B,LALIGA HYPERMOTION,,,24,62,64,59,63,63
+243711,13042,63,Thomas,Callens,,1998-09-06,182,81,1,3,2,GK,Defense,,France,FC Annecy,Ligue 2 BKT,,,27,67,64,58,61,63
+272769,13047,63,Niek,Schiks,,2004-02-03,188,73,1,2,2,GK,Defense,,Holland,PSV,Eredivisie,,,22,63,62,63,64,60
+278394,13090,63,Francisco Javie,González Pérez,Fran González,2005-06-24,199,72,1,3,1,GK,Defense,,Spain,Real Madrid,LALIGA EA SPORTS,,,20,62,61,60,63,64
+279897,13099,63,Eric,Puerto Huerta,Eric Puerto,2002-10-28,185,80,1,3,1,GK,Defense,,Spain,RC Deportivo,LALIGA HYPERMOTION,,,23,65,62,60,58,65
+77692,13107,63,Diogo,Dias Fernandes,Diogo Fernandes,2005-02-17,185,78,1,2,1,GK,Defense,,Portugal,FC Porto,Liga Portugal,,,21,65,62,55,58,64
+259153,13319,62,Doğukan,Özkan,,2000-02-04,185,75,1,3,1,GK,Defense,,Turkey,Antalyaspor,Trendyol Süper Lig,,,26,62,64,62,62,60
+182206,13358,62,Richard,O'Donnell,,1988-09-12,188,85,1,3,2,GK,Defense,,England,Derby County,EFL Championship,Far Throw,,37,62,62,60,62,62
+223727,13360,62,Craig,MacGillivray,,1993-01-12,188,78,1,3,1,GK,Defense,,Scotland,MK Dons,EFL League Two,Footwork,,33,62,61,62,61,63
+173531,13375,62,Ben,Amos,,1990-04-10,193,70,1,3,1,GK,Defense,,England,Port Vale,EFL League One,,,35,60,65,67,61,60
+72390,13416,62,Wyll,Stanway,,2001-05-21,193,82,1,2,1,GK,Defense,,England,Barrow,EFL League Two,,,24,63,58,61,62,63
+262516,13422,62,Jonas,Krumrey,,2003-11-25,193,85,1,2,1,GK,Defense,,Germany,Holstein Kiel,Bundesliga 2,,,22,65,61,58,59,60
+225511,13431,62,Connal,Trueman,,1996-03-26,186,74,1,3,1,GK,Defense,,England,MK Dons,EFL League Two,,,29,62,62,60,61,63
+76901,13443,62,Bartosz,Żelazowski,,2005-04-25,193,73,1,2,1,GK,Defense,,Poland,OGC Nice,Ligue 1 McDonald's,,,20,63,60,62,61,60
+211358,13472,62,Julien,Fabri,,1994-02-05,183,72,1,3,1,GK,Defense,,France,SC Bastia,Ligue 2 BKT,,,32,60,61,58,61,60
+222484,13474,62,Daniel,Mesenhöler,,1995-07-24,188,83,1,3,1,GK,Defense,,Germany,Dynamo Dresden,Bundesliga 2,,,30,62,64,56,59,61
+225432,13475,62,Daniele,Sommariva,,1997-07-18,185,76,1,2,1,GK,Defense,,Italy,Genoa,Serie A Enilive,,,28,64,56,62,59,68
+252783,13497,62,Krzysztof,Bąkowski,,2003-01-04,190,75,1,2,1,GK,Defense,,Poland,Lech Poznań,PKO BP Ekstraklasa,,,23,65,59,60,63,65
+222095,13505,62,Callum,Burton,,1996-08-15,188,80,1,3,1,GK,Defense,,England,Wrexham,EFL Championship,Cross Claimer,,29,63,61,60,59,63
+223868,13515,62,Tobias,Schützenauer,,1997-05-19,182,79,1,4,1,GK,Defense,,Austria,LASK,Ö. Bundesliga,,,28,63,60,63,64,62
+257126,13519,62,Teddy,Sharman-Lowe,,2003-03-30,193,87,1,3,1,GK,Defense,,England,Bolton,EFL League One,,,22,62,60,63,60,63
+211827,13529,62,Philipp,Klewin,,1993-09-30,192,86,1,2,1,GK,Defense,,Germany,FC Hansa Rostock,3. Liga,,,32,61,60,60,63,62
+264208,13557,62,Noah,Kruth,,2003-06-24,186,78,1,2,1,GK,Defense,,Germany,1. FC Magdeburg,Bundesliga 2,,,22,65,64,64,63,63
+242391,13566,62,Maxime,Pattier,,1996-02-12,184,77,1,2,1,GK,Defense,,France,Grenoble Foot 38,Ligue 2 BKT,,,30,63,61,63,62,64
+278112,13576,62,Milosz,Piekutowski,,2006-05-08,189,81,1,4,1,GK,Defense,,Poland,Jagiellonia,PKO BP Ekstraklasa,,,19,65,64,60,60,63
+173533,13618,62,David,Button,,1989-02-27,191,87,1,3,1,GK,Defense,,England,Ipswich,EFL Championship,,,37,62,60,59,61,61
+198039,13632,62,Mark,Gillespie,,1992-03-27,192,83,1,3,1,GK,Defense,,England,Newcastle Utd,Premier League,,,33,63,61,60,61,64
+269406,13642,62,Andrei,Gorcea,,2001-08-02,185,75,1,1,1,GK,Defense,,Romania,UTA Arad,SUPERLIGA,,,24,62,62,63,60,66
+248121,13654,62,Jackson,Smith,,2001-10-14,187,76,1,2,1,GK,Defense,,England,Barnsley,EFL League One,Cross Claimer,,24,61,59,59,61,63
+73297,13665,62,Stefan,Krell,,1992-06-12,189,82,1,2,1,GK,Defense,,Austria,FC Petrolul,SUPERLIGA,,,33,62,60,61,62,63
+219854,13669,62,Grant,Smith,,1993-11-20,185,86,1,3,2,GK,Defense,,England,Bromley FC,EFL League Two,,,32,62,59,62,60,62
+233868,13672,62,George,Gavrilaș,,1990-12-15,185,80,1,3,1,GK,Defense,,Romania,FC Metaloglobus,SUPERLIGA,,,35,63,60,62,60,62
+184148,13678,62,Jo,Coppens,,1990-12-21,190,72,1,2,2,GK,Defense,,Belgium,STVV,1A Pro League,,,35,63,60,60,64,61
+202770,13680,62,Connor,Ripley,,1993-02-13,191,96,1,3,1,GK,Defense,,England,Swindon Town,EFL League Two,"Long Ball Pass,Far Throw",,33,62,61,62,62,64
+205942,13681,62,Silviu,Lung,,1989-06-04,189,80,1,3,1,GK,Defense,,Romania,Univ. Craiova,SUPERLIGA,,,36,60,62,61,63,61
+264170,13688,62,Luis Federico,López Andúgar,Luis López,2001-05-08,197,76,1,3,1,GK,Defense,,Spain,SD Eibar,LALIGA HYPERMOTION,,,24,64,62,58,60,64
+269827,13696,62,Erhan,Erentürk,,1995-05-30,190,78,1,2,1,GK,Defense,,Turkey,Gençlerbirliği,Trendyol Süper Lig,,,30,65,61,61,60,65
+247944,13711,62,Cătălin,Straton,,1989-10-09,191,87,1,2,1,GK,Defense,,Romania,FC Argeș,SUPERLIGA,,,36,58,62,61,63,62
+279880,13739,62,Renato,Bellucci Marin,Renato Marin,2006-07-10,193,80,1,3,2,GK,Defense,,Italy,Paris SG,Ligue 1 McDonald's,,,19,63,61,65,60,61
+272787,13753,62,Simon,Simoni,,2004-07-14,192,81,1,3,1,GK,Defense,,Albania,Kaiserslautern,Bundesliga 2,,,21,66,57,57,61,63
+194894,13761,62,Francesco,Rossi,,1991-04-27,193,83,1,2,1,GK,Defense,,Italy,Bergamo Calcio,Serie A Enilive,,,34,63,62,63,60,62
+275327,13771,62,Lovro,Štubljar,,2004-08-09,186,76,1,1,2,GK,Defense,,Slovenia,FC Groningen,Eredivisie,,,21,63,61,62,61,64
+265750,13783,62,Felix,Wienand,,2002-06-27,190,80,1,3,1,GK,Defense,,Germany,Rot-Weiss Essen,3. Liga,,,23,61,58,54,60,66
+277642,13786,62,Ander,Astralaga Aranguren,Astralaga,2004-03-03,190,77,1,3,1,GK,Defense,,Spain,Granada CF,LALIGA HYPERMOTION,,,22,58,61,63,64,61
+241052,13790,62,Kacper,Chorążka,,1999-03-18,189,76,1,2,1,GK,Defense,,Poland,Bohemians,SSE Airtricity PD,Cross Claimer,,27,64,61,57,60,62
+80811,13802,62,Gioele,Zacchi,,2003-07-10,185,85,1,3,1,GK,Defense,,Italy,Sassuolo,Serie A Enilive,,,22,61,62,59,61,62
+263057,13806,62,Toni,Silić,,2004-05-07,196,81,1,2,1,GK,Defense,,Croatia,Hajduk Split,Liga Hrvatska,,,21,66,58,60,61,62
+278024,13812,62,Deniz,Ertaş,,2005-03-20,193,77,1,2,1,GK,Defense,,Turkey,Konyaspor,Trendyol Süper Lig,,,20,63,60,58,59,66
+278280,13826,62,Filippo,Rinaldi,,2002-12-04,188,75,1,3,1,GK,Defense,,Italy,Parma,Serie A Enilive,,,23,61,62,62,56,65
+244498,13848,62,Karol,Szymański,,1993-06-25,192,91,1,2,1,GK,Defense,,Poland,Piast Gliwice,PKO BP Ekstraklasa,,,32,65,63,52,61,61
+74006,13867,62,Ovie,Ejeheri,,2003-04-23,195,89,1,3,1,GK,Defense,,England,FC Midtjylland,3F Superliga,,,22,61,60,59,62,61
+250804,14084,61,Joe,Walsh,,2002-04-01,185,78,1,5,1,GK,Defense,,England,QPR,EFL Championship,Cross Claimer,,23,63,65,60,56,62
+257237,14125,61,Ross,Doohan,,1998-03-29,186,75,1,3,1,GK,Defense,,Scotland,Celtic,Scottish Prem,,,27,61,58,57,60,62
+73967,14152,61,Tao,Paradowski,,2005-02-27,180,71,1,2,1,GK,Defense,,France,Pau FC,Ligue 2 BKT,,,21,59,62,62,61,67
+257862,14160,61,James,Belshaw,,1990-10-12,191,86,1,2,1,GK,Defense,,England,Harrogate Town,EFL League Two,,,35,61,59,60,61,63
+210509,14195,61,Thomas,Castella,,1993-06-30,185,76,1,2,1,GK,Defense,,Switzerland,Lausanne-Sport,Brack Super League,,,32,61,61,60,62,62
+251165,14199,61,Toby,Savin,,2001-05-04,194,84,1,3,1,GK,Defense,,England,Wigan Athletic,EFL League One,,,24,62,58,64,60,62
+73203,14213,61,Michal,Kukucka,,2002-04-12,191,83,1,3,2,GK,Defense,,Slovakia,1. FC Nürnberg,Bundesliga 2,,,23,61,64,57,62,61
+78700,14221,61,Máté,Simon,,2006-07-19,188,79,1,2,1,GK,Defense,,Romania,FK Csíkszereda,SUPERLIGA,,,19,63,59,62,61,65
+268623,14231,61,Matteo,Bignetti,,2004-05-06,190,76,1,4,1,GK,Defense,,Austria,SK Sturm Graz,Ö. Bundesliga,,,21,64,62,57,58,63
+244258,14239,61,Danijel,Zagorac,,1987-02-07,186,80,1,3,1,GK,Defense,,Croatia,Dinamo Zagreb,Liga Hrvatska,,,39,61,61,59,60,63
+73417,14244,61,Fabrizio,Bagheria,,2001-04-05,189,78,1,3,1,GK,Defense,,Italy,Modena,Serie BKT,,,24,66,60,59,60,61
+207606,14280,61,Jay,Lynch,,1993-03-31,188,85,1,3,1,GK,Defense,,England,Fleetwood Town,EFL League Two,Footwork,,32,61,62,58,60,61
+189917,14312,61,Frank,Lehmann,,1989-04-29,193,78,1,3,1,GK,Defense,,Germany,SV Elversberg,Bundesliga 2,,,36,63,62,65,57,60
+209332,14313,61,Mirko,Salvi,,1994-02-14,188,82,1,3,1,GK,Defense,,Switzerland,FC Basel 1893,Brack Super League,,,32,61,59,60,61,59
+270217,14319,61,Alessio,Furlanetto,,2002-02-07,191,78,1,2,1,GK,Defense,,Italy,Latium,Serie A Enilive,,,24,63,60,58,55,65
+71331,14322,61,Denys,Tvardovskyi,,2003-06-13,206,97,1,3,1,GK,Defense,,Ukraine,Shakhtar Donetsk,Ukrayina Liha,,,22,60,57,61,59,61
+279508,14340,61,Tom,de Graaff,,2004-12-10,193,78,1,3,2,GK,Defense,,Holland,PEC Zwolle,Eredivisie,,,21,62,58,66,59,62
+248000,14347,61,Eduard,Pap,,1994-07-01,182,82,1,2,1,GK,Defense,,Romania,FK Csíkszereda,SUPERLIGA,,,31,64,61,57,58,63
+271491,14350,61,Carlos,López Nogueras,Carlos López,2004-11-13,183,70,1,3,1,GK,Defense,,Spain,Málaga CF,LALIGA HYPERMOTION,"Far Throw,Footwork",,21,61,59,59,59,64
+257209,14364,61,Louis,Fortin,,2002-01-12,193,88,1,2,1,GK,Defense,,Belgium,FCV Dender EH,1A Pro League,,,24,65,58,56,53,63
+263674,14384,61,Lucien,Hawryluk,,2000-10-05,192,82,1,3,1,GK,Defense,,Germany,SV Waldhof,3. Liga,,,25,60,61,62,59,66
+19541,14422,61,Glenn,Morris,,1983-12-20,183,70,1,3,1,GK,Defense,,England,Gillingham,EFL League Two,"Footwork,Cross Claimer",,42,60,59,57,63,62
+257789,14424,61,Celestin,De Schrevel,,2002-05-08,187,79,1,3,1,GK,Defense,,Belgium,RAAL La Louvière,1A Pro League,,,23,69,55,55,56,65
+265179,14443,61,Aske,Andresen,,2005-07-12,199,80,1,2,1,GK,Defense,,Denmark,Silkeborg IF,3F Superliga,,,20,61,60,58,60,62
+270351,14444,61,Kjell,Peersman,,2004-05-21,194,71,1,3,1,GK,Defense,,Belgium,KAA Gent,1A Pro League,,,21,61,64,61,61,63
+257142,14457,61,Lucas,Margueron,,2001-02-12,194,85,1,2,1,GK,Defense,,France,Rodez AF,Ligue 2 BKT,,,25,63,61,62,60,64
+264645,14458,61,Cieran,Slicker,,2002-09-15,191,82,1,2,1,GK,Defense,,Scotland,Barnet,EFL League Two,,,23,60,62,60,59,62
+278335,14461,61,Giovanni,Daffara,,2004-12-05,194,75,1,3,1,GK,Defense,,Italy,Avellino,Serie BKT,,,21,59,65,56,61,60
+77188,14465,61,João Gonçalo,Carapinha Carvalho,João Carvalho,2004-04-09,192,78,1,2,1,GK,Defense,,Portugal,SC Braga,Liga Portugal,,,21,64,61,59,62,63
+257669,14482,61,Rafał,Strączek,,1999-02-12,188,80,1,2,1,GK,Defense,,Poland,GKS Katowice,PKO BP Ekstraklasa,,,27,60,61,61,62,60
+271977,14484,61,Harvey,Davies,,2003-09-03,190,80,1,2,2,GK,Defense,,England,Crawley Town,EFL League Two,,,22,60,63,57,59,60
+278023,14486,61,Mikki,van Sas,,2004-02-29,193,78,1,3,1,GK,Defense,,Holland,Wycombe,EFL League One,,,22,59,69,64,58,56
+73119,14489,61,Simon,Spari,,2002-06-16,196,89,1,3,1,GK,Defense,,Austria,FC St. Pauli,Bundesliga,,,23,61,58,61,59,64
+239746,14500,61,Lukas,Watkowiak,,1996-03-06,197,105,1,3,1,GK,Defense,,Germany,FC St. Gallen,Brack Super League,,,30,61,59,60,63,62
+262989,14505,61,Harry,Stone,,2002-04-20,191,70,1,3,1,GK,Defense,,Scotland,Hearts,Scottish Prem,Cross Claimer,,23,62,60,58,58,61
+259678,14514,61,Luka,Marić,,2002-07-19,184,90,1,3,1,GK,Defense,,Austria,TSV Hartberg,Ö. Bundesliga,,,23,60,57,56,62,64
+276872,14523,61,Enzo,Crombez,,2003-03-23,188,78,1,2,1,GK,Defense,,France,Rodez AF,Ligue 2 BKT,,,22,62,63,59,62,63
+72535,14524,61,Christoph,Nicht,,1994-01-05,184,78,1,2,1,GK,Defense,,Austria,Grazer AK,Ö. Bundesliga,,,32,60,62,57,61,61
+264529,14544,61,Florian,Schock,,2001-05-22,199,95,1,2,1,GK,Defense,,Germany,Düsseldorf,Bundesliga 2,,,24,58,59,56,62,62
+72179,14548,61,Lorenzo,Torriani,,2005-01-31,197,85,1,4,1,GK,Defense,,Italy,Milano FC,Serie A Enilive,,,21,59,54,66,61,62
+278965,14558,61,Viktor,Baier,,2005-01-16,191,76,1,2,1,GK,Defense,,Czech Republic,Blau-Weiss Linz,Ö. Bundesliga,,,21,64,60,58,59,63
+257637,14566,61,Daniel,Klein,,2001-03-13,191,84,1,2,1,GK,Defense,,Germany,FC Augsburg,Bundesliga,,,25,61,59,56,59,63
+247893,14571,61,Vlad,Mutiu,,1995-02-02,187,78,1,2,1,GK,Defense,,Romania,FC Hermannstadt,SUPERLIGA,,,31,64,60,57,60,60
+203034,14833,60,Joe,Day,,1990-08-13,190,84,1,2,2,GK,Defense,,England,Cheltenham Town,EFL League Two,Far Throw,,35,59,56,58,61,61
+79531,14837,60,Soumaïla,Sylla,,2004-03-15,191,73,1,2,1,GK,Defense,,France,Stade de Reims,Ligue 2 BKT,,,22,61,58,60,58,59
+71265,14854,60,Paul,Argney,,2006-05-23,186,73,1,2,1,GK,Defense,,France,Havre AC,Ligue 1 McDonald's,,,19,62,59,60,54,64
+211537,14861,60,Jack,Hamilton,,1994-03-22,189,75,1,2,1,GK,Defense,,Scotland,Livingston,Scottish Prem,,,31,61,58,60,58,60
+76845,14873,60,Jakub,Vinarčík,,2005-07-11,187,69,1,2,1,GK,Defense,,Slovakia,Arouca,Liga Portugal,,,20,60,57,63,62,60
+278099,14906,60,Marco,Pissardo,,1998-01-08,184,78,1,1,1,GK,Defense,,Italy,Bari,Serie BKT,,,28,58,61,61,60,64
+276322,14924,60,Lisandru,Olmeta,,2005-07-21,190,75,1,3,1,GK,Defense,,France,SC Bastia,Ligue 2 BKT,,,20,60,59,68,59,63
+277590,14935,60,Iustin,Chirila,,2006-05-21,179,64,1,2,1,GK,Defense,,Romania,FC Univ. Cluj,SUPERLIGA,,,19,61,59,60,60,63
+219657,14938,60,Lukas,Wedl,,1995-10-19,186,80,1,2,1,GK,Defense,,Austria,FK Austria Wien,Ö. Bundesliga,,,30,60,57,56,58,60
+225361,14939,60,Luke,McGee,,1995-09-02,193,83,1,3,1,GK,Defense,,England,Tranmere Rovers,EFL League Two,"Long Ball Pass,Far Throw,Footwork",,30,60,59,59,60,61
+231046,14964,60,Jake,Eastwood,,1996-10-03,190,81,1,2,1,GK,Defense,,England,Cambridge Utd,EFL League Two,,,29,62,57,59,58,61
+243736,14966,60,Kevin,Rauhut,,1989-12-30,188,77,1,3,2,GK,Defense,,Germany,Viktoria Köln,3. Liga,,,36,62,59,63,57,62
+244458,14967,60,Alexander,Sebald,,1996-07-27,189,80,1,3,1,GK,Defense,,Germany,Energie Cottbus,3. Liga,,,29,60,61,57,56,65
+248019,14969,60,Răzvan,Ducan,,2001-02-09,192,86,1,2,1,GK,Defense,,Romania,Farul Constanța,SUPERLIGA,Far Throw,,25,60,59,62,59,61
+269146,14990,60,Alejandro,Primo Hernández,Álex Primo,2004-07-10,187,74,1,2,1,GK,Defense,,Spain,Levante UD,LALIGA EA SPORTS,,,21,61,60,55,58,62
+254662,15032,60,Ewan,Hatfout,,2000-04-01,193,79,1,3,1,GK,Defense,,France,Le Mans FC,Ligue 2 BKT,,,25,61,60,57,63,62
+78786,15038,60,Felix,Wimmer,,1998-08-17,183,75,1,1,2,GK,Defense,,Austria,SV Oberbank Ried,Ö. Bundesliga,,,27,58,57,61,62,61
+253171,15041,60,Leo,Oppermann,,2001-08-28,191,82,1,3,1,GK,Defense,,Germany,Arminia Bielefeld,Bundesliga 2,,,24,63,59,59,58,65
+267460,15044,60,Jonas,Nickisch,,2004-05-21,190,77,1,3,1,GK,Defense,,Germany,Saarbrücken,3. Liga,,,21,63,57,59,57,65
+274478,15045,60,Timon,Vanhoutte,,2004-01-29,189,82,1,3,1,GK,Defense,,Belgium,RSC Anderlecht,1A Pro League,,,22,61,59,57,58,62
+79377,15052,60,Maximilian,Weisbäcker,,2001-04-18,200,85,1,2,2,GK,Defense,,Germany,FC Schweinfurt 05,3. Liga,,,24,58,62,59,60,64
+261260,15055,60,Gergő,Szécsi,,1989-02-07,185,80,1,2,1,GK,Defense,,Hungary,Ferencvárosi TC,Magyar Liga,,,37,59,60,60,59,61
+71383,15058,60,Hugo,Rölleke,,2005-05-06,204,85,1,2,1,GK,Defense,,Germany,VfL Bochum 1848,Bundesliga 2,,,20,62,61,56,62,61
+273872,15067,60,Dániel,Radnóti,,2006-10-01,187,78,1,2,1,GK,Defense,,Hungary,Ferencvárosi TC,Magyar Liga,,,19,61,58,59,60,63
+252505,15077,60,Jędrzej,Grobelny,,2001-06-28,190,80,1,2,1,GK,Defense,,Poland,Arka Gdynia,PKO BP Ekstraklasa,,,24,61,57,55,60,60
+266517,15096,60,Kevin,Gadellaa,,2003-04-08,210,87,1,3,1,GK,Defense,,Holland,FC Utrecht,Eredivisie,,,22,61,60,56,57,61
+183789,15102,60,Mark,Howard,,1986-09-21,183,76,1,3,1,GK,Defense,,England,Salford City,EFL League Two,,,39,60,58,58,61,58
+236337,15117,60,Jake,Turner,,1999-02-25,194,82,1,3,1,GK,Defense,,England,Gillingham,EFL League Two,,,27,60,61,58,59,61
+274730,15121,60,Denys,Ignatenko,,2003-01-11,191,85,1,2,1,GK,Defense,,Ukraine,Dynamo Kyiv,Ukrayina Liha,,,23,59,57,59,61,60
+265782,15130,60,Gianluca,Saro,,2000-06-25,180,86,1,3,1,GK,Defense,,Italy,Reggiana,Serie BKT,Cross Claimer,,25,59,64,61,56,59
+277284,15133,60,Ali Emre,Yanar,,1998-05-15,190,82,1,3,1,GK,Defense,,Turkey,Kasımpaşa,Trendyol Süper Lig,,,27,65,58,56,59,58
+262939,15148,60,Arne,Schulz,,2003-03-23,190,80,1,3,1,GK,Defense,,Germany,Viktoria Köln,3. Liga,,,22,60,57,55,56,65
+77744,15153,60,George,Evans,,2005-05-16,190,83,1,3,1,GK,Defense,,England,Millwall,EFL Championship,,,20,61,59,60,58,60
+79285,15156,60,Jerik,von der Felsen,,2004-10-22,202,94,1,3,1,GK,Defense,,Germany,VfB Stuttgart II,3. Liga,,,21,61,63,56,60,62
+258555,15158,60,Dani,van den Heuvel,,2003-05-28,188,75,1,3,1,GK,Defense,,Holland,Club Brugge,1A Pro League,,,22,61,58,61,57,61
+278331,15159,60,Lapo,Nava,,2004-01-22,189,70,1,3,1,GK,Defense,,Italy,Cremonese,Serie A Enilive,,,22,58,55,65,63,58
+277117,15178,60,Edoardo,Borrelli,,2004-07-23,188,77,1,3,1,GK,Defense,,Italy,Catanzaro,Serie BKT,,,21,60,61,57,57,60
+70284,15179,60,Daniel,Grilo Azevedo,Daniel Azevedo,1998-02-12,195,90,1,1,1,GK,Defense,,Portugal,Casa Pia AC,Liga Portugal,,,28,61,56,54,63,62
+264285,15197,60,Yusuf,Karagöz,,1999-10-05,195,79,1,2,1,GK,Defense,,Turkey,Alanyaspor,Trendyol Süper Lig,,,26,61,59,53,57,60
+272961,15203,60,Daniël,Virginio Deen,,2003-02-13,188,72,1,3,1,GK,Defense,,Holland,AZ,Eredivisie,,,23,60,61,56,57,60
+263137,15226,60,David,Skubl,,2001-09-18,187,80,1,3,1,GK,Defense,,Austria,Wolfsberger AC,Ö. Bundesliga,,,24,64,58,54,53,64
+254021,15340,59,Valentin,Rabouille,,2000-04-15,187,80,1,2,1,GK,Defense,,France,Red Star FC,Ligue 2 BKT,,,25,62,61,54,53,63
+213408,15379,59,Ryan,Boot,,1994-11-09,185,79,1,2,1,GK,Defense,,England,Chesterfield,EFL League Two,,,31,61,58,53,58,55
+256989,15381,59,Ryan,Mullen,,2001-05-18,188,80,1,3,1,GK,Defense,,Scotland,St. Mirren,Scottish Prem,,,24,59,57,54,55,60
+218593,15387,59,Stuart,Moore,,1994-09-08,194,88,1,2,1,GK,Defense,,England,Wycombe,EFL League One,,,31,60,58,56,59,60
+260933,15409,59,Ekrem,Kılıçarslan,,1997-08-01,188,82,1,2,1,GK,Defense,,Turkey,Göztepe,Trendyol Süper Lig,Cross Claimer,,28,62,55,60,53,62
+276731,15433,59,Mateusz,Pruchniewski,,2007-02-15,184,78,1,2,1,GK,Defense,,Poland,Lech Poznań,PKO BP Ekstraklasa,,,19,59,58,62,60,57
+228582,15437,59,Sam,Sargeant,,1997-09-23,188,75,1,2,2,GK,Defense,,England,Sligo Rovers,SSE Airtricity PD,,,28,63,58,55,55,59
+227529,15445,59,Mathew,Hudson,,1998-07-29,193,75,1,3,1,GK,Defense,,England,Oldham Athletic,EFL League Two,,,27,58,59,53,60,58
+73047,15460,59,Federico,Botti,,2002-06-20,183,74,1,2,2,GK,Defense,,Italy,Mantova,Serie BKT,,,23,55,54,60,58,65
+276352,15464,59,Jonathan,Hutters,,2004-02-21,188,78,1,3,1,GK,Defense,,Denmark,AGF,3F Superliga,Cross Claimer,,22,61,59,60,57,60
+225166,15469,59,Xavier,Lenogue,,1996-12-27,194,84,1,2,1,GK,Defense,,France,US Boulogne,Ligue 2 BKT,,,29,63,54,55,55,58
+279028,15472,59,Matt,Young,,2006-11-24,191,87,1,2,1,GK,Defense,,England,Salford City,EFL League Two,,,19,59,58,58,58,60
+258943,15481,59,Jack,Bycroft,,2001-09-21,187,81,1,2,1,GK,Defense,,England,Exeter City,EFL League One,,,24,61,56,56,59,60
+271546,15483,59,Valentyn,Morgun,,2001-08-10,189,78,1,3,1,GK,Defense,,Ukraine,Dynamo Kyiv,Ukrayina Liha,,,24,60,57,57,59,61
+278252,15512,59,Max,Schmitt,,2006-01-18,189,76,1,2,1,GK,Defense,,Germany,SSV Ulm 1846,3. Liga,,,20,58,56,61,59,63
+264111,15521,59,Tobias Haahr,Jakobsen,,2003-07-03,188,78,1,3,1,GK,Defense,,Denmark,Vejle Boldklub,3F Superliga,,,22,59,58,59,55,59
+263780,15528,59,Markus,Ponath,,2001-01-13,188,81,1,2,1,GK,Defense,,Germany,FC Ingolstadt 04,3. Liga,,,25,57,59,55,58,62
+255014,15534,59,Teddy,Bartouche-Selbonne,,1997-06-05,178,70,1,2,1,GK,Defense,,France,En Avant Guingamp,Ligue 2 BKT,,,28,63,58,57,55,64
+271171,15555,59,Louis,Lord,,2003-10-22,197,84,1,3,1,GK,Defense,,Germany,FC Erzgebirge Aue,3. Liga,,,22,62,57,56,59,61
+79286,15561,59,Florian,Hellstern,,2007-10-18,186,74,1,4,1,GK,Defense,,Germany,VfB Stuttgart,Bundesliga,,,18,63,58,60,59,63
+245854,15565,59,Théo,Vermot,,1997-01-27,190,75,1,2,1,GK,Defense,,France,OM,Ligue 1 McDonald's,,,29,62,54,61,56,64
+269435,15568,59,Pascal,Kuiper,,2004-03-17,194,87,1,3,1,GK,Defense,,Holland,Sparta Rotterdam,Eredivisie,,,22,62,59,58,57,60
+271236,15583,59,Noah,Raveyre,,2005-06-22,182,75,1,3,1,GK,Defense,,France,Pau FC,Ligue 2 BKT,,,20,58,55,63,60,64
+277644,15592,59,Tom,Negrel,,2003-04-13,192,75,1,3,1,GK,Defense,,France,AJ Auxerre,Ligue 1 McDonald's,,,22,56,57,60,61,62
+245407,15602,59,Nino,Ziswiler,,1999-10-23,188,79,1,3,1,GK,Defense,,Switzerland,FC Thun,Brack Super League,,,26,59,64,52,61,59
+269916,15604,59,Max,Hagemoser,,2003-01-07,190,77,1,3,2,GK,Defense,,Germany,FC Hansa Rostock,3. Liga,,,23,61,56,58,59,60
+270372,15605,59,Ionuț,Gurău,,1999-03-27,198,91,1,2,1,GK,Defense,,Romania,Unirea Slobozia,SUPERLIGA,,,26,62,58,55,58,57
+274104,15608,59,Krisztián,Hegyi,,2002-09-24,196,86,1,2,1,GK,Defense,,Hungary,West Ham,Premier League,,,23,60,57,58,58,60
+71476,15610,59,José,Guilherme Ribeiro,Gui,2006-05-13,191,79,1,1,1,GK,Defense,,Portugal,Vitória SC,Liga Portugal,,,19,60,58,57,58,62
+72839,15611,59,Stefano,Mazzini,,1998-12-06,191,82,1,2,1,GK,Defense,,Italy,Carrarese Calcio,Serie BKT,,,27,59,59,55,58,60
+262922,15618,59,Paul,Tschernuth,,2002-01-20,186,88,1,2,1,GK,Defense,,Austria,Heidenheim,Bundesliga,,,24,60,61,60,58,60
+263092,15619,59,Paul,Schermer,,2004-04-04,186,76,1,2,1,GK,Defense,,Austria,WSG Tirol,Ö. Bundesliga,,,21,62,57,56,57,61
+271748,15621,59,Roy,Steur,,2005-02-01,192,85,1,3,1,GK,Defense,,Holland,FC Volendam,Eredivisie,,,21,60,56,53,58,62
+247058,15632,59,Tom,Hendriks,,2002-05-14,198,77,1,2,1,GK,Defense,,Holland,Aleman. Aachen,3. Liga,,,23,59,59,56,58,57
+243905,15639,59,Robin,Mantel,,2000-11-15,198,87,1,2,1,GK,Defense,,Belgium,Heracles Almelo,Eredivisie,,,25,57,59,56,56,63
+273778,15641,59,Tim,Goller,,2005-01-26,193,84,1,2,1,GK,Defense,,Germany,Hertha BSC,Bundesliga 2,,,21,60,59,55,63,57
+277802,15643,59,Edoardo,Motta,,2005-01-13,194,87,1,2,1,GK,Defense,,Italy,Reggiana,Serie BKT,,,21,59,58,59,58,61
+271199,15652,59,Giuseppe,Ciocci,,2002-01-24,190,86,1,2,1,GK,Defense,,Italy,Cagliari,Serie A Enilive,,,24,61,55,53,57,64
+265747,15659,59,Rijk,Janse,,2002-04-16,189,72,1,3,1,GK,Defense,,Holland,N.E.C. Nijmegen,Eredivisie,,,23,60,55,56,58,58
+277928,15662,59,Mannou,Berger,,2004-10-15,181,72,1,3,1,GK,Defense,,Holland,Feyenoord,Eredivisie,,,21,60,57,53,57,64
+78735,15666,59,Jakub,Zieliński,,2008-02-21,194,83,1,3,1,GK,Defense,,Poland,VfL Wolfsburg,Bundesliga,,,18,60,53,60,59,60
+277445,15669,59,Alexander,Eckmayr,,1999-07-06,186,78,1,2,1,GK,Defense,,Austria,WSG Tirol,Ö. Bundesliga,,,26,58,60,55,56,60
+73692,15670,59,Lucca,Brughmans,,2008-06-27,197,85,1,3,1,GK,Defense,,Belgium,KRC Genk,1A Pro League,,,17,63,57,54,60,58
+72962,15676,59,Luca,Podlech,,2005-03-23,200,91,1,3,1,GK,Defense,,Germany,FC Schalke 04,Bundesliga 2,,,20,52,58,52,58,64
+79320,15679,59,Malte,Brüning,,2004-03-18,192,85,1,2,1,GK,Defense,,Germany,Rot-Weiss Essen,3. Liga,,,22,56,59,52,59,58
+276916,15696,59,Diogo Alexandre,Aranha Dias,Diogo Dias,2003-06-17,188,81,1,3,1,GK,Defense,,Portugal,Estoril Praia,Liga Portugal,,,22,56,62,53,55,60
+269232,15699,59,Sam,Karssies,,2003-02-26,185,68,1,3,1,GK,Defense,,Holland,FC Twente,Eredivisie,,,23,58,60,55,56,60
+211387,15852,58,Ben,Lundt,,1995-09-24,198,99,1,1,1,GK,Defense,,Germany,St. Louis CITY SC,MLS,,,30,58,57,57,60,61
+229393,15853,58,Sam,Hornby,,1995-02-14,185,80,1,2,2,GK,Defense,,England,Walsall,EFL League Two,,,31,60,57,54,54,62
+223988,15859,58,Lewis,Ward,,1997-03-05,195,81,1,2,1,GK,Defense,,England,Swindon Town,EFL League Two,,,29,58,57,59,57,59
+258056,15900,58,Sam,Long,,2002-11-12,188,80,1,3,1,GK,Defense,,Scotland,Bromley FC,EFL League Two,,,23,62,55,59,54,58
+275272,15926,58,Myles,Roberts,,2001-12-09,193,78,1,3,1,GK,Defense,,England,Walsall,EFL League Two,,,24,63,55,52,59,61
+262559,15937,58,Ben,Winterbottom,,2001-07-16,188,66,1,3,1,GK,Defense,,England,Barrow,EFL League Two,,,24,62,60,64,55,59
+75739,15953,58,Alexis,Mirbach,,2005-03-04,192,78,1,2,1,GK,Defense,,France,FC Nantes,Ligue 1 McDonald's,,,21,65,56,55,53,59
+72959,15962,58,Marlon,Zacharias,,2005-02-06,189,78,1,3,1,GK,Defense,,Germany,SC Verl,3. Liga,,,21,57,59,54,50,63
+277825,15982,58,Jorge,Benito de Valle,Jorge Benito,2006-06-06,182,76,1,3,1,GK,Defense,,Spain,Getafe CF,LALIGA EA SPORTS,,,19,61,58,59,55,58
+186494,15992,58,Mark,Oxley,,1990-09-28,190,87,1,2,1,GK,Defense,,England,Harrogate Town,EFL League Two,,,35,56,56,60,60,58
+250865,16000,58,Zach,Jeacock,,2001-05-08,191,77,1,3,1,GK,Defense,,England,Lincoln City,EFL League One,,,24,57,56,60,57,60
+70522,16011,58,Tyler,Doğan,,2005-12-18,188,86,1,3,1,GK,Defense,,Turkey,Holstein Kiel,Bundesliga 2,,,20,61,55,57,58,62
+274489,16024,58,Fabian,Pekruhl,,1999-02-14,193,87,1,3,1,GK,Defense,,Germany,SC Verl,3. Liga,,,27,53,58,61,56,64
+223827,16029,58,Joe,McDonnell,,1994-05-19,178,70,1,2,1,GK,Defense,,England,AFC Wimbledon,EFL League One,Cross Claimer,,31,58,56,54,58,62
+258399,16031,58,Owen,Jochmans,,2003-01-28,185,70,1,3,1,GK,Defense,,Belgium,OH Leuven,1A Pro League,,,23,65,61,54,52,62
+76777,16032,58,Tim,Philipp,,2005-12-21,192,83,1,2,1,GK,Defense,,Germany,TSG Hoffenheim II,3. Liga,,,20,58,57,60,56,60
+266649,16038,58,Nando,Verdoni,,2003-07-09,188,75,1,3,1,GK,Defense,,Holland,Go Ahead Eagles,Eredivisie,,,22,57,56,61,56,58
+76472,16046,58,Thomas,Turner,,1998-03-03,191,80,1,1,2,GK,Defense,,Austria,Blau-Weiss Linz,Ö. Bundesliga,,,28,57,54,58,57,61
+77838,16047,58,Robin,Lisewski,,2006-02-13,195,80,1,3,1,GK,Defense,,Poland,1. FC Nürnberg,Bundesliga 2,,,20,60,55,53,53,66
+277290,16052,58,Jonah,Busse,,2005-09-10,190,80,1,3,1,GK,Defense,,Germany,TSV Havelse,3. Liga,,,20,57,61,56,58,59
+242382,16060,58,Luca,Ashby-Hammond,,2001-03-25,185,76,1,3,1,GK,Defense,,England,Plymouth Argyle,EFL League One,,,24,59,58,56,54,62
+251522,16061,58,Joe,Hilton,,1999-10-11,195,83,1,3,1,GK,Defense,,England,Bradford City,EFL League One,"Footwork,Cross Claimer",,26,57,58,55,54,60
+278933,16063,58,Kieren,Flavell,,2003-09-21,197,86,1,2,1,GK,Defense,,England,Barnsley,EFL League One,,,22,59,57,56,57,58
+207528,16068,58,Ross,Fitzsimons,,1994-05-28,185,75,1,3,1,GK,Defense,,England,Northampton,EFL League One,Cross Claimer,,31,59,59,51,52,60
+233970,16077,58,Jordan,Wright,,1999-02-27,190,86,1,2,1,GK,Defense,,England,Newport County,EFL League Two,,,27,61,54,58,56,61
+278972,16084,58,Wiktor,Koptas,,2004-10-09,188,76,1,2,1,GK,Defense,,Poland,Radomiak Radom,PKO BP Ekstraklasa,,,21,59,57,54,56,61
+71838,16090,58,Tim,Pfeiffer,,2005-05-12,187,72,1,2,1,GK,Defense,,Germany,FC Basel 1893,Brack Super League,,,20,59,59,59,57,55
+278554,16094,58,Niels,Devalckeneer,,2004-05-17,193,86,1,3,1,GK,Defense,,Belgium,Royal Antwerp FC,1A Pro League,Cross Claimer,,21,59,57,56,54,60
+79737,16096,58,Enis,Kamga,,2007-07-08,195,85,1,3,1,GK,Defense,,Germany,Kaiserslautern,Bundesliga 2,,,18,54,60,57,59,60
+73174,16106,58,Antonio,Spagnoli,,2005-05-31,185,78,1,2,1,GK,Defense,,Switzerland,FC Winterthur,Brack Super League,,,20,62,57,58,53,57
+75810,16116,58,Amil,Šiljević,,2007-01-19,188,78,1,3,1,GK,Defense,,Germany,Frankfurt,Bundesliga,,,19,59,54,59,54,62
+72522,16123,58,Dominik,Draband,,1996-03-07,186,78,1,3,1,GK,Defense,,Germany,VfB Stuttgart II,3. Liga,,,30,60,55,55,59,60
+74211,16134,58,Andrés,Céspedes Rubio,Andrés Céspedes,2004-07-22,186,80,1,2,1,GK,Defense,,Spain,Málaga CF,LALIGA HYPERMOTION,,,21,59,58,48,56,57
+80557,16143,58,Freek,Entius,,2006-05-26,185,70,1,3,1,GK,Defense,,Holland,N.E.C. Nijmegen,Eredivisie,,,19,58,54,57,55,59
+79786,16185,58,Azamat,Uriev,,2004-05-27,190,80,1,3,1,GK,Defense,,France,US Boulogne,Ligue 2 BKT,,,21,56,54,50,59,59
+79336,16268,57,Tijn,Van Ingelgom,,2007-03-07,196,80,1,3,1,GK,Defense,,Belgium,KV Mechelen,1A Pro League,,,19,56,60,58,57,57
+274988,16280,57,Elyh,Harrison,,2006-02-19,182,70,1,2,1,GK,Defense,,England,Shrewsbury,EFL League Two,,,20,57,55,59,56,58
+228998,16302,57,Dario,Marzino,,1996-09-19,184,80,1,2,1,GK,Defense,,Switzerland,BSC Young Boys,Brack Super League,,,29,63,52,53,53,60
+271490,16335,57,Javier,Garrido López,Javi Garrido,2003-09-07,186,70,1,3,1,GK,Defense,,Spain,CD Leganés,LALIGA HYPERMOTION,,,22,58,53,67,57,60
+273889,16336,57,Tom,Smith,,2002-01-30,188,81,1,3,2,GK,Defense,,England,Colchester,EFL League Two,,,24,59,55,58,55,59
+256897,16339,57,Mihai,Udrea,,2001-07-20,183,77,1,3,2,GK,Defense,,Romania,FCSB,SUPERLIGA,,,24,56,55,56,58,55
+266842,16356,57,Nathan,Broome,,2002-01-03,188,86,1,3,1,GK,Defense,,England,Bolton,EFL League One,,,24,56,58,57,54,58
+240763,16364,57,Jamie,Sneddon,,1997-09-06,184,75,1,2,2,GK,Defense,,Scotland,Falkirk,Scottish Prem,,,28,56,57,55,56,59
+73013,16371,57,Aki,Koch,,2004-03-18,187,76,1,3,1,GK,Defense,,Germany,Karlsruher SC,Bundesliga 2,,,22,60,56,59,57,62
+79407,16375,57,Oscar,Buur,,2006-10-29,192,81,1,3,1,GK,Defense,,Denmark,F.C. København,3F Superliga,,,19,59,54,58,54,60
+77589,16381,57,Fernando,Dickes,,2007-10-13,193,89,1,3,2,GK,Defense,,Germany,Hamburger SV,Bundesliga,,,18,60,56,55,52,59
+270965,16394,57,Timo,Schlieck,,2006-03-02,193,82,1,3,1,GK,Defense,,Germany,Fürth,Bundesliga 2,,,20,59,57,55,53,62
+78285,16408,57,Jan,Eicher,,2004-02-16,186,80,1,2,1,GK,Defense,,Switzerland,FC Thun,Brack Super League,,,22,54,55,55,59,61
+79403,16409,57,Sebastian,Jung,,2005-05-04,188,80,1,4,1,GK,Defense,,Germany,Fürth,Bundesliga 2,,,20,59,51,55,59,63
+276760,16410,57,Noah,Marec,,2004-08-25,190,76,1,2,2,GK,Defense,,France,En Avant Guingamp,Ligue 2 BKT,,,21,57,58,56,57,60
+258586,16435,57,Will,Blackmore,,2001-10-01,185,75,1,2,1,GK,Defense,,England,Peterborough,EFL League One,,,24,60,57,55,57,57
+268108,16436,57,Dirk,Baron,,2002-08-16,190,78,1,3,1,GK,Defense,,Holland,FC Groningen,Eredivisie,,,23,57,62,54,56,57
+77226,16440,57,Benicio,Peña,,2003-03-21,184,81,1,2,1,GK,Defense,,Denmark,Sønderjyske,3F Superliga,,,22,57,58,57,58,55
+256873,16442,57,Julius,Paris,,2001-08-22,190,83,1,2,1,GK,Defense,,Germany,MSV Duisburg,3. Liga,,,24,58,56,62,51,62
+268069,16445,57,Bas,Langenbick,,2003-02-12,189,72,1,2,1,GK,Defense,,Belgium,Cercle Brugge,1A Pro League,,,23,62,57,55,53,61
+277669,16447,57,Tom,Hülsmann,,2004-04-11,205,89,1,3,1,GK,Defense,,Germany,TSV Hartberg,Ö. Bundesliga,,,21,60,57,52,57,57
+72026,16450,57,Callan,McKenna,,2006-12-22,188,76,1,2,1,GK,Defense,,Scotland,AFC Bournemouth,Premier League,,,19,56,55,55,56,56
+78756,16451,57,Augustin,Delbecque,,2002-02-03,187,76,1,3,1,GK,Defense,,France,Le Mans FC,Ligue 2 BKT,,,24,56,59,51,62,59
+251777,16453,57,Ionuț,Pop,,1997-08-01,190,80,1,2,1,GK,Defense,,Romania,FC Hermannstadt,SUPERLIGA,,,28,55,55,56,55,59
+268528,16454,57,Vincent,Angelini,,2003-09-12,190,80,1,3,1,GK,Defense,,Scotland,Al Riyadh,ROSHN Saudi League,,,22,53,55,51,57,60
+275419,16455,57,Duke,Verduin,,2003-10-30,195,82,1,3,1,GK,Defense,,Holland,PEC Zwolle,Eredivisie,,,22,57,56,50,57,57
+75137,16459,57,Davide,Marfella,,1999-09-15,183,75,1,3,1,GK,Defense,,Italy,Bari,Serie BKT,,,26,53,56,57,59,58
+78787,16461,57,Dominik,Stöger,,2006-09-22,200,88,1,1,1,GK,Defense,,Austria,SV Oberbank Ried,Ö. Bundesliga,,,19,53,56,57,57,59
+267739,16468,57,Tom,Donaghy,,2003-04-18,188,82,1,2,1,GK,Defense,,England,Oldham Athletic,EFL League Two,,,22,58,55,55,56,57
+78611,16473,57,Mads,Eriksen,,2003-10-30,198,85,1,2,1,GK,Defense,,Denmark,FC Fredericia,3F Superliga,,,22,56,58,55,56,57
+268449,16476,57,Timo,Jansink,,2003-03-16,198,82,1,3,1,GK,Defense,,Holland,Heracles Almelo,Eredivisie,,,23,57,60,52,56,54
+276725,16477,57,Lorenzo,Palmisani,,2004-06-12,185,79,1,3,1,GK,Defense,,Italy,Frosinone,Serie BKT,,,21,58,54,53,56,59
+277446,16493,57,Paul,Piffer,,2006-04-08,182,73,1,2,1,GK,Defense,,Austria,SCR Altach,Ö. Bundesliga,,,19,60,53,52,55,60
+279022,16494,57,Lio,Rothenhagen,,2006-08-31,188,85,1,3,1,GK,Defense,,Germany,Holstein Kiel,Bundesliga 2,,,19,60,57,56,55,58
+79551,16497,57,Bastian,Holm,,2005-02-13,187,76,1,3,1,GK,Defense,,Denmark,Silkeborg IF,3F Superliga,,,21,58,56,56,55,58
+277281,16504,57,Robert,Kampa,,2005-02-13,188,75,1,2,1,GK,Defense,,Germany,1. FC Magdeburg,Bundesliga 2,,,21,57,57,54,56,57
+251563,16510,57,Joe,Wright,,2001-04-10,185,82,1,2,1,GK,Defense,,England,Barnet,EFL League Two,,,24,57,54,55,58,59
+260262,16518,57,Murray,Johnson,,2004-11-13,191,75,1,2,2,GK,Defense,,Scotland,Hibernian,Scottish Prem,,,21,57,53,52,56,60
+276190,16519,57,Marvin,Seybold,,2001-11-26,190,85,1,2,1,GK,Defense,,Germany,SSV Ulm 1846,3. Liga,,,24,58,54,51,56,60
+240838,16629,56,Brad,Wade,,2000-07-03,188,83,1,2,1,GK,Defense,,England,Waterford,SSE Airtricity PD,,,25,56,60,57,55,55
+80281,16647,56,Arnaud,Dobbels,,2005-02-02,185,76,1,2,1,GK,Defense,,Belgium,Zulte Waregem,1A Pro League,,,21,57,52,53,54,62
+208755,16674,56,Cristian,Nedelcovici,,1993-06-02,188,82,1,2,1,GK,Defense,,Romania,FC Metaloglobus,SUPERLIGA,,,32,56,54,58,56,54
+72844,16696,56,Alessandro,Siano,,2001-04-28,188,78,1,3,1,GK,Defense,,Italy,Cesena,Serie BKT,,,24,60,55,61,55,54
+73554,16718,56,Hannes,Hermann,,2005-03-23,189,77,1,3,1,GK,Defense,,Germany,Hamburger SV,Bundesliga,,,20,56,57,57,58,60
+73749,16719,56,Max,Metcalfe,,2003-01-28,198,86,1,2,1,GK,Defense,,Scotland,Stockport,EFL League One,,,23,58,54,53,55,57
+71439,16732,56,Laurenz,Orgler,,2004-10-13,187,80,1,3,1,GK,Defense,,Austria,SK Rapid,Ö. Bundesliga,,,21,58,57,59,56,58
+79924,16738,56,Valentin,Oelz,,2005-04-24,192,82,1,1,1,GK,Defense,,Austria,Blau-Weiss Linz,Ö. Bundesliga,,,20,56,55,57,54,57
+78435,16750,56,Yannick,Onohiol,,2004-08-21,188,80,1,2,1,GK,Defense,,Germany,TSG Hoffenheim II,3. Liga,,,21,55,62,62,55,54
+239510,16751,56,Matthias,Köbbing,,1997-05-28,196,94,1,3,1,GK,Defense,,Germany,1. FC Köln,Bundesliga,,,28,61,57,52,51,56
+76337,16759,56,Leon,Klanac,,2007-03-01,185,78,1,3,1,GK,Defense,,Germany,FC Bayern München,Bundesliga,,,19,59,58,54,49,60
+276353,16765,56,Marian,Kirsch,,2004-02-12,196,80,1,3,1,GK,Defense,,Germany,Preußen Münster,Bundesliga 2,,,22,61,55,54,48,57
+72829,16767,56,Alessandro,Signorini,,1999-08-16,182,80,1,2,1,GK,Defense,,Italy,SS Juve Stabia,Serie BKT,,,26,55,57,58,56,53
+79210,16770,56,Yevhen,Morozov,,2007-02-15,188,85,1,2,1,GK,Defense,,Ukraine,FC Zürich,Brack Super League,,,19,58,62,57,50,53
+268839,16772,56,Ollie,Wright,,2002-10-25,187,77,1,3,1,GK,Defense,,England,Accrington,EFL League Two,,,23,56,55,54,55,57
+73968,16774,56,Tim,Hottiger,,2005-03-24,191,76,1,3,1,GK,Defense,,Switzerland,Lausanne-Sport,Brack Super League,,,20,59,50,58,56,58
+70281,16786,56,Diego,Mina,,2005-08-12,185,78,1,1,1,GK,Defense,,Switzerland,FC Lugano,Brack Super League,,,20,53,56,54,54,57
+70445,16787,56,Gustav,Knudsen,,2006-07-10,185,79,1,2,1,GK,Defense,,Denmark,Vejle Boldklub,3F Superliga,,,19,55,54,55,57,56
+79392,16792,56,Jan Marco,Niemann,,2004-07-05,199,94,1,2,1,GK,Defense,,Germany,SV Waldhof,3. Liga,,,21,55,59,52,56,59
+269948,16793,56,Tom,Booth,,2004-08-02,190,82,1,3,1,GK,Defense,,England,Crewe Alexandra,EFL League Two,,,21,55,55,54,54,56
+71290,16807,56,Elias,Lorenz,,2006-03-27,194,80,1,3,1,GK,Defense,,Austria,SK Sturm Graz,Ö. Bundesliga,,,19,58,53,56,56,55
+73240,16808,56,Silas,Huber,,2005-07-10,195,93,1,2,1,GK,Defense,,Switzerland,FC Zürich,Brack Super League,,,20,56,54,54,55,57
+77747,16809,56,Max,Uhlig,,2006-09-08,187,80,1,2,2,GK,Defense,,Germany,FC Erzgebirge Aue,3. Liga,,,19,58,57,57,50,57
+79233,16810,56,Leco,Zeevalkink,,2005-09-14,192,79,1,3,1,GK,Defense,,Holland,Heracles Almelo,Eredivisie,,,20,59,49,53,56,59
+272383,16813,56,Nicolas,Glaus,,2002-05-10,187,87,1,3,1,GK,Defense,,Switzerland,GC Zürich,Brack Super League,,,23,58,55,56,51,59
+73750,16830,56,Benjamin,Göschl,,2005-11-16,188,82,1,2,1,GK,Defense,,Austria,SK Rapid,Ö. Bundesliga,,,20,54,49,57,55,63
+73046,16838,56,Marcel,Mendes-Dudziński,,2005-05-14,193,80,1,3,1,GK,Defense,,Poland,Legia Warszawa,PKO BP Ekstraklasa,,,20,55,55,54,55,58
+72948,16848,56,Jakub,Burek,,2003-03-08,187,79,1,2,1,GK,Defense,,Poland,Wisła Płock,PKO BP Ekstraklasa,,,23,56,59,48,56,55
+262791,16854,56,Sven,Jansen,,2004-10-23,193,78,1,2,1,GK,Defense,,Holland,Go Ahead Eagles,Eredivisie,,,21,58,55,58,49,56
+77044,16857,56,Calum,Ward,,2000-10-17,188,82,1,2,1,GK,Defense,,England,Motherwell,Scottish Prem,,,25,56,55,49,55,57
+73465,16924,55,Jacob,Knightbridge,,2004-01-25,191,75,1,3,2,GK,Defense,,England,Oxford United,EFL Championship,,,22,54,56,56,54,55
+272336,16938,55,Matt,Lendfers,,2006-03-10,190,76,1,3,1,GK,Defense,,Belgium,STVV,1A Pro League,,,20,64,49,53,50,60
+74312,16967,55,Noah,Phillips,,2004-12-07,185,66,1,2,1,GK,Defense,,England,Leyton Orient,EFL League One,,,21,56,53,52,54,57
+74118,16988,55,Alejandro,Arévalo Arrebola,Alejandro Arévalo,2007-11-22,184,69,1,2,1,GK,Defense,,Spain,Córdoba CF,LALIGA HYPERMOTION,,,18,56,53,51,54,60
+277207,16994,55,Oskar,Annell,,2005-02-15,190,76,1,3,1,GK,Defense,,Belgium,KVC Westerlo,1A Pro League,,,21,56,60,52,58,55
+79077,16998,55,Stanisław,Pruszkowski,,2004-07-22,200,85,1,2,1,GK,Defense,,Poland,Wisła Płock,PKO BP Ekstraklasa,,,21,56,55,62,52,54
+75302,17003,55,Sebastian,Auton,,2006-11-07,185,81,1,2,1,GK,Defense,,England,Grimsby Town,EFL League Two,,,19,56,52,55,54,57
+80742,17005,55,Thomas,Goos,,2008-05-21,192,80,1,2,1,GK,Defense,,Holland,NAC Breda,Eredivisie,,,17,58,53,57,53,58
+262764,17007,55,Alexander,Dlugaiczyk,,1983-02-17,195,90,1,2,2,GK,Defense,,Germany,TSV Havelse,3. Liga,,,43,57,56,58,58,52
+276993,17014,55,Noah,Brdar,,2005-08-11,190,83,1,2,1,GK,Defense,,Germany,Wehen Wiesbaden,3. Liga,,,20,60,57,55,55,55
+275721,17023,55,Tim,Spycher,,2004-04-13,187,81,1,3,2,GK,Defense,,Switzerland,FC Basel 1893,Brack Super League,,,21,55,54,56,54,55
+76260,17031,55,Luke,Hewitson,,2004-10-15,187,84,1,2,1,GK,Defense,,England,Fleetwood Town,EFL League Two,,,21,56,53,54,53,55
+271164,17033,55,Rareș,Gal,,2001-01-25,186,75,1,2,1,GK,Defense,,Romania,CFR 1907 Cluj,SUPERLIGA,,,25,53,56,54,52,63
+271502,17034,55,Šerif,Berbić,,2001-11-25,194,84,1,3,1,GK,Defense,,Switzerland,FC Lugano,Brack Super League,,,24,55,54,52,53,55
+76473,17040,55,Nick,Dobben,,2008-05-17,185,75,1,3,1,GK,Defense,,Holland,PEC Zwolle,Eredivisie,,,17,57,58,56,44,59
+252281,17053,55,Furkan,Bekleviç,,1999-01-31,189,73,1,2,1,GK,Defense,,Turkey,Karagümrük SK,Trendyol Süper Lig,,,27,56,54,50,54,55
+79553,17058,55,Marcus,Eskildsen,,2007-12-03,187,74,1,2,1,GK,Defense,,Denmark,Odense BK,3F Superliga,,,18,56,54,56,54,55
+243758,17059,55,Bartłomiej,Żynel,,1998-04-09,187,78,1,2,2,GK,Defense,,Poland,Jagiellonia,PKO BP Ekstraklasa,,,27,55,54,51,55,56
+275631,17062,55,Kevin,Radulović,,2002-06-27,180,74,1,2,1,GK,Defense,,Austria,Blau-Weiss Linz,Ö. Bundesliga,,,23,55,54,59,52,55
+79337,17067,55,Axel,Willockx,,2007-02-07,189,72,1,3,1,GK,Defense,,Belgium,KV Mechelen,1A Pro League,,,19,59,56,46,58,54
+262358,17073,55,Harrison,Sharp,,2001-04-04,189,81,1,2,1,GK,Defense,,Scotland,Dundee FC,Scottish Prem,,,24,56,54,55,54,54
+276925,17081,55,Nicolas,Closset,,2004-07-10,185,75,1,2,1,GK,Defense,,Belgium,Sp. Charleroi,1A Pro League,,,21,54,52,52,55,58
+73176,17085,55,Julian,Bock,,2004-05-29,191,82,1,2,1,GK,Defense,,Germany,FC Luzern,Brack Super League,,,21,55,54,51,55,56
+80295,17092,55,Viktor,Džodić,,2006-11-15,186,72,1,2,1,GK,Defense,,Serbia,Montpellier,Ligue 2 BKT,,,19,58,56,55,50,51
+245335,17096,55,Jamie,Pardington,,2000-07-20,195,85,1,2,1,GK,Defense,,England,Lincoln City,EFL League One,,,25,55,53,53,54,56
+269243,17101,55,Dion,Vlak,,2001-06-28,192,80,1,3,1,GK,Defense,,Holland,FC Volendam,Eredivisie,,,24,58,52,48,52,57
+277366,17181,54,Alfie,Marriott,,2004-03-26,187,74,1,3,1,GK,Defense,,England,Watford,EFL Championship,,,21,57,55,54,49,55
+276354,17189,54,Jan,Krzywański,,2003-03-10,189,79,1,2,1,GK,Defense,,Poland,Widzew Łódź,PKO BP Ekstraklasa,,,23,54,55,59,49,55
+73129,17191,54,Mats,Remberg,,2006-01-29,186,78,1,2,1,GK,Defense,,Germany,VfL Osnabrück,3. Liga,,,20,58,55,54,55,56
+78710,17192,54,Mark,Karácsony,,2003-07-07,188,78,1,2,2,GK,Defense,,Romania,FK Csíkszereda,SUPERLIGA,,,22,55,54,59,55,56
+74298,17198,54,Tom,Watson,,2004-08-27,187,75,1,3,1,GK,Defense,,England,Wigan Athletic,EFL League One,,,21,54,53,53,53,56
+79332,17199,54,Giorgi,Kavlashvili,,2007-01-24,195,80,1,2,2,GK,Defense,,Georgia,R. Union St.-G.,1A Pro League,,,19,59,49,51,48,59
+78522,17210,54,Emil,Zorn,,2006-03-19,190,80,1,2,1,GK,Defense,,Germany,FC Schweinfurt 05,3. Liga,,,19,51,58,58,56,52
+272444,17219,54,James,Dadge,,2004-10-18,188,79,1,3,1,GK,Defense,,England,Northampton,EFL League One,,,21,52,52,57,55,55
+75000,17220,54,Luke,Faxon,,2005-02-15,188,78,1,3,1,GK,Defense,,England,Sheffield Utd,EFL Championship,,,21,54,53,53,52,56
+75440,17221,54,Mamadou,Diallo,,2008-01-28,185,82,1,2,1,GK,Defense,,England,Cheltenham Town,EFL League Two,,,18,56,53,52,53,55
+70780,17223,54,Brad,Mayo,,2004-09-15,185,79,1,3,1,GK,Defense,,England,Birmingham City,EFL Championship,,,21,53,53,55,53,52
+76006,17224,54,Adam,Matysek,,2007-05-30,190,85,1,2,1,GK,Defense,,Poland,Zagłębie Lubin,PKO BP Ekstraklasa,,,18,53,51,56,53,56
+262785,17227,54,Brad,Young,,2002-05-05,191,90,1,2,1,GK,Defense,,England,Bristol Rovers,EFL League Two,,,23,55,53,54,53,55
+76921,17234,54,Benjamin,Lade,,2006-06-28,187,78,1,2,1,GK,Defense,,Germany,TSG Hoffenheim II,3. Liga,,,19,52,53,50,55,59
+79951,17237,54,Nicky,Hogarth,,2001-07-04,195,73,1,1,1,GK,Defense,,Scotland,Falkirk,Scottish Prem,,,24,56,53,58,51,52
+80240,17242,54,Mathis,Ntessa,,2008-07-28,170,60,1,2,1,GK,Defense,,France,Laval MFC,Ligue 2 BKT,,,17,56,57,55,50,49
+263967,17246,54,Nico,Hansen,,2001-07-10,189,75,1,3,1,GK,Defense,,Denmark,Colorado Rapids,MLS,,,24,54,56,53,50,56
+271751,17267,54,Harry,Griffiths,,2005-05-04,185,82,1,3,1,GK,Defense,,England,Notts County,EFL League Two,,,20,55,53,52,54,53
+138431,17314,53,Richard,Brush,,1984-11-26,185,86,1,2,1,GK,Defense,,England,Sligo Rovers,SSE Airtricity PD,,,41,51,54,54,55,49
+79258,17331,53,Finn,Ludwig,,2006-03-10,191,89,1,3,1,GK,Defense,,Germany,Wehen Wiesbaden,3. Liga,,,20,49,56,55,56,53
+268990,17332,53,Halil,Bağcı,,2003-04-04,194,80,1,3,1,GK,Defense,,Turkey,Gaziantep,Trendyol Süper Lig,,,22,54,54,57,50,53
+80267,17347,53,Marwan,Aubert,,2006-02-12,186,80,1,3,1,GK,Defense,,Switzerland,Servette FC,Brack Super League,,,20,55,52,57,53,52
+75501,17357,53,Salko,Hamzić,,2006-09-17,190,80,1,2,2,GK,Defense,,Austria,RB Salzburg,Ö. Bundesliga,,,19,51,54,55,49,57
+79133,17363,53,Ahmet Hasan,Göcen,,2003-06-10,190,81,1,2,1,GK,Defense,,Turkey,Kocaelispor,Trendyol Süper Lig,,,22,54,53,51,54,56
+277977,17366,53,Gabriel,Ursu,,2002-02-04,185,80,1,1,1,GK,Defense,,Romania,SC Oțelul Galați,SUPERLIGA,,,24,51,55,55,51,52
+72590,17367,53,Patryk,Szczuka,,2002-01-31,189,76,1,2,1,GK,Defense,,Poland,GKS Katowice,PKO BP Ekstraklasa,,,24,57,51,52,50,58
+279891,17373,53,Diego,Mascardi,,2006-09-26,190,80,1,3,1,GK,Defense,,Italy,Spezia,Serie BKT,,,19,53,51,52,51,53
+73862,17374,53,Kamil,Dudek,,2005-10-10,191,78,1,2,1,GK,Defense,,Poland,Burton Albion,EFL League One,,,20,53,52,51,52,53
+276408,17377,53,Florian,Pruhs,,2006-02-06,190,85,1,3,1,GK,Defense,,Germany,SC Paderborn 07,Bundesliga 2,,,20,55,58,57,47,52
+277430,17378,53,Zak,Baker,,2004-11-19,187,78,1,2,1,GK,Defense,,England,Plymouth Argyle,EFL League One,,,21,51,55,50,50,56
+279183,17379,53,Max,Woodford,,2008-05-05,184,75,1,3,1,GK,Defense,,England,Stevenage,EFL League One,,,17,52,53,51,53,51
+71447,17381,53,Nicholas,Michalski,,2007-03-14,188,82,1,3,1,GK,Defense,,England,Blackburn Rovers,EFL Championship,,,19,54,52,53,51,52
+79316,17392,53,Noah,Brogli,,2008-05-28,192,85,1,3,1,GK,Defense,,Switzerland,FC Winterthur,Brack Super League,,,17,56,47,48,52,58
+80044,17403,53,Dillon,Addai,,2005-03-15,191,80,1,2,1,GK,Defense,,England,Bromley FC,EFL League Two,,,21,55,55,48,54,47
+73736,17409,53,Zac,Hadi,,2006-03-08,196,80,1,2,1,GK,Defense,,England,Bradford City,EFL League One,,,20,52,51,51,51,53
+78401,17411,53,Frankie,Phillips,,2006-09-20,188,75,1,2,1,GK,Defense,,England,Exeter City,EFL League One,,,19,53,52,50,50,54
+263907,17485,52,Ted,Cann,,2000-12-27,188,77,1,4,1,GK,Defense,,England,Rotherham Utd,EFL League One,,,25,52,53,52,50,53
+72094,17498,52,Konrad,Golonka,,2007-05-26,188,82,1,2,1,GK,Defense,,Poland,Cracovia,PKO BP Ekstraklasa,,,18,52,51,52,50,55
+75978,17499,52,Adrian,Briciu,,2007-08-17,190,79,1,2,1,GK,Defense,,Romania,FC Rapid 1923,SUPERLIGA,,,18,52,58,54,47,49
+269970,17501,52,Michał,Jerke,,2006-01-13,191,79,1,2,1,GK,Defense,,Poland,Radomiak Radom,PKO BP Ekstraklasa,,,20,52,55,53,51,52
+269418,17513,52,Andrei,Jercălău,,2005-03-10,188,80,1,2,1,GK,Defense,,Romania,FC Petrolul,SUPERLIGA,,,21,53,54,58,47,55
+274479,17518,52,Jake,Oram,,2006-02-22,183,74,1,2,1,GK,Defense,,England,Doncaster,EFL League One,,,20,53,49,48,51,55
+73858,17522,52,Aidan,Stokes,,2008-01-14,182,65,1,2,1,GK,Defense,,England,Red Bulls,MLS,,,18,59,47,46,54,55
+276450,17528,52,Harald,Postl,,2005-09-29,185,75,1,2,1,GK,Defense,,Austria,TSV Hartberg,Ö. Bundesliga,,,20,59,52,45,47,52
+74513,17531,52,Alexandru,Stoian,,2005-03-12,185,78,1,2,1,GK,Defense,,Romania,FC Dinamo 1948,SUPERLIGA,,,21,51,48,48,54,56
+257210,17555,52,Matteo,Godfroid,,2004-02-25,190,77,1,3,1,GK,Defense,,Belgium,Standard Liège,1A Pro League,,,22,48,50,52,55,52
+79932,17557,52,Darius,Achitei,,2008-08-01,185,75,1,2,1,GK,Defense,,Romania,Grazer AK,Ö. Bundesliga,,,17,56,57,47,41,53
+271110,17562,52,Matthew,Connelly,,2003-03-02,179,70,1,3,1,GK,Defense,,Scotland,Motherwell,Scottish Prem,,,23,52,50,49,52,53
+77113,17624,51,Lucas,Roșu,,2007-01-07,184,75,1,2,1,GK,Defense,,Romania,UTA Arad,SUPERLIGA,,,19,51,53,54,50,46
+78009,17625,51,Michał,Niedbała,,2006-04-10,193,83,1,2,1,GK,Defense,,Poland,Korona Kielce,PKO BP Ekstraklasa,,,19,51,50,52,50,52
+75998,17628,51,Dawid,Rychta,,2006-03-04,192,82,1,2,1,GK,Defense,,Poland,Piast Gliwice,PKO BP Ekstraklasa,,,20,51,46,53,52,53
+80001,17631,51,Serhat,Öztaşdelen,,2004-12-09,188,80,1,2,1,GK,Defense,,Turkey,Kocaelispor,Trendyol Süper Lig,,,21,53,50,48,51,53
+268629,17703,50,Sam,Waller,,2003-09-09,186,81,1,2,1,GK,Defense,,England,Crewe Alexandra,EFL League Two,,,22,50,54,50,49,52
+73581,17709,50,Alp,Köseer,,2003-01-01,186,80,1,2,1,GK,Defense,,Turkey,Eyüpspor,Trendyol Süper Lig,,,23,45,46,54,54,57
+74656,17710,50,James,Rogerson,,2006-11-20,182,72,1,2,1,GK,Defense,,England,Accrington,EFL League Two,,,19,51,50,46,48,52
+277763,17715,50,Şamil,Öztürk,,2005-05-09,194,78,1,3,1,GK,Defense,,Turkey,Kayserispor,Trendyol Süper Lig,,,20,52,51,50,49,50
+276386,17724,50,Tom,Finch,,2005-07-14,194,86,1,2,1,GK,Defense,,England,MK Dons,EFL League Two,,,20,53,46,48,52,51
+73592,17728,50,Mert,Bayram,,2005-01-02,190,80,1,3,1,GK,Defense,,Turkey,Alanyaspor,Trendyol Süper Lig,,,21,51,55,47,50,49
+79570,17823,48,Jenson,Kilroy,,2006-10-12,187,70,1,2,1,GK,Defense,,England,Walsall,EFL League Two,,,19,50,46,53,44,51
