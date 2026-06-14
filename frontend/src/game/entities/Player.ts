@@ -6,6 +6,7 @@ import { Ball } from './Ball';
 import { dist, clamp } from '../utils/MathUtils';
 import { FieldBounds } from '../types';
 import { traitBonus, TRAITS } from '../data/PlayerTraits';
+import type { SpectatorPlayerState } from '../../draft/MultiplayerLobby';
 
 const PLAYER_SPEED_SCALE = 1.85;
 const PLAYER_ACCELERATION_FAR = 0.07;
@@ -203,6 +204,29 @@ export class Player extends Phaser.GameObjects.Container {
     const heightScore = (this.heightCm - 180) * 0.55;
     const weightScore = (this.weightKg - 78) * 0.16;
     return clamp(heightScore + weightScore, -12, 18);
+  }
+
+  getCarryDir(): { x: number; y: number } {
+    return { x: this.ballCarryDirX, y: this.ballCarryDirY };
+  }
+
+  getSprintGlowIntensity(): number {
+    return this.sprintGlowIntensity;
+  }
+
+  applySpectatorFrame(data: SpectatorPlayerState): void {
+    this.setPosition(data.x, data.y);
+    this.state = data.state as PlayerState;
+    this.hasBall = data.hasBall;
+    this.currentStamina = data.stamina;
+    this.sprintMs = data.sprintMs;
+    this.ballCarryDirX = data.dirX;
+    this.ballCarryDirY = data.dirY;
+    // Approximate velocity so GkDive ellipse rotates correctly
+    this.vx = data.dirX * 2;
+    this.vy = data.dirY * 2;
+    this.wanderTime += 16;
+    this.updateVisuals();
   }
 
   requestSprint(durationMs = 650, minIntentDistance = 70): void {

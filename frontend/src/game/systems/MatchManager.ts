@@ -120,7 +120,10 @@ export class MatchManager {
     this.halftimeDelay = 0;
   }
 
+  spectatorClockOverride: string | null = null;
+
   getTimeString(): string {
+    if (this.spectatorClockOverride !== null) return this.spectatorClockOverride;
     if (this.state === 'halftime') return `45' (Intervalo)`;
     if (this.state === 'advantage') {
       const baseMin = this.half === 1 ? 45 : 90;

@@ -48,6 +48,27 @@ export interface MultiplayerMatchState {
   startedAt: number | null;
 }
 
+export interface SpectatorPlayerState {
+  id: string;
+  name: string;
+  jerseyNumber: number;
+  teamId: 'teamA' | 'teamB';
+  x: number;
+  y: number;
+  hasBall: boolean;
+  stamina: number;
+  sprintMs: number;
+  dirX: number;
+  dirY: number;
+  state: string;
+}
+
+export interface SpectatorEvent {
+  type: 'goal' | 'halftime' | 'halftime-end' | 'finished' | 'text';
+  text?: string;
+  teamId?: string;
+}
+
 export interface MultiplayerMatchLiveState {
   matchId: string;
   homeName: string;
@@ -57,17 +78,10 @@ export interface MultiplayerMatchLiveState {
   clock: string;
   phase: string;
   eventText?: string;
+  event?: SpectatorEvent;
   replay?: {
-    ball: { x: number; y: number };
-    players: Array<{
-      id: string;
-      name: string;
-      jerseyNumber: number;
-      teamId: 'teamA' | 'teamB';
-      x: number;
-      y: number;
-      hasBall: boolean;
-    }>;
+    ball: { x: number; y: number; vx: number; vy: number };
+    players: SpectatorPlayerState[];
   };
   updatedAt: number;
 }

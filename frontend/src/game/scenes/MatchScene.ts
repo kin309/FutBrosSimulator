@@ -104,6 +104,11 @@ export default class MatchScene extends Phaser.Scene {
   private liveUpdateElapsedMs = 0;
   private matchEndDelivered = false;
 
+  // Spectator mode
+  private spectatorLatestState: import('../../draft/MultiplayerLobby').MultiplayerMatchLiveState | null = null;
+  private spectatorLastEventAt = 0;
+  private playerById = new Map<string, Player>();
+
   // Advantage-of-attack state (when time runs out with ball in play)
   private advTeamId: string = '';
   private advText: Phaser.GameObjects.Text | null = null;
@@ -129,9 +134,6 @@ export default class MatchScene extends Phaser.Scene {
     this.stats = new StatsTracker();
     this.buildTeams();
     this.ball = new Ball(this, FIELD.centerX, FIELD.centerY);
-    this.aiA = new TeamAI(this.teamA);
-    this.aiB = new TeamAI(this.teamB);
-    this.heatMap = new FieldHeatMap(FIELD.left, FIELD.top, FIELD.right, FIELD.bottom);
     this.heatMapGfx = this.add.graphics().setDepth(3);
     this.gkDiveDebugGfx = this.add.graphics().setDepth(24);
     this.heatMapLabel = this.add.text(FIELD.left + 4, FIELD.top + 4, '', {
@@ -148,6 +150,18 @@ export default class MatchScene extends Phaser.Scene {
       strokeThickness: 2,
       resolution: 2,
     }).setOrigin(0.5, 1).setDepth(20);
+
+    if (this.setup?.spectatorMode) {
+      // Build index for fast player lookup by id
+      for (const p of this.allPlayers()) this.playerById.set(p.id, p);
+      // Register the push callback so DraftApp can feed frames into this scene
+      this.setup.onSpectatorFrame?.((state) => { this.spectatorLatestState = state; });
+      return;
+    }
+
+    this.aiA = new TeamAI(this.teamA);
+    this.aiB = new TeamAI(this.teamB);
+    this.heatMap = new FieldHeatMap(FIELD.left, FIELD.top, FIELD.right, FIELD.bottom);
     this.wireEvents();
     this.setupKeys();
     this.resetPlayersToKickoffShape();
@@ -155,6 +169,11 @@ export default class MatchScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    if (this.setup?.spectatorMode) {
+      this.updateSpectator();
+      return;
+    }
+
     const simDelta = delta * SIMULATION_SPEED;
 
     this.matchManager.update(simDelta);
@@ -281,7 +300,7 @@ export default class MatchScene extends Phaser.Scene {
       const conceder = teamId === 'teamA' ? this.teamB : this.teamA;
       this.scoreboard.showGoalBanner(scorer.name);
       this.scoreboard.logEvent(`⚽ GOL! ${scorer.name} marca!`);
-      this.emitLiveUpdate(`GOL! ${scorer.name} marca!`);
+      this.emitLiveUpdate(`GOL! ${scorer.name} marca!`, { type: 'goal', text: scorer.name, teamId });
       this.spawnGoalConfetti(teamId);
 
       const HAPPY  = ['🎉', '😄', '🔥', '😎', '🤩', '💪', '😜', '🙌', '👏'];
@@ -315,7 +334,7 @@ export default class MatchScene extends Phaser.Scene {
     };
     this.matchManager.onFinished = () => {
       this.scoreboard.showFinished(!!this.setup?.onMatchEnd);
-      this.emitLiveUpdate('Fim de jogo');
+      this.emitLiveUpdate('Fim de jogo', { type: 'finished' });
       this.showStatsOverlay();
       if (this.setup?.autoFinishDelayMs !== undefined) {
         this.time.delayedCall(this.setup.autoFinishDelayMs, () => this.deliverMatchEnd());
@@ -323,10 +342,11 @@ export default class MatchScene extends Phaser.Scene {
     };
     this.matchManager.onHalftime = () => {
       this.scoreboard.logEvent(`45' — Intervalo`);
-      this.emitLiveUpdate('Intervalo');
+      this.emitLiveUpdate('Intervalo', { type: 'halftime' });
       this.showHalftimeBanner();
     };
     this.matchManager.onHalftimeEnd = () => {
+      this.emitLiveUpdate(undefined, { type: 'halftime-end' });
       this.swapSides();
       this.resetPlayersToKickoffShape();
       this.ball.release();
@@ -366,7 +386,50 @@ export default class MatchScene extends Phaser.Scene {
   // Field drawing
   // ──────────────────────────────────────────────
 
-  private emitLiveUpdate(eventText?: string): void {
+  private updateSpectator(): void {
+    const s = this.spectatorLatestState;
+    if (!s) return;
+
+    // Sync scoreboard data
+    this.matchManager.scoreA = s.scoreHome;
+    this.matchManager.scoreB = s.scoreAway;
+    this.matchManager.spectatorClockOverride = s.clock;
+    this.matchManager.state = s.phase as import('../systems/MatchManager').MatchState;
+    this.scoreboard.update();
+
+    // Apply player positions and visuals
+    if (s.replay) {
+      this.ball.setPosition(s.replay.ball.x, s.replay.ball.y);
+      this.ball.velocity = { x: s.replay.ball.vx, y: s.replay.ball.vy };
+
+      for (const pd of s.replay.players) {
+        const p = this.playerById.get(pd.id);
+        if (!p) continue;
+        p.applySpectatorFrame(pd);
+        p.updateLabelAlpha(s.replay.ball.x, s.replay.ball.y);
+      }
+    }
+
+    // Process one-shot events (goal, halftime, finished)
+    if (s.event && s.updatedAt !== this.spectatorLastEventAt) {
+      this.spectatorLastEventAt = s.updatedAt;
+      const ev = s.event;
+      if (ev.type === 'goal' && ev.teamId) {
+        this.scoreboard.showGoalBanner(ev.text ?? '');
+        this.spawnGoalConfetti(ev.teamId);
+        const teamPlayers = ev.teamId === 'teamA' ? this.teamA.players : this.teamB.players;
+        const otherPlayers = ev.teamId === 'teamA' ? this.teamB.players : this.teamA.players;
+        for (const p of teamPlayers) p.showCelebration();
+        for (const p of otherPlayers) p.showDisappointment();
+      } else if (ev.type === 'halftime') {
+        this.showHalftimeBanner();
+      } else if (ev.type === 'finished') {
+        this.scoreboard.showFinished(false);
+      }
+    }
+  }
+
+  private emitLiveUpdate(eventText?: string, event?: import('../../draft/MultiplayerLobby').SpectatorEvent): void {
     if (!this.setup?.onLiveUpdate || !this.matchManager) return;
     this.setup.onLiveUpdate({
       scoreA: this.matchManager.scoreA,
@@ -374,17 +437,26 @@ export default class MatchScene extends Phaser.Scene {
       clock: this.matchManager.getTimeString(),
       phase: this.matchManager.state,
       eventText,
+      event,
       replay: {
-        ball: { x: this.ball.x, y: this.ball.y },
-        players: this.allPlayers().map((player) => ({
-          id: player.id,
-          name: player.playerName,
-          jerseyNumber: player.jerseyNumber,
-          teamId: player.teamId as 'teamA' | 'teamB',
-          x: player.x,
-          y: player.y,
-          hasBall: player.hasBall,
-        })),
+        ball: { x: this.ball.x, y: this.ball.y, vx: this.ball.velocity.x, vy: this.ball.velocity.y },
+        players: this.allPlayers().map((p) => {
+          const dir = p.getCarryDir();
+          return {
+            id: p.id,
+            name: p.playerName,
+            jerseyNumber: p.jerseyNumber,
+            teamId: p.teamId as 'teamA' | 'teamB',
+            x: p.x,
+            y: p.y,
+            hasBall: p.hasBall,
+            stamina: p.currentStamina,
+            sprintMs: p.sprintMs,
+            dirX: dir.x,
+            dirY: dir.y,
+            state: p.state,
+          };
+        }),
       },
     });
   }

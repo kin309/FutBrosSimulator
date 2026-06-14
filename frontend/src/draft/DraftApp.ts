@@ -740,6 +740,7 @@ function openLobby(
   let liveState: MultiplayerMatchLiveState | null = null;
   const runningMatchRef: { value: string | null } = { value: null };
   const runningGameRef: { value: ReturnType<typeof createGame> | null } = { value: null };
+  const spectatorPushRef: { value: ((s: MultiplayerMatchLiveState) => void) | null } = { value: null };
   const managers = new Map<string, DraftManager>();
   // Mutable ref so tournamentState persists across re-renders of renderMultiplayerDraft
   const tsRef: { value: TournamentState | null } = { value: options.restore?.tournamentState ?? null };
@@ -932,6 +933,7 @@ function openLobby(
         runningGameRef.value.destroy(true);
         runningGameRef.value = null;
         runningMatchRef.value = null;
+        spectatorPushRef.value = null;
         document.body.classList.remove('match-running');
         if (!root.isConnected) document.body.appendChild(root);
       }
@@ -942,10 +944,11 @@ function openLobby(
 
     if (message.type === 'match-live-state') {
       liveState = message.state;
-      if (draftState && matchState.phase === 'running') {
-        if (!options.isHost && root.querySelector('[data-live-replay]')) {
-          updateMultiplayerLiveReplay(root, liveState);
-        } else {
+      if (matchState.phase === 'running') {
+        if (!options.isHost) {
+          // Feed the Phaser spectator scene directly
+          spectatorPushRef.value?.(liveState);
+        } else if (draftState) {
           renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef);
         }
       }
@@ -1251,8 +1254,21 @@ function renderMultiplayerDraft(
 
     if (matchState.phase === 'running') {
       if (!isHost) {
-        root.innerHTML = multiplayerMatchLiveView(match, liveState);
-        if (liveState) updateMultiplayerLiveReplay(root, liveState);
+        if (runningMatchRef.value !== match.id) {
+          runningMatchRef.value = match.id;
+          const home = orientTeam(teamForCompetitor(match.home, matchState.teams, pools), 'teamA', 0x38bdf8, 1);
+          const away = orientTeam(teamForCompetitor(match.away, matchState.teams, pools), 'teamB', 0xef4444, -1);
+          root.remove();
+          document.body.classList.add('match-running');
+          const game = createGame({
+            teams: [home, away],
+            spectatorMode: true,
+            onSpectatorFrame: (push) => { spectatorPushRef.value = push; },
+          });
+          runningGameRef.value = game;
+          // Feed any state that arrived before the scene was ready
+          if (liveState) spectatorPushRef.value?.(liveState);
+        }
         return;
       }
 
@@ -1278,6 +1294,7 @@ function renderMultiplayerDraft(
                 clock: live.clock,
                 phase: live.phase,
                 eventText: live.eventText,
+                event: live.event,
                 replay: live.replay,
                 updatedAt: Date.now(),
               },
