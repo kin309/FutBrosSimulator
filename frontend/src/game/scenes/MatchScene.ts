@@ -43,27 +43,27 @@ const CENTER_CIRCLE_RADIUS = 100; // 9.15m radius ≈ 9.7% of field width
 const CONTACT_RADIUS: number = BALL_PHYSICS.contactRadius;
 const BALL_FRICTION: number = BALL_PHYSICS.groundFrictionPerFrame;
 const BALL_PICKUP_RADIUS: number = BALL_PHYSICS.pickupRadius;
-const TACKLE_RANGE = 36;
+const TACKLE_RANGE = 28;
 const TACKLE_COOLDOWN_MS = 1400;
-const SHOT_BASE_POWER = 7.0;
-const SHOT_STAT_POWER = 3.1;
-const SHOT_DISTANCE_POWER = 2.6;
-const SHOT_MIN_POWER = 7.4;
-const SHOT_MAX_POWER = 12.5;
-const SHOT_ELITE_MAX_POWER_BONUS = 3.2;
+const SHOT_BASE_POWER = 8.5;
+const SHOT_STAT_POWER = 4.0;
+const SHOT_DISTANCE_POWER = 3.2;
+const SHOT_MIN_POWER = 8.5;
+const SHOT_MAX_POWER = 15.0;
+const SHOT_ELITE_MAX_POWER_BONUS = 3.8;
 const SHOT_DISTANCE_POWER_START = 180;
 const SHOT_DISTANCE_POWER_FULL = 620;
 const CLEARANCE_BASE_POWER = 7.0;
 const CLEARANCE_STAT_POWER = 2.6;
 const SIMULATION_SPEED = 1.0;
-const GK_DIVE_MIN_DISTANCE = 66;
+const GK_DIVE_MIN_DISTANCE = 52;
 const GK_DIVE_BASE_REACH = 100;
 const GK_DIVE_MAX_REACH = 196;
 const GK_DIVE_MIN_DISPLACEMENT = 50;
 const GK_DIVE_OVERSHOOT = 18;
 const GK_DIVE_MIN_REACTION_FRAMES = 2;
 const GK_DIVE_MAX_REACTION_FRAMES = 90;
-const GK_DIVE_MIN_TARGETED_THREAT_SPEED = 6.0;
+const GK_DIVE_MIN_TARGETED_THREAT_SPEED = 4.8;
 const GK_DIVE_MIN_CROSS_THREAT_SPEED = 4.8;
 const GK_DIVE_CATCH_RADIUS = 26;
 const GK_DIVE_GOAL_LINE_MARGIN = 2;
@@ -716,9 +716,17 @@ export default class MatchScene extends Phaser.Scene {
       this.allPlayers().filter(p => p !== passer && p !== receiver),
       passer.teamId,
     );
-    const targetFrames = clamp(passDist / 10.2, 18, 48);
-    // statMult range 0.52–0.76: poor passers underpowered on long balls; elite passers thread anything
-    const statMult = 0.52 + (passer.stats.passing / 100) * 0.24;
+    const targetFrames = clamp(passDist / 9.2, 18, 44);
+    // Blend shortPassing↔longPassing based on distance; crosses use crossing stat
+    const passSkill = isCross || isCutback
+      ? passer.stats.crossing
+      : passDist < 160
+        ? passer.stats.shortPassing
+        : passDist > 280
+          ? passer.stats.longPassing
+          : Math.round(passer.stats.shortPassing * (280 - passDist) / 120 + passer.stats.longPassing * (passDist - 160) / 120);
+    // statMult range 0.62–0.86: poor passers noticeably underpowered; elite passers crisp
+    const statMult = 0.62 + (passSkill / 100) * 0.24;
     // Whipped Pass: harder, faster crosses and cutbacks (+0.14 power regular, +0.10 extra for Plus)
     const whippedBoost = (isCross || isCutback) ? traitBonus(passer, TRAITS.WHIPPED_PASS, 0.14, 0.10) : 0;
     const servicePower = (isCross ? 1.24 : isCutback ? 0.96 : isThroughPass ? 1.14 : 1.0) + whippedBoost;
@@ -727,7 +735,7 @@ export default class MatchScene extends Phaser.Scene {
     const PASS_FRICTION = BALL_FRICTION;
     const baseVelocity = passDist * (1 - PASS_FRICTION) / (1 - Math.pow(PASS_FRICTION, targetFrames));
     const lanePowerBoost = 1 + passLane.risk * (isCross ? 0.05 : isCutback ? 0.04 : 0.09);
-    const power = clamp(baseVelocity * statMult * servicePower * lanePowerBoost, 2.1, 14.0);
+    const power = clamp(baseVelocity * statMult * servicePower * lanePowerBoost, 2.1, 16.0);
 
     // Angular accuracy: same angular error = larger positional miss at distance.
     // passing reduces base error; pressure and stamina add noise; pass kind adds extra spread.
@@ -738,9 +746,11 @@ export default class MatchScene extends Phaser.Scene {
       if (d < minOppDist) minOppDist = d;
     }
     const pressure = clamp((60 - minOppDist) / 60, 0, 1);
-    const kindExtra = isThroughPass ? 2.0 : isCross ? 2.5 : isCutback ? 0.5 : 0;
-    const laneExtra = passLane.risk * (isCutback ? 1.2 : 2.4) * (1 - passer.stats.passing / 140);
-    const maxDevDeg = (1 - passer.stats.passing / 100) * 4.5
+    // Through-pass extra error decreases with long passing: stat=60→1.30°, stat=91→0.68°, stat=100→0.5°
+    const throughExtra = Math.max(0.5, 2.5 - (passer.stats.longPassing / 100) * 2.0);
+    const kindExtra = isThroughPass ? throughExtra : isCross ? 2.5 : isCutback ? 0.5 : 0;
+    const laneExtra = passLane.risk * (isCutback ? 1.2 : 2.4) * (1 - passSkill / 140);
+    const maxDevDeg = (1 - passSkill / 100) * 4.5
       + pressure * 3.5
       + (1 - passer.getStaminaFactor()) * 1.5
       + kindExtra
@@ -750,7 +760,7 @@ export default class MatchScene extends Phaser.Scene {
     const baseAngle = Math.atan2(intendedY - passer.y, intendedX - passer.x);
     const laneAvoidDeg = passLane.blocker
       ? clamp((CONTACT_RADIUS + 18 - passLane.nearestDist) / 18, 0, 1)
-          * clamp(4.2 - passer.stats.passing * 0.018, 1.2, 4.2)
+          * clamp(4.2 - passSkill * 0.018, 1.2, 4.2)
           * (0.6 + passLane.risk * 0.4)
       : 0;
     const actualAngle = baseAngle + deviation + Phaser.Math.DegToRad(laneAvoidDeg) * passLane.openSide;
@@ -821,8 +831,16 @@ export default class MatchScene extends Phaser.Scene {
     shooter.aiCooldown = 700;
 
     const shotDist = dist(shooter.x, shooter.y, targetGoal.centerX, FIELD.centerY);
-    const shootingSkill = shooter.stats.shooting / 100;
+    const shootingSkill = shooter.stats.shotPower / 100;
     const physicalPower = shooter.stats.physical / 100;
+    // Inside the box: finishing/composure; mid-range: shotPower; long: longShots blend
+    const finishingSkill = shooter.stats.finishing / 100;
+    const longShotSkill  = shooter.stats.longShots / 100;
+    const executionSkill = shotDist < 190
+      ? finishingSkill * 0.65 + shootingSkill * 0.35
+      : shotDist > 250
+        ? longShotSkill * 0.60 + shootingSkill * 0.40
+        : shootingSkill;
     const elitePowerBonus = Math.pow(shootingSkill, 1.7) * 1.85
       + Math.pow(physicalPower, 1.45) * 1.35;
     const maxShotPower = SHOT_MAX_POWER + clamp(elitePowerBonus, 0, SHOT_ELITE_MAX_POWER_BONUS);
@@ -863,9 +881,8 @@ export default class MatchScene extends Phaser.Scene {
     const aimLow  = Math.min(nearPostY, farPostY) + 5 + (nearPostY > farPostY ? narrowFactor * (goalMid - targetGoal.top) : 0);
     const aimHigh = Math.max(nearPostY, farPostY) - 5 - (nearPostY < farPostY ? narrowFactor * (targetGoal.bottom - goalMid) : 0);
     // GK-aware aiming: read the open side of the goal and aim there.
-    // Intelligence controls how accurately the player reads the GK's position.
-    // Shooting skill already drives execution precision via maxDevDeg below.
-    const intelligenceFactor = shooter.stats.intelligence / 100;
+    // Reactions controls how accurately the player reads the GK's position.
+    const intelligenceFactor = shooter.stats.reactions / 100;
     const gkInWindow = clamp(goalkeeper.y, aimLow, aimHigh);
     const topGap = gkInWindow - aimLow;   // open space above GK
     const botGap = aimHigh - gkInWindow;  // open space below GK
@@ -873,7 +890,7 @@ export default class MatchScene extends Phaser.Scene {
     const bestGap = Math.max(topGap, botGap);
     const cornerIntent = clamp(
       0.16
-        + shootingSkill * 0.52
+        + executionSkill * 0.52
         + intelligenceFactor * 0.26
         + shooter.stats.physical / 100 * 0.08
         - pressure * 0.18
@@ -895,7 +912,7 @@ export default class MatchScene extends Phaser.Scene {
       ? aimLow + bestGap * 0.48
       : aimHigh - bestGap * 0.48;
     const deliberateCornerChance = clamp(
-      0.18 + shootingSkill * 0.50 + intelligenceFactor * 0.22 - pressure * 0.20,
+      0.18 + executionSkill * 0.50 + intelligenceFactor * 0.22 - pressure * 0.20,
       0.08,
       0.88,
     );
@@ -903,7 +920,7 @@ export default class MatchScene extends Phaser.Scene {
     // Low intelligence → drifts toward a naive random aim; high → stays on the open side
     // blendWeight: 0.18 (int=0) → 0.83 (int=100)
     const naiveAimY = aimLow + Math.random() * (aimHigh - aimLow);
-    const blendWeight = clamp(0.14 + shootingSkill * 0.46 + intelligenceFactor * 0.34 - pressure * 0.12, 0.12, 0.90);
+    const blendWeight = clamp(0.14 + executionSkill * 0.46 + intelligenceFactor * 0.34 - pressure * 0.12, 0.12, 0.90);
     let aimY = smartAimY * blendWeight + naiveAimY * (1 - blendWeight);
     const shotBlockers = this.allPlayers().filter(p => p !== shooter && p !== goalkeeper);
     let selectedShotLane = this.analyzeBallLane(
@@ -931,8 +948,8 @@ export default class MatchScene extends Phaser.Scene {
         shotBlockers,
         shooter.teamId,
       );
-      const aimCost = Math.abs(candidateY - aimY) * (0.030 + (1 - shootingSkill) * 0.020);
-      const cornerValue = Math.abs(candidateY - goalMid) / (GOAL_HEIGHT / 2) * (4 + shootingSkill * 4);
+      const aimCost = Math.abs(candidateY - aimY) * (0.030 + (1 - executionSkill) * 0.020);
+      const cornerValue = Math.abs(candidateY - goalMid) / (GOAL_HEIGHT / 2) * (4 + executionSkill * 4);
       const score = -candidateLane.risk * 42 - candidateLane.blockers * 4 - aimCost + cornerValue;
       if (score > bestAimScore) {
         bestAimScore = score;
@@ -942,9 +959,9 @@ export default class MatchScene extends Phaser.Scene {
     }
 
     // Angular accuracy: same angular error produces larger positional miss at distance
-    // intelligence + physical reduce how much pressure disturbs the shot
+    // composure + physical reduce how much pressure disturbs the shot
     const pressureResist = clamp(
-      shooter.stats.intelligence * 0.002 + shooter.stats.physical * 0.002,
+      shooter.stats.composure * 0.003 + shooter.stats.physical * 0.002,
       0, 0.40,
     );
     // Clinical: tighter finish in the box (−1.8° regular, −1.2° extra for Plus)
@@ -952,9 +969,9 @@ export default class MatchScene extends Phaser.Scene {
     // Long Shot: better accuracy on attempts beyond normal range (−1.4° regular, −1.0° extra for Plus)
     const longShotBonus = shotDist > 250 ? traitBonus(shooter, TRAITS.LONG_SHOT, 1.4, 1.0) : 0;
     const maxDevDeg = Math.max(0.4,
-      (1 - shootingSkill) * 7.5
+      (1 - executionSkill) * 7.5
       + pressure * 5.5 * (1 - pressureResist)
-      + selectedShotLane.risk * 3.2 * (1 - shootingSkill * 0.55)
+      + selectedShotLane.risk * 3.2 * (1 - executionSkill * 0.55)
       + (1 - shooter.getStaminaFactor()) * 2.5
       - clinicalBonus
       - longShotBonus,
@@ -968,7 +985,7 @@ export default class MatchScene extends Phaser.Scene {
     // Use actual shot distance (to actualY, not FIELD.centerY) for accuracy on corner shots.
     const actualShotDist = dist(shooter.x, shooter.y, targetGoal.centerX, actualY);
     // GK rushes at sprint speed — include stamina so tired GKs cover less ground.
-    const gkSpeed = (goalkeeper.stats.speed / 100) * 1.85 * 1.28
+    const gkSpeed = (goalkeeper.stats.sprintSpeed / 100) * 1.85 * 1.28
                   * (0.9 + goalkeeper.stats.defending / 100 * 0.2)
                   * goalkeeper.getStaminaFactor();
     const gkDistNeeded   = Math.abs(actualY - goalkeeper.y);
@@ -1025,7 +1042,7 @@ export default class MatchScene extends Phaser.Scene {
     const speed = this.ball.getSpeed();
     const target = this.ball.targetPlayer as Player | null;
     if (target?.role === PlayerRole.Goalkeeper) return;
-    if (speed < 4.4) return;
+    if (speed < 3.8) return;
 
     const targetedThreat = !!target
       && (speed >= GK_DIVE_MIN_TARGETED_THREAT_SPEED
@@ -1081,7 +1098,7 @@ export default class MatchScene extends Phaser.Scene {
     const diveDistance = dist(gk.x, gk.y, interceptX, interceptY);
     // this.drawGkDiveDebugPoint(gk, interceptX, interceptY);
     const reach = clamp(
-      GK_DIVE_BASE_REACH + gk.stats.speed * 0.42 + gk.stats.defending * 0.28 + traitBonus(gk, TRAITS.FAR_REACH, 24, 14),
+      GK_DIVE_BASE_REACH + gk.stats.sprintSpeed * 0.42 + gk.stats.defending * 0.28 + traitBonus(gk, TRAITS.FAR_REACH, 24, 14),
       GK_DIVE_BASE_REACH,
       GK_DIVE_MAX_REACH,
     ) * gk.getStaminaFactor();
@@ -1141,7 +1158,7 @@ export default class MatchScene extends Phaser.Scene {
   }
 
   private estimateGkDiveDurationMs(gk: Player, displacement: number): number {
-    return clamp(205 + displacement * 1.75 - gk.stats.speed * 0.10, 225, 460);
+    return clamp(205 + displacement * 1.75 - gk.stats.sprintSpeed * 0.10, 225, 460);
   }
 
   private drawGkDiveDebugPoint(
@@ -1265,12 +1282,12 @@ export default class MatchScene extends Phaser.Scene {
     const controlledOutlet = this.findGkControlledOutlet(gk, ownTeam, oppTeam, dir);
     if (controlledOutlet) {
       const { target, blocker } = controlledOutlet;
-      const passErr = 1 - gk.stats.passing / 100;
+      const passErr = 1 - gk.stats.shortPassing / 100;
       const maxOff = passErr * 34 + 16;
       const destX = clamp(target.x + (Math.random() - 0.5) * maxOff, FIELD.left + 15, FIELD.right - 15);
       const destY = clamp(target.y + (Math.random() - 0.5) * maxOff * 1.25, FIELD.top + 15, FIELD.bottom - 15);
       const kickDist = dist(gk.x, gk.y, destX, destY);
-      const power = clamp(3.1 + kickDist / 92 + (gk.stats.passing / 100) * 1.4, 3.8, 8.4);
+      const power = clamp(3.1 + kickDist / 92 + (gk.stats.longPassing / 100) * 1.4, 3.8, 8.4);
 
       this.ball.targetPlayer = target;
       this.ball.kickTo(destX, destY, power, gk.id, {
@@ -1312,7 +1329,7 @@ export default class MatchScene extends Phaser.Scene {
     const loftChance = (blocker: Player): number => {
       const d = dist(gk.x, gk.y, blocker.x, blocker.y);
       const distFactor = clamp((d - 15) / 105, 0, 1); // 0 at ≤15 px, 1 at ≥120 px
-      return distFactor * 0.50 + (gk.stats.passing / 100) * 0.45;
+      return distFactor * 0.50 + (gk.stats.longPassing / 100) * 0.45;
     };
 
     // Find the most advanced free midfielder/striker — loft over nearby blockers when able
@@ -1333,7 +1350,7 @@ export default class MatchScene extends Phaser.Scene {
       }
     }
 
-    const passErr  = 1 - gk.stats.passing / 100;
+    const passErr  = 1 - gk.stats.longPassing / 100;
     const maxOff   = passErr * 70 + 55; // clearances always carry some spread
 
     let destX: number;
@@ -1357,7 +1374,7 @@ export default class MatchScene extends Phaser.Scene {
       destY = clamp(FIELD.centerY + oy, FIELD.top + 15, FIELD.bottom - 15);
     }
 
-    const power = CLEARANCE_BASE_POWER + (gk.stats.passing / 100) * CLEARANCE_STAT_POWER;
+    const power = CLEARANCE_BASE_POWER + (gk.stats.longPassing / 100) * CLEARANCE_STAT_POWER;
     this.ball.kickTo(destX, destY, power, gk.id, {
       lift: clearTargetBlocker ? 4.2 : 3.4,
       spin: dir * (0.050 + power * 0.013),
@@ -1451,7 +1468,8 @@ export default class MatchScene extends Phaser.Scene {
       // Burst past — push velocity toward the pre-chosen target direction so the
       // player cuts along the side chosen by the AI, not always straight forward.
       const dir = carrier.attackDirection;
-      carrier.requestSprint(850);
+      // Skilled dribblers burst harder: stat=60→780ms, stat=91→873ms, stat=100→900ms
+      carrier.requestSprint(600 + carrier.stats.dribbling * 3);
       const tdx = carrier.targetX - carrier.x;
       const tdy = carrier.targetY - carrier.y;
       const tlen = Math.sqrt(tdx * tdx + tdy * tdy);
@@ -1763,13 +1781,13 @@ export default class MatchScene extends Phaser.Scene {
         const isShot = this.ball.getSpeed() > 6.5;
 
         // 1. Clean intercept — defender controls the ball.
-        // Defending + intelligence (reading the ball) + Intercept trait.
+        // Defending + reactions (reading the ball) + Intercept trait.
         const interceptTrait = player.playstyles.includes('Intercept') || player.playstylesPlus.includes('Intercept')
           ? (player.playstylesPlus.includes('Intercept') ? 0.10 : 0.06)
           : 0;
         const interceptChance = 0.22
           + (player.stats.defending / 100) * 0.38
-          + (player.stats.intelligence / 100) * 0.14
+          + (player.stats.reactions / 100) * 0.14
           + interceptTrait;
         if (Math.random() < interceptChance) {
           this.stats.recordInterception(player.teamId);
@@ -2145,6 +2163,17 @@ export default class MatchScene extends Phaser.Scene {
         if (defender.distanceTo(carrier) > TACKLE_RANGE) continue;
         if (defender.state !== PlayerState.MarkOpponent && defender.state !== PlayerState.PressBall) continue;
 
+        // MarkOpponent defenders must be closing in — velocity must point roughly toward carrier.
+        // Very close contact (< 18px) skips the check: at that distance the defender is essentially on top.
+        // PressBall defenders are already committed to pressing, so no extra check needed.
+        if (defender.state === PlayerState.MarkOpponent && defender.distanceTo(carrier) >= 18) {
+          const toCarrierX = carrier.x - defender.x;
+          const toCarrierY = carrier.y - defender.y;
+          const speed = Math.sqrt(defender.vx * defender.vx + defender.vy * defender.vy);
+          const dot = defender.vx * toCarrierX + defender.vy * toCarrierY;
+          if (dot <= -speed * 0.3) continue;
+        }
+
         this.tackleCooldowns.set(defender.id, TACKLE_COOLDOWN_MS);
         this.tackleCooldowns.set(carrier.id, TACKLE_COOLDOWN_MS * 0.7);
 
@@ -2153,8 +2182,13 @@ export default class MatchScene extends Phaser.Scene {
           carrier.hasBall = false;
           this.ball.release();
           carrier.state = PlayerState.FindSpace;
-          this.ball.velocity.x = (Math.random() - 0.5) * 4;
-          this.ball.velocity.y = (Math.random() - 0.5) * 4;
+          // Ball squirts away from the defender's approach direction — more realistic than pure random.
+          const approachX = carrier.x - defender.x;
+          const approachY = carrier.y - defender.y;
+          const approachLen = Math.max(Math.sqrt(approachX * approachX + approachY * approachY), 1);
+          const scatter = (Math.random() - 0.5) * 2.5;
+          this.ball.velocity.x = (approachX / approachLen) * 2.5 + scatter;
+          this.ball.velocity.y = (approachY / approachLen) * 2.5 + scatter;
           this.scoreboard.logEvent(`${defender.playerName} roubou de ${carrier.playerName}!`);
         } else {
           // Push defender back
@@ -2227,7 +2261,7 @@ export default class MatchScene extends Phaser.Scene {
     const betweenCarrierAndGoal = defenderGoalDist < carrierGoalDist + 8;
     const goalSideBonus = betweenCarrierAndGoal ? 4 : -5;
     const jockeyBonus = traitBonus(defender, TRAITS.JOCKEY, 5, 4);
-    const readBonus = (defender.stats.defending * 0.045 + defender.stats.intelligence * 0.035) * laneBlock * ahead;
+    const readBonus = (defender.stats.defending * 0.045 + defender.stats.reactions * 0.035) * laneBlock * ahead;
     const recoveryPenalty = aheadDot < -18 ? clamp((-aheadDot - 18) / 70, 0, 1) * 12 : 0;
 
     return clamp(laneBlock * 14 + ahead * 7 + readBonus + goalSideBonus + jockeyBonus - recoveryPenalty, -14, 24);
@@ -2736,7 +2770,7 @@ export default class MatchScene extends Phaser.Scene {
   }
 
   private estimatedArrivalFrames(player: Player, distance: number, sprinting: boolean): number {
-    const baseSpeed = Math.max(0.35, (player.stats.speed / 100) * 1.85 * player.getStaminaFactor());
+    const baseSpeed = Math.max(0.35, (player.stats.sprintSpeed / 100) * 1.85 * player.getStaminaFactor());
     const sprintMult = sprinting ? 1.28 : 1.0;
     return distance / (baseSpeed * sprintMult);
   }
@@ -2748,7 +2782,7 @@ export default class MatchScene extends Phaser.Scene {
   // High dribbling = settles the ball faster; high intelligence = reads situation faster.
   // Pressure (opponent nearby) shortens the window — urgency forces the decision.
   private settleTime(player: Player, nearestOpp: Player | null): number {
-    const skill = (player.stats.dribbling * 0.6 + player.stats.intelligence * 0.4) / 100; // 0–1
+    const skill = (player.stats.dribbling * 0.6 + player.stats.reactions * 0.4) / 100; // 0–1
     const oppDist = nearestOpp ? nearestOpp.distanceTo(player) : 999;
     const pressure = clamp((85 - oppDist) / 85, 0, 1); // 0 = free, 1 = opponent right on you
     const base = 220 - skill * 165;           // 55 ms (elite) to 220 ms (poor)
@@ -2762,15 +2796,15 @@ export default class MatchScene extends Phaser.Scene {
     if (speed < 0.8) return { x: this.ball.x, y: this.ball.y };
 
     const d = dist(player.x, player.y, this.ball.x, this.ball.y);
-    const playerSpeed = Math.max(0.4, (player.stats.speed / 100) * 1.85 * player.getStaminaFactor());
+    const playerSpeed = Math.max(0.4, (player.stats.sprintSpeed / 100) * 1.85 * player.getStaminaFactor());
     const frames = clamp(d / playerSpeed, 0, 90);
 
     // Geometric series: sum of friction^i for i=0..frames-1 gives total displacement
     const displacementFactor = (1 - Math.pow(BALL_FRICTION, frames)) / (1 - BALL_FRICTION);
 
-    // Intelligence scales how much the player anticipates vs. chasing current position.
-    // Range: 0.35 (intel=0) → 1.0 (intel=100)
-    const anticipation = 0.62 + (player.stats.intelligence / 100) * 0.38;
+    // Reactions scales how much the player anticipates vs. chasing current position.
+    // Range: 0.62 (reactions=0) → 1.0 (reactions=100)
+    const anticipation = 0.62 + (player.stats.reactions / 100) * 0.38;
 
     return {
       x: clamp(this.ball.x + this.ball.velocity.x * displacementFactor * anticipation, FIELD.left + 15, FIELD.right - 15),
@@ -2856,7 +2890,7 @@ export default class MatchScene extends Phaser.Scene {
   }
 
   private applyKickFollowThrough(player: Player, angle: number, impulse: number): void {
-    const targetDistance = 38 + player.stats.speed * 0.22;
+    const targetDistance = 38 + player.stats.sprintSpeed * 0.22;
     player.vx += Math.cos(angle) * impulse;
     player.vy += Math.sin(angle) * impulse;
     player.setTarget(

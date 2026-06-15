@@ -70,7 +70,7 @@ export class TeamAI {
     // ── Detect tactical phase ─────────────────────────────────────────────────
     const phase = detectPhase(
       this.team, oppTeam, ball, field,
-      gameCtx ?? { scoreOwn: 0, scoreOpp: 0, elapsedMs: 0, halfLengthMs: 180_000 },
+      gameCtx ?? { scoreOwn: 0, scoreOpp: 0, elapsedMs: 0, halfLengthMs: 150_000 },
       this.manualPhase,
     );
 

@@ -819,7 +819,7 @@ function openLobby(
     draftState = createMultiplayerDraftState(options.roomCode, settings, players, managers);
     persistMultiplayerProgress();
     post({ type: 'draft-state', state: draftState });
-    renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, options.isHost, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef);
+    renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, options.isHost, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef, spectatorPushRef);
   };
 
   const broadcastMatch = (): void => {
@@ -827,7 +827,7 @@ function openLobby(
     persistMultiplayerProgress();
     post({ type: 'match-state', state: matchState });
     if (draftState) {
-      renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, options.isHost, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef);
+      renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, options.isHost, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef, spectatorPushRef);
     }
   };
 
@@ -913,14 +913,14 @@ function openLobby(
       players = message.state.players;
       settings = message.state.settings;
       persistMultiplayerProgress();
-      renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef);
+      renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef, spectatorPushRef);
     }
 
     if (message.type === 'tournament-state') {
       tsRef.value = message.state;
       persistMultiplayerProgress();
       if (draftState) {
-        renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef);
+        renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef, spectatorPushRef);
       }
     }
 
@@ -938,7 +938,7 @@ function openLobby(
         if (!root.isConnected) document.body.appendChild(root);
       }
       if (draftState) {
-        renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef);
+        renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef, spectatorPushRef);
       }
     }
 
@@ -949,7 +949,7 @@ function openLobby(
           // Feed the Phaser spectator scene directly
           spectatorPushRef.value?.(liveState);
         } else if (draftState) {
-          renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef);
+          renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef, spectatorPushRef);
         }
       }
     }
@@ -1163,6 +1163,7 @@ function renderMultiplayerDraft(
   liveState: MultiplayerMatchLiveState | null,
   runningMatchRef: { value: string | null },
   runningGameRef: { value: ReturnType<typeof createGame> | null },
+  spectatorPushRef: { value: ((s: MultiplayerMatchLiveState) => void) | null },
 ): void {
   const localTeam = state.teams.find((team) => team.playerId === localPlayerId) ?? state.teams[0];
   const localIndex = Math.max(0, state.players.findIndex((player) => player.id === localPlayerId));
@@ -1181,7 +1182,7 @@ function renderMultiplayerDraft(
   };
 
   const backToDraft = (): void => {
-    renderMultiplayerDraft(root, pools, roomCode, localPlayerId, isHost, state, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef);
+    renderMultiplayerDraft(root, pools, roomCode, localPlayerId, isHost, state, post, managers, tsRef, matchState, liveState, runningMatchRef, runningGameRef, spectatorPushRef);
   };
 
   const tournament = tsRef.value?.plan ?? createTournamentPlan({
@@ -1315,7 +1316,8 @@ function renderMultiplayerDraft(
     }
   }
 
-  const localRenderKey = multiplayerLocalRenderKey(state, localTeam, tournament, localIndex);
+  const localRenderKey = multiplayerLocalRenderKey(state, localTeam);
+  const boosterKey = localTeam.currentPlayers.map((p) => p.id).join(',');
   if (root.dataset.multiplayerDraftScreen === 'draft' && root.dataset.multiplayerDraftLocalKey === localRenderKey) {
     const aside = root.querySelector<HTMLElement>('[data-multiplayer-draft-sidebar]');
     if (aside) {
@@ -1324,10 +1326,12 @@ function renderMultiplayerDraft(
     }
   }
 
+  const isNewBooster = root.dataset.multiplayerBoosterKey !== boosterKey;
   root.innerHTML = multiplayerDraftView(state, localTeam, tournament, localIndex);
   root.dataset.multiplayerDraftScreen = 'draft';
   root.dataset.multiplayerDraftLocalKey = localRenderKey;
-  setupSequentialFlip(root);
+  root.dataset.multiplayerBoosterKey = boosterKey;
+  if (isNewBooster) setupSequentialFlip(root);
   setupGoldParticles(root);
 
   root.querySelectorAll<HTMLButtonElement>('[data-pick-id]').forEach((button) => {
@@ -1849,15 +1853,11 @@ function multiplayerDraftSidebarView(state: MultiplayerDraftState, localTeam: Mu
 function multiplayerLocalRenderKey(
   state: MultiplayerDraftState,
   localTeam: MultiplayerDraftTeam,
-  tournament: TournamentPlan,
-  localIndex: number,
 ): string {
   return JSON.stringify({
     roomCode: state.roomCode,
     mode: state.settings.mode,
     groupPlacement: state.settings.groupPlacement,
-    title: tournament.title,
-    opener: openingOpponentNameFor(tournament, localIndex),
     playerName: localTeam.playerName,
     picked: localTeam.picked.map((player) => player.id),
     currentPlayers: localTeam.currentPlayers.map((player) => player.id),

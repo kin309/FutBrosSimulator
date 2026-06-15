@@ -4,7 +4,7 @@ export class MatchManager {
   scoreA: number = 0;
   scoreB: number = 0;
   matchTime: number = 0;
-  readonly halfDuration: number = 90_000; // 1.5 real minutes = 45 game minutes
+  readonly halfDuration: number = 75_000; // 1.25 real minutes = 45 game minutes
   isPaused: boolean = false;
   state: MatchState = 'kickoff';
   half: 1 | 2 = 1;

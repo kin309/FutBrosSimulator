@@ -92,16 +92,94 @@ function toStats(row: string[], indexes: Record<string, number>, role: PlayerRol
     );
   const stamina = numberValue(row, indexes, 'stamina') || Math.max(50, physical);
 
+  // ── Pace ────────────────────────────────────────────────────────────────────
+  const acceleration = role === PlayerRole.Goalkeeper
+    ? pace : (numberValue(row, indexes, 'acceleration') || pace);
+  const sprintSpeed = role === PlayerRole.Goalkeeper
+    ? pace : (numberValue(row, indexes, 'sprintSpeed') || pace);
+
+  // ── Shooting ────────────────────────────────────────────────────────────────
+  const finishing = role === PlayerRole.Goalkeeper
+    ? 20 : (numberValue(row, indexes, 'finishing') || shooting);
+  const shotPower = role === PlayerRole.Goalkeeper
+    ? average(numberValue(row, indexes, 'gkKicking'), 50)
+    : (numberValue(row, indexes, 'shotPower') || shooting);
+  const longShots = role === PlayerRole.Goalkeeper
+    ? 20 : (numberValue(row, indexes, 'longShots') || shooting);
+
+  // ── Passing ─────────────────────────────────────────────────────────────────
+  const shortPassing = role === PlayerRole.Goalkeeper
+    ? (numberValue(row, indexes, 'gkKicking') || passing)
+    : (numberValue(row, indexes, 'shortPassing') || passing);
+  const longPassing = role === PlayerRole.Goalkeeper
+    ? (numberValue(row, indexes, 'gkKicking') || passing)
+    : (numberValue(row, indexes, 'longPassing') || passing);
+  const crossing = role === PlayerRole.Goalkeeper
+    ? 20 : (numberValue(row, indexes, 'crossing') || passing);
+  const vision = role === PlayerRole.Goalkeeper
+    ? average(numberValue(row, indexes, 'gkPositioning'), overall)
+    : (numberValue(row, indexes, 'vision')
+        || average(numberValue(row, indexes, 'longPassing'), numberValue(row, indexes, 'composure')));
+
+  // ── Dribbling ───────────────────────────────────────────────────────────────
+  const agility = numberValue(row, indexes, 'agility') || dribbling;
+  const ballControl = role === PlayerRole.Goalkeeper
+    ? (numberValue(row, indexes, 'gkHandling') || dribbling)
+    : (numberValue(row, indexes, 'ballControl') || dribbling);
+  const skillMoves  = numberValue(row, indexes, 'skillMoves')  || 2;
+  const weakFootAbility = numberValue(row, indexes, 'weakFootAbility') || 3;
+  const preferredFoot   = numberValue(row, indexes, 'preferredFoot')   || 1;
+
+  // ── Defending ───────────────────────────────────────────────────────────────
+  const interceptions = role === PlayerRole.Goalkeeper
+    ? average(numberValue(row, indexes, 'gkPositioning'), numberValue(row, indexes, 'gkReflexes'))
+    : (numberValue(row, indexes, 'interceptions') || defending);
+
+  // ── Physical ────────────────────────────────────────────────────────────────
+  const strength = numberValue(row, indexes, 'strength') || physical;
+  const balance  = numberValue(row, indexes, 'balance')  || physical;
+
+  // ── Mental ──────────────────────────────────────────────────────────────────
+  const composure = role === PlayerRole.Goalkeeper
+    ? average(numberValue(row, indexes, 'gkPositioning'), overall)
+    : (numberValue(row, indexes, 'composure') || intelligence);
+  const reactions = role === PlayerRole.Goalkeeper
+    ? average(numberValue(row, indexes, 'gkReflexes'), numberValue(row, indexes, 'gkPositioning'))
+    : (numberValue(row, indexes, 'reactions') || intelligence);
+
+  // ── Fitness ─────────────────────────────────────────────────────────────────
+  const aggression = numberValue(row, indexes, 'aggression') || Math.max(50, physical);
+
   return {
     overall,
     speed: pace,
-    passing,
     shooting,
-    dribbling,
-    defending,
-    physical,
+    passing,
     intelligence,
+    acceleration,
+    sprintSpeed,
+    finishing,
+    shotPower,
+    longShots,
+    shortPassing,
+    longPassing,
+    crossing,
+    vision,
+    dribbling,
+    agility,
+    ballControl,
+    skillMoves,
+    weakFootAbility,
+    preferredFoot,
+    defending,
+    interceptions,
+    physical,
+    strength,
+    balance,
+    composure,
+    reactions,
     stamina,
+    aggression,
   };
 }
 

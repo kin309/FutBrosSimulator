@@ -8,14 +8,14 @@ import { FieldBounds } from '../types';
 import { traitBonus, TRAITS } from '../data/PlayerTraits';
 import type { SpectatorPlayerState } from '../../draft/MultiplayerLobby';
 
-const PLAYER_SPEED_SCALE = 1.85;
+const PLAYER_SPEED_SCALE = 1.62;
 const PLAYER_ACCELERATION_FAR = 0.07;
 const PLAYER_ACCELERATION_NEAR = 0.050;
 const PLAYER_DIVE_ACCELERATION = 0.20;
 const GK_DIVE_IMPULSE_BASE = 13.6;
 const SPRINT_SPEED_MULTIPLIER = 1.28;
 const SPRINT_STAMINA_DRAIN_MULTIPLIER = 2.4;
-const MIN_STAMINA_TO_SPRINT = 12;
+// Stamina floor for sprinting is now per-player (see sprintStaminaFloor getter).
 const PLAYER_NAME_MAX_CHARS = 14;
 
 export class Player extends Phaser.GameObjects.Container {
@@ -131,9 +131,8 @@ export class Player extends Phaser.GameObjects.Container {
     this.circle = scene.add.arc(0, 0, 14, 0, 360, false, color, 1);
     this.circle.setStrokeStyle(2, 0x000000, 0.5);
 
-    const roleRingColor = this.getRoleRingColor();
     this.ring = scene.add.arc(0, 0, 19, 0, 360, false, 0x000000, 0);
-    this.ring.setStrokeStyle(2.5, roleRingColor, 0.72);
+    this.ring.setVisible(false);
 
     // Both graphics live outside the container and draw at world coords each frame
     this.sprintGlow  = scene.add.graphics().setDepth(4); // behind player circle
@@ -187,13 +186,13 @@ export class Player extends Phaser.GameObjects.Container {
     this.updateVisuals();
   }
 
-  // Returns the speed multiplier based on current stamina (1.0 when fresh, 0.68 when exhausted).
-  // Curve is piecewise: stays full until ~70, drops gently to 0.85 by 40, then steeper to 0.68.
+  // Returns the speed multiplier based on current stamina (1.0 when fresh, 0.82 when exhausted).
+  // Curve is piecewise: stays full until ~70, drops gently to 0.92 by 40, then softer to 0.82.
   getStaminaFactor(): number {
     const s = this.currentStamina;
     if (s >= 70) return 1.0;
-    if (s >= 40) return 0.85 + ((s - 40) / 30) * 0.15;
-    return 0.68 + (s / 40) * 0.17;
+    if (s >= 40) return 0.92 + ((s - 40) / 30) * 0.08;
+    return 0.82 + (s / 40) * 0.10;
   }
 
   getBodyMassFactor(): number {
@@ -231,7 +230,7 @@ export class Player extends Phaser.GameObjects.Container {
 
   requestSprint(durationMs = 650, minIntentDistance = 70): void {
     if (durationMs <= 0) return;
-    if (this.currentStamina < MIN_STAMINA_TO_SPRINT) return;
+    if (this.currentStamina < this.sprintStaminaFloor) return;
     const dx = this.targetX - this.x;
     const dy = this.targetY - this.y;
     // Quick Step: triggers sprint sooner and extends burst duration
@@ -243,12 +242,17 @@ export class Player extends Phaser.GameObjects.Container {
 
   forceSprint(durationMs = 450): void {
     if (durationMs <= 0) return;
-    if (this.currentStamina < MIN_STAMINA_TO_SPRINT) return;
+    if (this.currentStamina < this.sprintStaminaFloor) return;
     this.sprintMs = Math.max(this.sprintMs, durationMs);
   }
 
+  /** High-stamina players can sprint even when more depleted (stat=30→15, stat=60→12, stat=90→9). */
+  private get sprintStaminaFloor(): number {
+    return Math.round(Math.max(6, 18 - (this.stats.stamina / 100) * 10));
+  }
+
   isSprinting(): boolean {
-    return this.sprintMs > 0 && this.currentStamina >= MIN_STAMINA_TO_SPRINT;
+    return this.sprintMs > 0 && this.currentStamina >= this.sprintStaminaFloor;
   }
 
   private tickStamina(delta: number): void {
@@ -256,29 +260,32 @@ export class Player extends Phaser.GameObjects.Container {
     const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
 
     const physicalFactor = this.stats.physical / 100;
-    // Physical reduces base depletion by up to 22% and also cushions sprint cost.
-    // Relentless trait adds a further 15% reduction (Plus: 22%).
-    const physicalMult = 1 - physicalFactor * 0.22;
+    // Physical reduces base depletion by up to 15%. Stamina stat reduces by up to 30%
+    // (coefficient 0.003 — halved from old 0.006 so the drain gap between low/high stamina
+    // players stays small; the stat now matters more for recovery than for drain).
+    const physicalMult = 1 - physicalFactor * 0.15;
     const relentlessMult = 1 - traitBonus(this, TRAITS.RELENTLESS, 0.15, 0.07);
-    const deplRate = 0.6 * (1 - this.stats.stamina * 0.006) * physicalMult * relentlessMult;
+    // Wider stamina gap: base 0.50, coefficient 0.005 → stat=60 drains 28% more than stat=91
+    // (was 0.42 * 0.003 → only 12% gap). Average at stat=55 is equivalent to before.
+    const deplRate = 0.50 * (1 - this.stats.stamina * 0.005) * physicalMult * relentlessMult;
 
     let staminaDelta: number;
     if (speed > 1.2) {
-      // Physical shields against sprint cost: stronger players sustain effort longer.
-      // phy=100 → sprint drain ×1.73 (28% less than baseline 2.4); phy=40 → ×2.13 (11% less).
-      const physSprintShield = 1 - physicalFactor * 0.28;
+      // Physical cushions sprint cost by up to 18% (was 28%) — less compounding with base reduction.
+      const physSprintShield = 1 - physicalFactor * 0.18;
       const sprintDrain = this.isSprinting() ? SPRINT_STAMINA_DRAIN_MULTIPLIER * physSprintShield : 1.0;
-      // Fatigue amplifier: sprinting when already depleted costs progressively more (lactate effect).
-      // At 25 stamina → +22.5% cost; at 10 stamina → +36% cost.
+      // Fatigue amplifier: sprinting when depleted still costs more, but gentler slope.
+      // At 25 stamina → +15% cost; at 10 stamina → +24% cost.
       const fatigueAmp = this.isSprinting() && this.currentStamina < 50
-        ? 1 + (1 - this.currentStamina / 50) * 0.45
+        ? 1 + (1 - this.currentStamina / 50) * 0.30
         : 1.0;
       staminaDelta = -deplRate * (this.hasBall ? 1.6 : 1.0) * sprintDrain * fatigueAmp * dt;
     } else {
-      // Physical improves recovery rate by up to 25%; Relentless adds more on top.
-      const recoveryBoost = (1 + physicalFactor * 0.25)
+      // Recovery: stamina contributes 65% of the rate, base 35% always.
+      // Gap stat=60 vs stat=91: ~27% (was 15%). Physical boosts by up to 18%.
+      const recoveryBoost = (1 + physicalFactor * 0.18)
         * (1 + traitBonus(this, TRAITS.RELENTLESS, 0.30, 0.15));
-      staminaDelta = 0.15 * (this.stats.stamina / 100) * recoveryBoost * dt;
+      staminaDelta = 0.17 * (0.35 + (this.stats.stamina / 100) * 0.65) * recoveryBoost * dt;
     }
 
     this.currentStamina = clamp(this.currentStamina + staminaDelta, 0, 100);
@@ -309,13 +316,14 @@ export class Player extends Phaser.GameObjects.Container {
     const d = Math.sqrt(dx * dx + dy * dy);
 
     const isDiving = this.state === PlayerState.GkDive;
-    const baseSpeed = (this.stats.speed / 100) * PLAYER_SPEED_SCALE;
+    // sprintSpeed controls 45% of the range; 55% floor is always present.
+    const baseSpeed = (0.55 + (this.stats.sprintSpeed / 100) * 0.45) * PLAYER_SPEED_SCALE;
     // Rapid: +6 % top sprint speed (Plus: +10 %)
     const rapidBoost = this.isSprinting() ? 1 + traitBonus(this, TRAITS.RAPID, 0.06, 0.04) : 1;
     const sprintMult = this.isSprinting() && !isDiving ? SPRINT_SPEED_MULTIPLIER : 1.0;
-    // Extra burst when actively dribbling past a defender — skilled dribblers accelerate harder into contact
+    // Extra burst when actively dribbling past a defender — agility sharpens the cut, dribbling adds carry speed
     const dribbleBoost = (this.hasBall && this.state === PlayerState.Dribble && this.isSprinting())
-      ? 1.10 + (this.stats.dribbling / 100) * 0.12
+      ? 1.06 + (this.stats.dribbling / 100) * 0.08 + (this.stats.agility / 100) * 0.08
       : 1.0;
     const maxSpeed = (this.hasBall
       ? baseSpeed * (0.88 + (this.stats.dribbling / 100) * 0.20)
@@ -325,11 +333,13 @@ export class Player extends Phaser.GameObjects.Container {
     // Quick Step: faster acceleration ramp when starting a sprint (+35 % far, +20 % near; Plus adds 20 %/10 % more)
     const quickStepFar  = 1 + traitBonus(this, TRAITS.QUICK_STEP, 0.35, 0.20);
     const quickStepNear = 1 + traitBonus(this, TRAITS.QUICK_STEP, 0.20, 0.10);
-    const agility = isDiving
+    // steerBlend: how quickly velocity aligns to the desired direction each frame.
+    // acceleration stat controls startup burst (far); agility stat controls tight turns (near).
+    const steerBlend = isDiving
       ? PLAYER_DIVE_ACCELERATION
       : d > 80
-        ? PLAYER_ACCELERATION_FAR  * quickStepFar
-        : PLAYER_ACCELERATION_NEAR * quickStepNear;
+        ? (0.050 + (this.stats.acceleration / 100) * 0.030) * quickStepFar   // acc=75→0.0725, acc=91→0.0773
+        : (0.036 + (this.stats.agility    / 100) * 0.018) * quickStepNear;   // agi=72→0.049, agi=91→0.052
 
     const scale = Math.min(delta, 50) / 16.67;
     const oldX = this.x;
@@ -360,8 +370,8 @@ export class Player extends Phaser.GameObjects.Container {
       const desiredVx = (dx / d) * maxSpeed * slowFactor;
       const desiredVy = (dy / d) * maxSpeed * slowFactor;
 
-      this.vx += (desiredVx - this.vx) * agility;
-      this.vy += (desiredVy - this.vy) * agility;
+      this.vx += (desiredVx - this.vx) * steerBlend;
+      this.vy += (desiredVy - this.vy) * steerBlend;
 
       const spd = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
       if (spd > maxSpeed) {
@@ -405,15 +415,6 @@ export class Player extends Phaser.GameObjects.Container {
   }
 
   private updateVisuals(): void {
-    // Role-based ring: always visible at low alpha; bright yellow when holding the ball.
-    const roleColor = this.getRoleRingColor();
-    if (this.state === PlayerState.GkDive && Player.debugRings) {
-      this.ring.setStrokeStyle(3, 0x00e5ff, 1);
-    } else if (this.hasBall) {
-      this.ring.setStrokeStyle(3.5, 0xfbbf24, 0.95);
-    } else {
-      this.ring.setStrokeStyle(2.5, roleColor, 0.55);
-    }
 
     // Dive: flatten the circle into an ellipse aligned with the velocity direction.
     const isDiving = this.state === PlayerState.GkDive;
@@ -459,18 +460,7 @@ export class Player extends Phaser.GameObjects.Container {
       }
     }
 
-    // Stamina arc follows the same visibility logic as names, but stays readable in play.
-    const t = this.currentStamina / 100;
-    const color = t > 0.65 ? 0x4ade80 : t > 0.40 ? 0xf97316 : 0xef4444;
-    const staminaPressure = clamp((0.92 - t) / 0.62, 0, 1);
-    const alpha = this.infoAlpha * (0.54 + staminaPressure * 0.44);
-    const sweep  = t * Math.PI * 2;
-    const start  = -Math.PI / 2;
     this.staminaArc.clear();
-    this.staminaArc.lineStyle(3, color, alpha);
-    this.staminaArc.beginPath();
-    this.staminaArc.arc(this.x, this.y, 17, start, start + sweep, false);
-    this.staminaArc.strokePath();
   }
 
   private formatDisplayName(name: string): string {
@@ -756,7 +746,7 @@ export class Player extends Phaser.GameObjects.Container {
   }
 
   private getBallControlSkill(): number {
-    return clamp((this.stats.dribbling * 0.72 + this.stats.intelligence * 0.28) / 100, 0, 1);
+    return clamp((this.stats.dribbling * 0.72 + this.stats.reactions * 0.28) / 100, 0, 1);
   }
 
   showDiveBurst(): void {
@@ -805,7 +795,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.diveDirX = impulseX / len;
     this.diveDirY = impulseY / len;
     this.diveRemaining = len;
-    this.diveMsRemaining = durationMs ?? clamp(115 + len * 1.15 - this.stats.speed * 0.28, 125, 285);
+    this.diveMsRemaining = durationMs ?? clamp(115 + len * 1.15 - this.stats.sprintSpeed * 0.28, 125, 285);
     this.vx = this.diveDirX * impulse;
     this.vy = this.diveDirY * impulse;
   }
@@ -831,7 +821,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.diveDirX = impulseX / len;
     this.diveDirY = impulseY / len;
     this.diveRemaining = len;
-    this.diveMsRemaining = clamp(115 + len * 1.15 - this.stats.speed * 0.28, 125, 285);
+    this.diveMsRemaining = clamp(115 + len * 1.15 - this.stats.sprintSpeed * 0.28, 125, 285);
     this.vx = this.diveDirX * impulse;
     this.vy = this.diveDirY * impulse;
   }

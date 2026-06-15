@@ -50,7 +50,7 @@ export function buildBotTeamFromPool(teamName: string, allPlayers: DraftPlayer[]
     used.add(player.id);
     return {
       id: `b${index}`,
-      name: player.commonName || player.name,
+      name: player.commonName || player.lastName || player.name,
       jerseyNumber: index + 1,
       role: slot.role,
       stats: applyOutOfPositionPenalty(player.stats, player.role, slot.role),
@@ -439,7 +439,7 @@ function toTeamData(state: FormationState): TeamData {
     formationName: state.formation.name,
     players: state.starters.map((starter, index) => ({
       id: `a${index}`,
-      name: starter.player.commonName || starter.player.name,
+      name: starter.player.commonName || starter.player.lastName || starter.player.name,
       jerseyNumber: index + 1,
       role: starter.role,
       stats: applyOutOfPositionPenalty(starter.player.stats, starter.player.role, starter.role),
@@ -509,7 +509,7 @@ function formationView(state: FormationState, context: MatchContext): string {
           <h2>${state.editMode === 'lineup' ? 'Trocar jogadores' : 'Titulares'}</h2>
           <div class="squad-header-meta">
             <span class="ovr-badge">OVR ${ovr}</span>
-            <span>${state.starters.length}</span>
+            <span>${state.formation.name}</span>
           </div>
         </div>
         <ol class="formation-list">

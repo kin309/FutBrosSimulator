@@ -1,8 +1,15 @@
 import { PlayerStats } from './PlayerStats';
 
 const STAT_KEYS: (keyof PlayerStats)[] = [
-  'overall', 'speed', 'passing', 'shooting', 'dribbling',
-  'defending', 'physical', 'intelligence', 'stamina',
+  'overall', 'speed', 'shooting', 'passing', 'intelligence',
+  'acceleration', 'sprintSpeed',
+  'finishing', 'shotPower', 'longShots',
+  'shortPassing', 'longPassing', 'crossing', 'vision',
+  'dribbling', 'agility', 'ballControl',
+  'defending', 'interceptions',
+  'physical', 'strength', 'balance',
+  'composure', 'reactions',
+  'stamina', 'aggression',
 ];
 
 interface StatRange { min: number; max: number }

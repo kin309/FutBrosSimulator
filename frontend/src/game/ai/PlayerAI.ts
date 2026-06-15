@@ -135,7 +135,7 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
     } else if (newState === PlayerState.Dribble && player.dribbleTarget) {
       const blocker = player.dribbleTarget;
       const dir = ctx.ownTeam.attackDirection;
-      const skill = (player.stats.dribbling * 0.72 + player.stats.speed * 0.28) / 100;
+      const skill = (player.stats.dribbling * 0.72 + player.stats.sprintSpeed * 0.28) / 100;
 
       // Pick the side of the blocker with fewer opponents in the escape lane
       const pastDistance = 66 + skill * 34 + Math.random() * 24;
@@ -329,9 +329,8 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
       if (player.role === PlayerRole.Goalkeeper && player.currentStamina > 25) {
         const targetDist = dist(player.x, player.y, tx, ty);
         // Repositioning sprint: after a save/dive/clearance the GK may be significantly
-        // displaced. Sprint threshold scales with speed — faster GKs react sooner.
-        // speed=100 → 65 px, speed=60 → 89 px, speed=40 → 101 px
-        const repoSprintFrom = 125 - player.stats.speed * 0.60;
+        // displaced. Sprint threshold scales with sprintSpeed — faster GKs react sooner.
+        const repoSprintFrom = 125 - player.stats.sprintSpeed * 0.60;
         if (state === PlayerState.ReturnToShape && targetDist > repoSprintFrom) {
           player.requestSprint(resolveSprintMs(player, 540, 0.5), repoSprintFrom);
         }
@@ -373,8 +372,8 @@ function updateCarryRisk(player: Player, ctx: AIContext, delta: number): void {
   if (pressure > 0.18 || stalled || movingBackward) {
     const stallWeight = stalled ? 0.55 : 0;
     const backwardWeight = movingBackward ? 0.35 : 0;
-    // Strong players resist being muscled off the ball: phy=90 accumulates risk 25% slower.
-    const physShield = 1 - (player.stats.physical / 100) * 0.28;
+    // Strength+balance resist being muscled off the ball.
+    const physShield = 1 - ((player.stats.strength + player.stats.balance) / 200) * 0.32;
     player.carryRiskMs = clamp(
       player.carryRiskMs + cappedDelta * (0.45 + pressure * 1.15 + stallWeight + backwardWeight) * physShield,
       0,
@@ -407,7 +406,7 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
   const currentShotAngle = computeGoalViewAngle(player.x, player.y, ctx);
   const angleOpeningWanted =
     (anglePassTarget && currentPassLane < 52)
-    || (closeToGoal && player.stats.shooting > 52 && currentShotAngle < 0.58);
+    || (closeToGoal && player.stats.finishing > 52 && currentShotAngle < 0.58);
 
   const forwardDistances = underPressure ? [34, 58, 82] : [62, 92, 126];
   const lateralOptions = underPressure
@@ -495,15 +494,15 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
     const oppHeat = ctx.heatMap?.getHeat(x, y, oppIdx) ?? 0;
     const candidateShotAngle = computeGoalViewAngle(x, y, ctx);
     const shotAngleGain = candidateShotAngle - currentShotAngle;
-    const shotAngleScore = closeToGoal && player.stats.shooting > 48
-      ? clamp(shotAngleGain / 0.24, -0.35, 1) * (12 + player.stats.shooting * 0.18)
+    const shotAngleScore = closeToGoal && player.stats.finishing > 48
+      ? clamp(shotAngleGain / 0.24, -0.35, 1) * (12 + player.stats.finishing * 0.18)
       : 0;
     const candidatePassLane = anglePassTarget
       ? nearestLaneBlockerDistance(x, y, anglePassTarget.x, anglePassTarget.y, ctx)
       : Infinity;
     const passLaneGain = anglePassTarget ? candidatePassLane - currentPassLane : 0;
     const passAngleScore = anglePassTarget
-      ? clamp(passLaneGain / 64, -0.35, 1) * (13 + player.stats.passing * 0.18)
+      ? clamp(passLaneGain / 64, -0.35, 1) * (13 + player.stats.shortPassing * 0.18)
       : 0;
     const openTarget = clamp((nearestAtTarget - 34) / 125, 0, 1) * 40;
     const clearLane = clamp((laneBlock - 24) / 95, 0, 1) * 28;
