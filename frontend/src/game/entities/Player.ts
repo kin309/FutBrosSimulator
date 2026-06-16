@@ -78,6 +78,8 @@ export class Player extends Phaser.GameObjects.Container {
   private ring!: Phaser.GameObjects.Arc;
   private staminaArc!: Phaser.GameObjects.Graphics;
   private sprintGlow!: Phaser.GameObjects.Graphics;
+  private patternGraphics!: Phaser.GameObjects.Graphics;
+  private outlineCircle!: Phaser.GameObjects.Arc;
   private sprintGlowIntensity = 0;
   private infoAlpha = 0.2;
   private label!: Phaser.GameObjects.Text;
@@ -105,6 +107,10 @@ export class Player extends Phaser.GameObjects.Container {
     weightKg = 78,
     playstyles: string[] = [],
     playstylesPlus: string[] = [],
+    numberColor = 0xffffff,
+    secondaryColor = 0x000000,
+    kitPattern = 'solid',
+    isHome = true,
   ) {
     super(scene, x, y);
     this.id = id;
@@ -129,7 +135,8 @@ export class Player extends Phaser.GameObjects.Container {
     this.wanderPhase = id.split('').reduce((s, c) => s + c.charCodeAt(0), 0) * 2.39;
 
     this.circle = scene.add.arc(0, 0, 14, 0, 360, false, color, 1);
-    this.circle.setStrokeStyle(2, 0x000000, 0.5);
+    this.outlineCircle = scene.add.arc(0, 0, 14, 0, 360, false, 0x000000, 0);
+    this.outlineCircle.setStrokeStyle(isHome ? 1.5 : 3, 0xffffff, isHome ? 0.3 : 1);
 
     this.ring = scene.add.arc(0, 0, 19, 0, 360, false, 0x000000, 0);
     this.ring.setVisible(false);
@@ -142,7 +149,7 @@ export class Player extends Phaser.GameObjects.Container {
       fontSize: '10px',
       fontStyle: 'bold',
       fontFamily: 'Nunito',
-      color: '#ffffff',
+      color: `#${numberColor.toString(16).padStart(6, '0')}`,
       stroke: '#000000',
       strokeThickness: 2,
       resolution: 2,
@@ -158,9 +165,76 @@ export class Player extends Phaser.GameObjects.Container {
       resolution: 2,
     }).setOrigin(0.5, 1);
 
-    this.add([this.ring, this.circle, this.jerseyText, this.label]);
+    // Created without scene.add so it stays out of the scene displayList —
+    // the container owns it and transforms it correctly in local space.
+    this.patternGraphics = new Phaser.GameObjects.Graphics(scene);
+    this.drawPattern(kitPattern, color, secondaryColor);
+
+    this.add([this.ring, this.circle, this.patternGraphics, this.outlineCircle, this.jerseyText, this.label]);
     scene.add.existing(this);
     this.setDepth(5);
+  }
+
+  private drawPattern(pattern: string, primary: number, secondary: number): void {
+    const g = this.patternGraphics;
+    const R = 14;
+    if (pattern === 'solid') return;
+
+    g.fillStyle(secondary, 1);
+
+    // Horizontal scanline helpers — one pixel tall rect clipped to circle
+    const scanH = (y0: number, y1: number): void => {
+      for (let y = Math.ceil(y0); y < y1; y++) {
+        const hw = Math.sqrt(Math.max(0, R * R - (y + 0.5) * (y + 0.5)));
+        if (hw > 0) g.fillRect(-hw, y, hw * 2, 1);
+      }
+    };
+
+    const scanV = (x0: number, x1: number): void => {
+      for (let x = Math.ceil(x0); x < x1; x++) {
+        const hh = Math.sqrt(Math.max(0, R * R - (x + 0.5) * (x + 0.5)));
+        if (hh > 0) g.fillRect(x, -hh, 1, hh * 2);
+      }
+    };
+
+    if (pattern === 'stripes-h') {
+      // 2 secondary bands centered symmetrically; primary fills center and edges
+      const sh = (2 * R) / 4;
+      const half = sh / 2;
+      scanH( half,        half + sh);
+      scanH(-half - sh,  -half);
+    } else if (pattern === 'stripes-v') {
+      const sw = (2 * R) / 4;
+      const half = sw / 2;
+      scanV( half,        half + sw);
+      scanV(-half - sw,  -half);
+    } else if (pattern === 'checkered') {
+      // 4×4 grid centered at (0,0): cell (0,0) is primary, alternating outward
+      const cell = (2 * R) / 4;
+      const half = cell / 2;
+      for (let y = Math.ceil(-R); y < R; y++) {
+        const hw = Math.sqrt(Math.max(0, R * R - (y + 0.5) * (y + 0.5)));
+        const row = Math.floor((y + half) / cell);
+        const colStart = Math.floor((-hw + half) / cell);
+        const colEnd   = Math.ceil((hw + half) / cell);
+        for (let col = colStart; col < colEnd; col++) {
+          if ((row + col) % 2 !== 0) {
+            const cx1 = Math.max(-half + col * cell, -hw);
+            const cx2 = Math.min(-half + (col + 1) * cell, hw);
+            if (cx2 > cx1) g.fillRect(cx1, y, cx2 - cx1, 1);
+          }
+        }
+      }
+    } else if (pattern === 'sash') {
+      // Diagonal band where |x - y| < bw (top-left to bottom-right)
+      const bw = 7;
+      for (let y = -R; y < R; y++) {
+        const hw = Math.sqrt(Math.max(0, R * R - (y + 0.5) * (y + 0.5)));
+        const bx1 = Math.max(-hw, y - bw);
+        const bx2 = Math.min(hw, y + bw);
+        if (bx2 > bx1) g.fillRect(bx1, y, bx2 - bx1, 1);
+      }
+    }
   }
 
   updatePlayer(delta: number, field: FieldBounds): void {
@@ -215,6 +289,10 @@ export class Player extends Phaser.GameObjects.Container {
 
   applySpectatorFrame(data: SpectatorPlayerState): void {
     this.setPosition(data.x, data.y);
+    this.applySpectatorFrameState(data);
+  }
+
+  applySpectatorFrameState(data: SpectatorPlayerState): void {
     this.state = data.state as PlayerState;
     this.hasBall = data.hasBall;
     this.currentStamina = data.stamina;
@@ -424,12 +502,18 @@ export class Player extends Phaser.GameObjects.Container {
         const angleDeg = Math.atan2(this.vy, this.vx) * (180 / Math.PI);
         this.circle.setAngle(angleDeg);
         this.circle.setScale(1.15, 0.85);
+        this.outlineCircle.setAngle(angleDeg);
+        this.outlineCircle.setScale(1.15, 0.85);
       }
       this.circle.setAlpha(0.95);
+      this.outlineCircle.setAlpha(0.95);
     } else {
       this.circle.setAngle(0);
       this.circle.setScale(1, 1);
       this.circle.setAlpha(1);
+      this.outlineCircle.setAngle(0);
+      this.outlineCircle.setScale(1, 1);
+      this.outlineCircle.setAlpha(1);
     }
 
     // Dribble glow: radial gradient arcs that oscillate while the player is dribbling

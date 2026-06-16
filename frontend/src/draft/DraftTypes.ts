@@ -16,11 +16,13 @@ export interface DraftPlayer {
   heightCm: number;
   weightKg: number;
   stats: PlayerStats;
+  alternatePositions: string[];
+  alternateRoles: PlayerRole[];
   playstyles: string[];
   playstylesPlus: string[];
 }
 
-export type DraftRoundKind = 'normal' | 'famous-clubs';
+export type DraftRoundKind = 'normal' | 'famous-clubs' | 'elite' | `nationality:${string}` | `position:${string}`;
 
 export interface DraftRound {
   number: number;

@@ -4,6 +4,7 @@ import { Player } from '../entities/Player';
 import { PlayerRole } from '../data/PlayerRole';
 import { FieldBounds, GoalBounds } from '../types';
 import { clamp } from '../utils/MathUtils';
+import { TacticalProfile } from '../data/TacticalProfile';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ export function detectPhase(
   field: FieldBounds,
   gameCtx: GameContext,
   manualPhase: TacticalPhase | null,
+  pressStaminaThreshold = 28,
 ): TacticalPhase {
   if (manualPhase !== null) return manualPhase;
 
@@ -70,7 +72,7 @@ export function detectPhase(
     const avgStamina = ownTeam.players.reduce((s, p) => s + p.currentStamina, 0) / ownTeam.players.length;
     const losingLate = gameCtx.scoreOwn < gameCtx.scoreOpp
       && gameCtx.elapsedMs > gameCtx.halfLengthMs * 0.55;
-    const energyOk = avgStamina > 28 || losingLate;
+    const energyOk = avgStamina > pressStaminaThreshold || losingLate;
 
     if (energyOk) {
       // Opponent carrier in their own half → press them back
@@ -91,10 +93,11 @@ export function tryTriggerSetPlay(
   oppGoal: GoalBounds,
   field: FieldBounds,
   phase: TacticalPhase,
+  profile?: TacticalProfile,
 ): ActiveSetPlay | null {
   switch (phase) {
     case 'counterattack': return tryCounterLaunch(ownTeam, oppGoal, field);
-    case 'high-press':    return tryPressTrap(ownTeam, oppTeam, field);
+    case 'high-press':    return tryPressTrap(ownTeam, oppTeam, field, profile?.pressCoordination ?? 0.4);
     case 'build-up':      return tryOverlap(ownTeam, field);
     default:              return null;
   }
@@ -133,12 +136,14 @@ function tryPressTrap(
   ownTeam: Team,
   oppTeam: Team,
   field: FieldBounds,
+  pressCoordination = 0.4,
 ): ActiveSetPlay | null {
   const carrier = oppTeam.getBallCarrier();
   if (!carrier) return null;
 
-  // Only trigger when carrier is wide and away from either goal — good trapping ground
-  const wide = Math.abs(carrier.y - field.centerY) > 90;
+  // Higher coordination = trap triggers even when carrier is less wide (closer to center)
+  const wideThreshold = 90 - pressCoordination * 35; // 0.2→83px  0.4→76px  0.9→58px
+  const wide = Math.abs(carrier.y - field.centerY) > wideThreshold;
   const reachable = Math.abs(carrier.x - field.centerX) < 420;
   if (!wide || !reachable) return null;
 

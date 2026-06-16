@@ -7,6 +7,7 @@ import { updatePlayerAI } from './PlayerAI';
 import { AIContext } from './DecisionUtils';
 import { FieldHeatMap } from './FieldHeatMap';
 import { GoalBounds, FieldBounds } from '../types';
+import { clamp } from '../utils/MathUtils';
 import {
   TacticalPhase,
   TacticalDirective,
@@ -16,6 +17,7 @@ import {
   tryTriggerSetPlay,
   tickSetPlay,
 } from './TacticalAI';
+import { TacticalProfile, DEFAULT_TACTICAL_PROFILE } from '../data/TacticalProfile';
 
 // Minimum gap between two consecutive set plays (ms)
 const SET_PLAY_COOLDOWN_MS = 7000;
@@ -25,9 +27,36 @@ export class TeamAI {
   private directive: TacticalDirective = { phase: 'hold-shape', setPlay: null };
   private setPlayCooldown = 0;
   private manualPhase: TacticalPhase | null = null;
+  private profile: TacticalProfile = DEFAULT_TACTICAL_PROFILE;
+  private appliedLineDepthOffset = 0;
 
   constructor(team: Team) {
     this.team = team;
+  }
+
+  setTacticalProfile(profile: TacticalProfile): void {
+    const dir = this.team.attackDirection;
+    // Undo previous defensive line offset before applying the new one
+    if (this.appliedLineDepthOffset !== 0) {
+      for (const p of this.team.players) {
+        if (p.role === PlayerRole.Defender || p.role === PlayerRole.Midfielder) {
+          p.baseX -= this.appliedLineDepthOffset;
+        }
+      }
+    }
+    // Positive defensiveLineDepth = deeper line; negative = higher line
+    const newOffset = dir * -profile.defensiveLineDepth;
+    for (const p of this.team.players) {
+      if (p.role === PlayerRole.Defender || p.role === PlayerRole.Midfielder) {
+        p.baseX += newOffset;
+      }
+    }
+    this.appliedLineDepthOffset = newOffset;
+    this.profile = profile;
+  }
+
+  getTacticalProfile(): TacticalProfile {
+    return this.profile;
   }
 
   // Human-controlled tactical override (null = auto-detect).
@@ -72,12 +101,13 @@ export class TeamAI {
       this.team, oppTeam, ball, field,
       gameCtx ?? { scoreOwn: 0, scoreOpp: 0, elapsedMs: 0, halfLengthMs: 150_000 },
       this.manualPhase,
+      this.profile.pressStaminaThreshold,
     );
 
     // ── Try to trigger a set play ─────────────────────────────────────────────
     let setPlay = this.directive.setPlay;
     if (!setPlay && this.setPlayCooldown <= 0) {
-      const candidate = tryTriggerSetPlay(this.team, oppTeam, ball, oppGoal, field, phase);
+      const candidate = tryTriggerSetPlay(this.team, oppTeam, ball, oppGoal, field, phase, this.profile);
       if (candidate) setPlay = candidate;
     }
 
@@ -93,17 +123,29 @@ export class TeamAI {
       field,
       directive: this.directive,
       heatMap,
+      tacticalProfile: this.profile,
     };
 
-    // ── Presser cap (relaxed for high-press; press-trap players are exempt) ───
-    // Allow up to 3 simultaneous pressers in high-press mode; 1 otherwise.
-    const maxPressers = phase === 'high-press' ? 3 : 1;
+    // ── Presser cap driven by tactical profile ────────────────────────────────
+    const maxPressers = phase === 'high-press'
+      ? this.profile.maxPressers
+      : Math.min(1, this.profile.maxPressers);
     let presserCount = 0;
     for (const p of this.team.players) {
       if (p.state === PlayerState.PressBall && !p.hasBall) presserCount++;
     }
 
     for (const player of this.team.players) {
+      // Strikers that don't track back stay forward when team is defending
+      if (
+        !this.profile.strikersTrackBack
+        && player.role === PlayerRole.Striker
+        && !player.hasBall
+        && !this.team.hasPossession()
+      ) {
+        player.state = PlayerState.FindSpace;
+      }
+
       const isSetPlayPresser = setPlay?.kind === 'press-trap' && setPlay.roles.has(player.id);
       if (
         player.state === PlayerState.PressBall
@@ -116,6 +158,27 @@ export class TeamAI {
         player.setTarget(player.baseX, player.baseY);
       }
       updatePlayerAI(player, ctx, delta);
+    }
+
+    // Defensive compactness: defenders and midfielders nudge laterally toward the ball.
+    // Near-side players close down space slightly; far-side players barely move (cover).
+    // Only applied on ReturnToShape so attackers holding position are not affected.
+    if (!this.team.hasPossession()) {
+      const fieldHalfH = (field.bottom - field.top) / 2;
+      const ballLateral = ball.y - field.centerY;
+      for (const p of this.team.players) {
+        if (p.hasBall || p.role === PlayerRole.Goalkeeper) continue;
+        if (p.role !== PlayerRole.Defender && p.role !== PlayerRole.Midfielder) continue;
+        if (p.state !== PlayerState.ReturnToShape) continue;
+        const sameSideness = ((p.baseY - field.centerY) / fieldHalfH) * (ballLateral / fieldHalfH);
+        const weight   = sameSideness > 0 ? 0.14 : 0.04;
+        const maxShift = sameSideness > 0 ? 22   : 8;
+        const pull = clamp(ballLateral * weight, -maxShift, maxShift);
+        p.setTarget(
+          p.targetX,
+          clamp(p.targetY + pull, field.top + 20, field.bottom - 20),
+        );
+      }
     }
   }
 

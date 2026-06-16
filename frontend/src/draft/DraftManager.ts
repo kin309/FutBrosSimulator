@@ -1,4 +1,5 @@
 import { DraftConfig, DraftPlayer, DraftRound, DraftRoundKind } from './DraftTypes';
+import { PlayerRole } from '../game/data/PlayerRole';
 
 const DEFAULT_CONFIG: DraftConfig = {
   totalPicks: 15,
@@ -8,13 +9,47 @@ const DEFAULT_CONFIG: DraftConfig = {
   maxFamousRounds: 1,
 };
 
+const ELITE_ROUND_CHANCE = 0.03;
+const MAX_ELITE_ROUNDS = 1;
+const ELITE_MIN_OVERALL = 85;
+const NATIONALITY_ROUND_CHANCE = 0.08;
+const MAX_NATIONALITY_ROUNDS = 1;
+const POSITION_ROUND_CHANCE = 0.08;
+const MAX_POSITION_ROUNDS = 1;
+
+const POSITION_LABELS: Record<string, string> = {
+  [PlayerRole.Goalkeeper]: 'Goleiros',
+  [PlayerRole.Defender]: 'Defensores',
+  [PlayerRole.Midfielder]: 'Meias',
+  [PlayerRole.Winger]: 'Alas',
+  [PlayerRole.Striker]: 'Atacantes',
+};
+
+function pickNationality(pool: DraftPlayer[], boosterSize: number): string | null {
+  const counts = new Map<string, number>();
+  for (const player of pool) {
+    counts.set(player.nationality, (counts.get(player.nationality) ?? 0) + 1);
+  }
+  const eligible = [...counts.entries()]
+    .filter(([, count]) => count >= boosterSize)
+    .map(([nat]) => nat);
+  return randomItem(eligible);
+}
+
+function pickPosition(pool: DraftPlayer[], boosterSize: number): PlayerRole | null {
+  const roles = Object.values(PlayerRole);
+  const eligible = roles.filter((role) => pool.filter((p) => p.role === role).length >= boosterSize);
+  return randomItem(eligible);
+}
+
 /**
  * Gera a sequência de tipos de rodada para todo o draft.
  * Deve ser chamada UMA vez pelo host e repassada a todos os DraftManagers,
- * garantindo que a rodada especial apareça na mesma posição para todos.
+ * garantindo que as rodadas especiais apareçam na mesma posição para todos.
  */
 export function generateRoundSequence(
   famousPool: DraftPlayer[],
+  fullPool: DraftPlayer[] = [],
   config: Partial<DraftConfig> = {},
 ): DraftRoundKind[] {
   const { totalPicks, maxFamousRounds, famousRoundChance, boosterSize } = {
@@ -23,6 +58,10 @@ export function generateRoundSequence(
   };
 
   let famousSeen = 0;
+  let eliteSeen = 0;
+  let nationalitySeen = 0;
+  let positionSeen = 0;
+
   return Array.from({ length: totalPicks }, () => {
     if (
       famousSeen < maxFamousRounds
@@ -30,7 +69,28 @@ export function generateRoundSequence(
       && Math.random() < famousRoundChance
     ) {
       famousSeen += 1;
-      return 'famous-clubs';
+      return 'famous-clubs' as DraftRoundKind;
+    }
+    if (eliteSeen < MAX_ELITE_ROUNDS && Math.random() < ELITE_ROUND_CHANCE) {
+      const elitePool = fullPool.filter((p) => p.overall >= ELITE_MIN_OVERALL);
+      if (elitePool.length >= boosterSize) {
+        eliteSeen += 1;
+        return 'elite' as DraftRoundKind;
+      }
+    }
+    if (nationalitySeen < MAX_NATIONALITY_ROUNDS && Math.random() < NATIONALITY_ROUND_CHANCE) {
+      const nat = pickNationality(fullPool, boosterSize);
+      if (nat) {
+        nationalitySeen += 1;
+        return `nationality:${nat}` as DraftRoundKind;
+      }
+    }
+    if (positionSeen < MAX_POSITION_ROUNDS && Math.random() < POSITION_ROUND_CHANCE) {
+      const role = pickPosition(fullPool, boosterSize);
+      if (role) {
+        positionSeen += 1;
+        return `position:${role}` as DraftRoundKind;
+      }
     }
     return 'normal';
   });
@@ -46,31 +106,57 @@ export class DraftManager {
   private currentKind: DraftRoundKind = 'normal';
   private rerollsLeft: number;
   private famousRoundsSeen = 0;
+  private eliteRoundsSeen = 0;
+  private nationalityRoundsSeen = 0;
+  private positionRoundsSeen = 0;
   private pickedThisRound = false;
 
   /**
    * @param roundKinds Sequência pré-gerada pelo host (multiplayer).
    *   Quando ausente, cada instância sorteia de forma independente (solo).
+   * @param restore Estado salvo para retomar um draft em andamento.
    */
   constructor(
     fullPool: DraftPlayer[],
     famousPool: DraftPlayer[],
     config: Partial<DraftConfig> = {},
     roundKinds?: DraftRoundKind[],
+    restore?: { picked: DraftPlayer[]; rerollsLeft: number; pickedThisRound?: boolean },
   ) {
     this.fullPool = fullPool;
     this.famousPool = famousPool;
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.rerollsLeft = this.config.totalRerolls;
     this.roundKinds = roundKinds ?? null;
-    this.startNextRound();
+
+    if (restore) {
+      this.picked = [...restore.picked];
+      this.rerollsLeft = restore.rerollsLeft;
+      this.pickedThisRound = restore.pickedThisRound ?? false;
+    } else {
+      this.rerollsLeft = this.config.totalRerolls;
+    }
+
+    if (!this.isComplete()) {
+      if (restore) {
+        // Se já escolheu nesta rodada, o booster é o da rodada atual (índice N-1).
+        // Se ainda não escolheu, gera o booster da próxima rodada a ser jogada (índice N).
+        const roundIndex = this.pickedThisRound && this.picked.length > 0
+          ? this.picked.length - 1
+          : this.picked.length;
+        const kind = this.roundKinds ? (this.roundKinds[roundIndex] ?? 'normal') : this.chooseRoundKind();
+        this.currentKind = kind;
+        this.currentPlayers = this.createBooster(kind);
+      } else {
+        this.startNextRound();
+      }
+    }
   }
 
   getRound(): DraftRound {
     return {
       number: this.picked.length + 1,
       kind: this.currentKind,
-      title: this.currentKind === 'famous-clubs' ? 'Rodada Clubes Famosos' : 'Rodada Normal',
+      title: roundTitle(this.currentKind),
       players: this.currentPlayers,
       rerollsLeft: this.rerollsLeft,
       picked: this.picked,
@@ -132,15 +218,51 @@ export class DraftManager {
       this.famousRoundsSeen += 1;
       return 'famous-clubs';
     }
+    if (this.eliteRoundsSeen < MAX_ELITE_ROUNDS && Math.random() < ELITE_ROUND_CHANCE) {
+      const elitePool = this.fullPool.filter((p) => p.overall >= ELITE_MIN_OVERALL);
+      if (elitePool.length >= this.config.boosterSize) {
+        this.eliteRoundsSeen += 1;
+        return 'elite';
+      }
+    }
+    if (this.nationalityRoundsSeen < MAX_NATIONALITY_ROUNDS && Math.random() < NATIONALITY_ROUND_CHANCE) {
+      const nat = pickNationality(this.fullPool, this.config.boosterSize);
+      if (nat) {
+        this.nationalityRoundsSeen += 1;
+        return `nationality:${nat}`;
+      }
+    }
+    if (this.positionRoundsSeen < MAX_POSITION_ROUNDS && Math.random() < POSITION_ROUND_CHANCE) {
+      const role = pickPosition(this.fullPool, this.config.boosterSize);
+      if (role) {
+        this.positionRoundsSeen += 1;
+        return `position:${role}`;
+      }
+    }
     return 'normal';
   }
 
   private createBooster(kind: DraftRoundKind): DraftPlayer[] {
     const pickedIds = new Set(this.picked.map((player) => player.id));
     const currentIds = new Set<string>();
-    const source = kind === 'famous-clubs' ? this.famousPool : this.fullPool;
-    const available = source.filter((player) => !pickedIds.has(player.id));
     const booster: DraftPlayer[] = [];
+
+    let source: DraftPlayer[];
+    if (kind === 'famous-clubs') {
+      source = this.famousPool;
+    } else if (kind === 'elite') {
+      source = this.fullPool.filter((p) => p.overall >= ELITE_MIN_OVERALL);
+    } else if (kind.startsWith('nationality:')) {
+      const nat = kind.slice('nationality:'.length);
+      source = this.fullPool.filter((p) => p.nationality === nat);
+    } else if (kind.startsWith('position:')) {
+      const role = kind.slice('position:'.length);
+      source = this.fullPool.filter((p) => p.role === role);
+    } else {
+      source = this.fullPool;
+    }
+
+    const available = source.filter((player) => !pickedIds.has(player.id));
 
     if (kind === 'famous-clubs') {
       const elite = available.filter((player) => player.overall >= 83);
@@ -166,11 +288,23 @@ export class DraftManager {
     if (candidates.length === 0) return null;
 
     const roll = Math.random();
-    const target = kind === 'famous-clubs' ? specialTier(roll) : normalTier(roll);
+    const isSpecial = kind === 'famous-clubs' || kind === 'elite' || kind.startsWith('nationality:') || kind.startsWith('position:');
+    const target = isSpecial ? specialTier(roll) : normalTier(roll);
 
     const tierCandidates = candidates.filter((player) => isInTier(player.overall, target));
     return randomItem(tierCandidates.length > 0 ? tierCandidates : candidates);
   }
+}
+
+export function roundTitle(kind: DraftRoundKind): string {
+  if (kind === 'famous-clubs') return 'Rodada Clubes Famosos';
+  if (kind === 'elite') return 'Rodada Elite';
+  if (kind.startsWith('nationality:')) return `Rodada ${kind.slice('nationality:'.length)}`;
+  if (kind.startsWith('position:')) {
+    const role = kind.slice('position:'.length);
+    return `Rodada ${POSITION_LABELS[role] ?? role}`;
+  }
+  return 'Rodada Normal';
 }
 
 function normalTier(roll: number): [number, number] {

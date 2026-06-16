@@ -49,14 +49,20 @@ function toDraftPlayer(row: string[], indexes: Record<string, number>): DraftPla
     heightCm: numberValue(row, indexes, 'height'),
     weightKg: numberValue(row, indexes, 'weight'),
     stats: toStats(row, indexes, role),
-    playstyles: splitPlaystyles(get(row, indexes, 'playstyles')),
-    playstylesPlus: splitPlaystyles(get(row, indexes, 'playstylesPlus')),
+    alternatePositions: splitList(get(row, indexes, 'alternatePositions'), ','),
+    alternateRoles: splitList(get(row, indexes, 'alternatePositions'), ',').map(toRole),
+    playstyles: splitPlaystyles(get(row, indexes, 'playStyles')),
+    playstylesPlus: splitPlaystyles(get(row, indexes, 'playStylesPlus'), true),
   };
 }
 
-function splitPlaystyles(raw: string): string[] {
+function splitPlaystyles(raw: string, stripPlus = false): string[] {
+  return splitList(raw, ',').map((s) => stripPlus ? s.replace(/\+$/, '') : s);
+}
+
+function splitList(raw: string, sep: string): string[] {
   if (!raw) return [];
-  return raw.split(';').map(s => s.trim()).filter(Boolean);
+  return raw.split(sep).map(s => s.trim()).filter(Boolean);
 }
 
 function toStats(row: string[], indexes: Record<string, number>, role: PlayerRole): PlayerStats {
@@ -68,11 +74,17 @@ function toStats(row: string[], indexes: Record<string, number>, role: PlayerRol
   const passing = numberValue(row, indexes, 'pas') || numberValue(row, indexes, 'gkKicking');
   const shooting = role === PlayerRole.Goalkeeper ? 20 : numberValue(row, indexes, 'sho');
   const dribbling = numberValue(row, indexes, 'dri') || numberValue(row, indexes, 'gkHandling');
-  const defending = numberValue(row, indexes, 'def') || average(
-    numberValue(row, indexes, 'gkDiving'),
-    numberValue(row, indexes, 'gkPositioning'),
-    numberValue(row, indexes, 'gkReflexes'),
-  );
+  const defending = role === PlayerRole.Goalkeeper
+    ? average(
+        numberValue(row, indexes, 'gkDiving'),
+        numberValue(row, indexes, 'gkPositioning'),
+        numberValue(row, indexes, 'gkReflexes'),
+      )
+    : (numberValue(row, indexes, 'def') || average(
+        numberValue(row, indexes, 'gkDiving'),
+        numberValue(row, indexes, 'gkPositioning'),
+        numberValue(row, indexes, 'gkReflexes'),
+      ));
   const physical = numberValue(row, indexes, 'phy') || average(
     numberValue(row, indexes, 'strength'),
     numberValue(row, indexes, 'jumping'),

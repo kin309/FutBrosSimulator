@@ -77,16 +77,17 @@ const PENALTY: Record<PlayerRole, Record<PlayerRole, StatPenalties>> = {
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
-export function isOutOfPosition(naturalRole: PlayerRole, slotRole: PlayerRole): boolean {
-  return naturalRole !== slotRole;
+export function isOutOfPosition(naturalRole: PlayerRole, slotRole: PlayerRole, alternateRoles: PlayerRole[] = []): boolean {
+  return naturalRole !== slotRole && !alternateRoles.includes(slotRole);
 }
 
 export function applyOutOfPositionPenalty(
   stats: PlayerStats,
   naturalRole: PlayerRole,
   slotRole: PlayerRole,
+  alternateRoles: PlayerRole[] = [],
 ): PlayerStats {
-  if (naturalRole === slotRole) return stats;
+  if (naturalRole === slotRole || alternateRoles.includes(slotRole)) return stats;
 
   const p = PENALTY[naturalRole]?.[slotRole] ?? NONE;
   const cut = (value: number, pct: number): number =>

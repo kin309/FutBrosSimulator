@@ -1,5 +1,7 @@
 import { createGame } from '../game/FootballGame';
-import { createOpponentTeam, FORMATIONS, FormationDefinition, TeamData } from '../game/data/TeamFactory';
+import { createOpponentTeam, FORMATIONS, FormationDefinition, KitColors, TeamData } from '../game/data/TeamFactory';
+import { TACTICAL_PROFILES, TacticalProfile } from '../game/data/TacticalProfile';
+import { showHalftimePanel } from './HalftimePanel';
 import { PlayerRole } from '../game/data/PlayerRole';
 import { DraftPlayer } from './DraftTypes';
 import { nationalityFlagCode } from './NationalityFlags';
@@ -53,7 +55,7 @@ export function buildBotTeamFromPool(teamName: string, allPlayers: DraftPlayer[]
       name: player.commonName || player.lastName || player.name,
       jerseyNumber: index + 1,
       role: slot.role,
-      stats: applyOutOfPositionPenalty(player.stats, player.role, slot.role),
+      stats: applyOutOfPositionPenalty(player.stats, player.role, slot.role, player.alternateRoles),
       heightCm: player.heightCm,
       weightKg: player.weightKg,
       baseX: 1200 - slot.x,
@@ -92,6 +94,9 @@ interface FormationState {
   bench: DraftPlayer[];
   selectedId: string | null;
   editMode: 'positions' | 'lineup';
+  kitColors: KitColors;
+  customJerseyNumbers: Record<string, number>;
+  tacticalProfile: TacticalProfile;
 }
 
 export interface SavedFormationState {
@@ -104,6 +109,9 @@ export interface SavedFormationState {
     y: number;
   }>;
   benchPlayerIds: string[];
+  kitColors?: KitColors;
+  customJerseyNumbers?: Record<string, number>;
+  tacticalProfileName?: string;
 }
 
 export interface MatchContext {
@@ -113,11 +121,13 @@ export interface MatchContext {
   matchId?: string;
   userIsHome?: boolean;
   onMatchEnd?: (scoreA: number, scoreB: number) => void;
+  onHalftime?: import('../game/FootballGame').MatchSetup['onHalftime'];
   startButtonLabel?: string;
   startButtonDisabled?: boolean;
   onReady?: (team: TeamData) => void;
   savedFormation?: SavedFormationState | null;
   onFormationChange?: (formation: SavedFormationState) => void;
+  initialKitColors?: KitColors;
 }
 
 export function renderFormationScreen(
@@ -126,7 +136,8 @@ export function renderFormationScreen(
   onBack: () => void,
   context: MatchContext = {},
 ): void {
-  let state = createFormationState(picked, FORMATIONS[0], context.savedFormation ?? null);
+  const defaultKitColors: KitColors = context.initialKitColors ?? { primary: 0x3b82f6, secondary: 0x000000, numberColor: 0xffffff, pattern: 'solid' };
+  let state = createFormationState(picked, FORMATIONS[0], context.savedFormation ?? null, defaultKitColors);
 
   const render = (): void => {
     context.onFormationChange?.(serializeFormationState(state));
@@ -167,6 +178,8 @@ function wireFormationScreen(
     document.body.classList.add('match-running');
     const game = createGame({
       teams: [toTeamData(state), context.opponentTeam ?? createOpponentTeam(context.opponentName)],
+      tacticalProfileA: state.tacticalProfile,
+      onHalftime: context.onHalftime,
       onMatchEnd: context.onMatchEnd ? (scoreA, scoreB) => {
         game.destroy(true);
         document.body.classList.remove('match-running');
@@ -180,7 +193,7 @@ function wireFormationScreen(
     button.addEventListener('click', () => {
       const next = FORMATIONS.find((formation) => formation.name === button.dataset.formation);
       if (!next) return;
-      const nextState = createFormationState(picked, next);
+      const nextState = changeFormationPreservingLineup(state, next);
       state.formation = nextState.formation;
       state.starters = nextState.starters;
       state.bench = nextState.bench;
@@ -194,6 +207,13 @@ function wireFormationScreen(
       state.editMode = button.dataset.editMode === 'lineup' ? 'lineup' : 'positions';
       state.selectedId = null;
       render();
+    });
+  });
+
+  root.querySelectorAll<HTMLButtonElement>('[data-tactical]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const profile = TACTICAL_PROFILES.find(p => p.name === button.dataset.tactical);
+      if (profile) { state.tacticalProfile = profile; render(); }
     });
   });
 
@@ -257,15 +277,70 @@ function wireFormationScreen(
     if ((event.target as HTMLElement).closest('[data-drag-player]')) return;
     event.preventDefault();
   });
+
+  root.querySelectorAll<HTMLInputElement>('[data-jersey-player]').forEach((input) => {
+    input.addEventListener('change', () => {
+      const playerId = input.dataset.jerseyPlayer!;
+      const num = Math.max(1, Math.min(99, parseInt(input.value) || 1));
+      state.customJerseyNumbers[playerId] = num;
+      input.value = String(num);
+    });
+  });
+}
+
+function changeFormationPreservingLineup(
+  state: FormationState,
+  next: FormationDefinition,
+): FormationState {
+  // Group current starters by their slot role (not player.role) so manual swaps
+  // (e.g. a bench GK promoted to the GK slot) are preserved when formation changes.
+  const bySlotRole = new Map<PlayerRole, DraftPlayer[]>();
+  for (const s of state.starters) {
+    const list = bySlotRole.get(s.role) ?? [];
+    list.push(s.player);
+    bySlotRole.set(s.role, list);
+  }
+
+  const used = new Set<string>();
+  const allPlayers = [...state.starters.map((s) => s.player), ...state.bench];
+
+  const starters = next.slots.map((slot, slotIndex) => {
+    const currentInRole = (bySlotRole.get(slot.role) ?? []).filter((p) => !used.has(p.id));
+    let player: DraftPlayer;
+
+    if (currentInRole.length > 0) {
+      // Keep the current starter who was playing this role
+      player = currentInRole[0];
+    } else {
+      // Role count changed — fill from remaining players by best fit
+      const remaining = allPlayers.filter((p) => !used.has(p.id));
+      player = [...remaining].sort((a, b) => fitScore(b, slot.role) - fitScore(a, slot.role))[0];
+    }
+
+    used.add(player.id);
+    return { player, slotIndex, role: slot.role, x: slot.x, y: slot.y };
+  });
+
+  return {
+    formation: next,
+    starters,
+    bench: allPlayers.filter((p) => !used.has(p.id)),
+    selectedId: null,
+    editMode: state.editMode,
+    kitColors: state.kitColors,
+    customJerseyNumbers: state.customJerseyNumbers,
+    tacticalProfile: state.tacticalProfile,
+  };
 }
 
 function createFormationState(
   picked: DraftPlayer[],
   formation: FormationDefinition,
   savedFormation: SavedFormationState | null = null,
+  defaultKitColors: KitColors = { primary: 0x3b82f6, secondary: 0x000000, numberColor: 0xffffff, pattern: 'solid' },
 ): FormationState {
   if (savedFormation) {
-    return createFormationStateFromSaved(picked, formation, savedFormation);
+    return createFormationStateFromSaved(picked, formation, savedFormation, defaultKitColors);
   }
 
   const used = new Set<string>();
@@ -287,6 +362,9 @@ function createFormationState(
     bench: picked.filter((player) => !used.has(player.id)),
     selectedId: null,
     editMode: 'positions',
+    kitColors: defaultKitColors,
+    customJerseyNumbers: {},
+    tacticalProfile: TACTICAL_PROFILES[0],
   };
 }
 
@@ -294,6 +372,7 @@ function createFormationStateFromSaved(
   picked: DraftPlayer[],
   fallbackFormation: FormationDefinition,
   saved: SavedFormationState,
+  defaultKitColors: KitColors = { primary: 0x3b82f6, secondary: 0x000000, numberColor: 0xffffff, pattern: 'solid' },
 ): FormationState {
   const formation = FORMATIONS.find((item) => item.name === saved.formationName) ?? fallbackFormation;
   const byId = new Map(picked.map((player) => [player.id, player]));
@@ -330,6 +409,12 @@ function createFormationStateFromSaved(
     ],
     selectedId: null,
     editMode: 'positions',
+    kitColors: {
+      ...defaultKitColors,
+      ...(saved.kitColors ?? {}),
+    } as KitColors,
+    customJerseyNumbers: saved.customJerseyNumbers ?? {},
+    tacticalProfile: TACTICAL_PROFILES.find(p => p.name === saved.tacticalProfileName) ?? TACTICAL_PROFILES[0],
   };
 }
 
@@ -344,6 +429,9 @@ function serializeFormationState(state: FormationState): SavedFormationState {
       y: starter.y,
     })),
     benchPlayerIds: state.bench.map((player) => player.id),
+    kitColors: state.kitColors,
+    customJerseyNumbers: state.customJerseyNumbers,
+    tacticalProfileName: state.tacticalProfile.name,
   };
 }
 
@@ -434,21 +522,37 @@ function toTeamData(state: FormationState): TeamData {
   return {
     id: 'teamA',
     name: 'Seu Time',
-    color: 0x3b82f6,
+    color: state.kitColors.primary,
+    secondaryColor: state.kitColors.secondary,
+    numberColor: state.kitColors.numberColor,
+    kitPattern: state.kitColors.pattern,
     attackDirection: 1,
     formationName: state.formation.name,
     players: state.starters.map((starter, index) => ({
       id: `a${index}`,
       name: starter.player.commonName || starter.player.lastName || starter.player.name,
-      jerseyNumber: index + 1,
+      jerseyNumber: state.customJerseyNumbers[starter.player.id] ?? (index + 1),
       role: starter.role,
-      stats: applyOutOfPositionPenalty(starter.player.stats, starter.player.role, starter.role),
+      stats: applyOutOfPositionPenalty(starter.player.stats, starter.player.role, starter.role, starter.player.alternateRoles),
       heightCm: starter.player.heightCm,
       weightKg: starter.player.weightKg,
       baseX: starter.x,
       baseY: starter.y,
       playstyles: starter.player.playstyles,
       playstylesPlus: starter.player.playstylesPlus,
+    })),
+    bench: state.bench.map((player, index) => ({
+      id: `ab${index}`,
+      name: player.commonName || player.lastName || player.name,
+      jerseyNumber: state.customJerseyNumbers[player.id] ?? (state.starters.length + index + 1),
+      role: player.role,
+      stats: player.stats,
+      heightCm: player.heightCm,
+      weightKg: player.weightKg,
+      baseX: 0,
+      baseY: 0,
+      playstyles: player.playstyles,
+      playstylesPlus: player.playstylesPlus,
     })),
   };
 }
@@ -478,12 +582,32 @@ function formationView(state: FormationState, context: MatchContext): string {
           </div>
         </header>
 
-        <div class="formation-tabs">
-          ${FORMATIONS.map((formation) => `
-            <button class="${formation.name === state.formation.name ? 'is-active' : ''}" data-formation="${formation.name}">
-              ${formation.name}
-            </button>
-          `).join('')}
+        <div class="formation-controls-bar">
+          <div class="formation-controls-group">
+            <span class="formation-controls-label">Formação</span>
+            <div class="formation-tabs">
+              ${FORMATIONS.map((formation) => `
+                <button class="${formation.name === state.formation.name ? 'is-active' : ''}" data-formation="${formation.name}">
+                  ${formation.name}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+          <div class="formation-controls-divider"></div>
+          <div class="formation-controls-group">
+            <span class="formation-controls-label">Tática</span>
+            <div class="formation-tabs">
+              ${TACTICAL_PROFILES.map(profile => `
+                <button
+                  class="${profile.name === state.tacticalProfile.name ? 'is-active' : ''}"
+                  data-tactical="${escapeHtml(profile.name)}"
+                  title="${escapeHtml(profile.description)}"
+                >
+                  ${escapeHtml(profile.label)}
+                </button>
+              `).join('')}
+            </div>
+          </div>
         </div>
 
         <div class="formation-edit-tabs">
@@ -513,7 +637,7 @@ function formationView(state: FormationState, context: MatchContext): string {
           </div>
         </div>
         <ol class="formation-list">
-          ${state.starters.map((starter) => starterItem(starter, state.editMode === 'lineup' && state.selectedId === starter.player.id, state.editMode)).join('')}
+          ${state.starters.map((starter, index) => starterItem(starter, state.editMode === 'lineup' && state.selectedId === starter.player.id, state.editMode, state.customJerseyNumbers[starter.player.id] ?? (index + 1))).join('')}
         </ol>
 
         <div class="bench-header">
@@ -523,6 +647,7 @@ function formationView(state: FormationState, context: MatchContext): string {
         <ol class="formation-list bench-list">
           ${state.bench.map((player) => benchItem(player, state.selectedId === player.id, state.editMode)).join('')}
         </ol>
+
       </aside>
     </main>
   `;
@@ -530,7 +655,7 @@ function formationView(state: FormationState, context: MatchContext): string {
 
 function playerMarker(starter: FormationPlayer, selected: boolean, editMode: FormationState['editMode']): string {
   const locked = editMode === 'positions' && starter.role === PlayerRole.Goalkeeper;
-  const outOfPos = isOutOfPosition(starter.player.role, starter.role);
+  const outOfPos = isOutOfPosition(starter.player.role, starter.role, starter.player.alternateRoles);
   return `
     <button
       class="formation-marker ${roleClass(starter.role)} ${selected ? 'is-selected' : ''} ${editMode === 'lineup' ? 'is-swap-marker' : ''} ${locked ? 'is-locked' : ''} ${outOfPos ? 'is-out-of-pos' : ''}"
@@ -545,10 +670,10 @@ function playerMarker(starter: FormationPlayer, selected: boolean, editMode: For
   `;
 }
 
-function starterItem(starter: FormationPlayer, selected: boolean, editMode: FormationState['editMode']): string {
-  const outOfPos = isOutOfPosition(starter.player.role, starter.role);
+function starterItem(starter: FormationPlayer, selected: boolean, editMode: FormationState['editMode'], jerseyNum: number): string {
+  const outOfPos = isOutOfPosition(starter.player.role, starter.role, starter.player.alternateRoles);
   return `
-    <li>
+    <li class="starter-list-item">
       <button
         class="${roleClass(starter.role)} ${selected ? 'is-selected' : ''} ${outOfPos ? 'is-out-of-pos' : ''}"
         data-select-player="${escapeHtml(starter.player.id)}"
@@ -559,11 +684,21 @@ function starterItem(starter: FormationPlayer, selected: boolean, editMode: Form
           <strong>${escapeHtml(starter.player.name)}</strong>
           <small>
             <b>${escapeHtml(positionLabel(starter.player.position))}</b>
+            ${starter.player.alternatePositions.map((p) => `<span class="alt-pos-badge">${escapeHtml(positionLabel(p))}</span>`).join('')}
             ${outOfPos ? `<span class="oop-badge" title="Fora de posição — atributos penalizados">↗ ${roleLabel(starter.role)}</span>` : ''}
             / ${playerMeta(starter.player)}
           </small>
         </div>
       </button>
+      <input
+        class="jersey-num-input"
+        type="number"
+        min="1"
+        max="99"
+        value="${jerseyNum}"
+        data-jersey-player="${escapeHtml(starter.player.id)}"
+        title="Número da camisa"
+      >
     </li>
   `;
 }
@@ -575,7 +710,11 @@ function benchItem(player: DraftPlayer, selected: boolean, editMode: FormationSt
         <span>${player.overall}</span>
         <div>
           <strong>${escapeHtml(player.name)}</strong>
-          <small>${escapeHtml(positionLabel(player.position))} / ${playerMeta(player, true)}</small>
+          <small>
+            ${escapeHtml(positionLabel(player.position))}
+            ${player.alternatePositions.map((p) => `<span class="alt-pos-badge">${escapeHtml(positionLabel(p))}</span>`).join('')}
+            / ${playerMeta(player, true)}
+          </small>
         </div>
       </button>
     </li>

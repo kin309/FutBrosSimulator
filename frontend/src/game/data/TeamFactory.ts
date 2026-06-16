@@ -15,13 +15,26 @@ export interface PlayerData {
   playstylesPlus?: string[];
 }
 
+export type KitPattern = 'solid' | 'stripes-h' | 'stripes-v' | 'checkered' | 'sash';
+
+export interface KitColors {
+  primary: number;
+  secondary: number;
+  numberColor: number;
+  pattern: KitPattern;
+}
+
 export interface TeamData {
   id: string;
   name: string;
   color: number;
+  secondaryColor?: number;
+  numberColor?: number;
+  kitPattern?: KitPattern;
   attackDirection: 1 | -1;
   formationName: string;
   players: PlayerData[];
+  bench?: PlayerData[];
 }
 
 // Formation definitions (Team A perspective: attacking left -> right).

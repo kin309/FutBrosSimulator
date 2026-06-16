@@ -1,5 +1,5 @@
 import { DraftPlayer, DraftRoundKind } from './DraftTypes';
-import { TeamData } from '../game/data/TeamFactory';
+import { KitColors, TeamData } from '../game/data/TeamFactory';
 import { TournamentMode, TournamentState } from './Tournament';
 
 export type DraftVisibility = 'hidden' | 'public';
@@ -7,6 +7,7 @@ export type DraftVisibility = 'hidden' | 'public';
 export interface LobbyPlayer {
   id: string;
   name: string;
+  kitColors?: KitColors;
   isHost: boolean;
   isConnected?: boolean;
 }
@@ -91,6 +92,7 @@ export type LobbyMessage =
   | { type: 'leave'; playerId: string }
   | { type: 'lobby-state'; hostId: string; players: LobbyPlayer[]; settings: LobbySettings }
   | { type: 'update-name'; playerId: string; name: string }
+  | { type: 'update-kit'; playerId: string; kitColors: KitColors }
   | { type: 'update-settings'; settings: LobbySettings }
   | { type: 'start-draft' }
   | { type: 'draft-state'; state: MultiplayerDraftState }

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import MatchScene from './scenes/MatchScene';
 import { TeamData } from './data/TeamFactory';
 import type { MultiplayerMatchLiveState } from '../draft/MultiplayerLobby';
+import type { TacticalProfile } from './data/TacticalProfile';
 
 export interface LiveUpdatePayload {
   scoreA: number;
@@ -25,10 +26,22 @@ export interface MatchSetup {
   /** Callback registrado pelo DraftApp para empurrar estado recebido na cena. */
   onSpectatorFrame?: (push: (state: MultiplayerMatchLiveState) => void) => void;
   autoFinishDelayMs?: number;
+  /** Perfil tático do time A (controlado pelo jogador). */
+  tacticalProfileA?: TacticalProfile;
+  /** Chamado no intervalo após a animação de saída. O callback deve chamar resume() para iniciar o 2º tempo. */
+  onHalftime?: (ctx: {
+    scoreA: number;
+    scoreB: number;
+    teamAName: string;
+    teamBName: string;
+    currentProfile: TacticalProfile;
+    applyTactic: (profile: TacticalProfile) => void;
+    resume: () => void;
+  }) => void;
 }
 
 export function createGame(setup?: MatchSetup): Phaser.Game {
-  return new Phaser.Game({
+  const game = new Phaser.Game({
     type: Phaser.AUTO,
     width: 1200,
     height: 760,
@@ -44,4 +57,12 @@ export function createGame(setup?: MatchSetup): Phaser.Game {
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
   });
+
+  // Phaser calls game.loop.sleep() when the page is hidden or the window loses
+  // focus (via 'hidden' / 'blur' events), stopping requestAnimationFrame entirely.
+  // Override blur() so the loop keeps running when the host minimizes the browser.
+  const timeStep = game.loop as unknown as { inFocus: boolean; blur(): void };
+  timeStep.blur = () => { timeStep.inFocus = false; };
+
+  return game;
 }

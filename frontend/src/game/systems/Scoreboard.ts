@@ -2,9 +2,9 @@ import Phaser from 'phaser';
 import { MatchManager } from './MatchManager';
 import { Team } from '../entities/Team';
 
+import { GAME_WIDTH, GAME_HEIGHT } from '../constants';
+
 const MAX_LOG = 5;
-const GAME_WIDTH = 1200;
-const GAME_HEIGHT = 760;
 const CENTER_X = GAME_WIDTH / 2;
 const FONT = 'Nunito';
 

@@ -399,6 +399,7 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
   const underPressure = nearestOppDist < 72;
   const closeToGoal = Math.abs(player.x - ctx.oppGoal.centerX) < 310;
   const attacker = player.role === PlayerRole.Striker || player.role === PlayerRole.Winger;
+  const myMarker = ctx.oppTeam.players.find(p => p.markingTarget === player) ?? null;
   const anglePassTarget = findBestPassTarget(player, ctx);
   const currentPassLane = anglePassTarget
     ? nearestLaneBlockerDistance(player.x, player.y, anglePassTarget.x, anglePassTarget.y, ctx)
@@ -408,10 +409,11 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
     (anglePassTarget && currentPassLane < 52)
     || (closeToGoal && player.stats.finishing > 52 && currentShotAngle < 0.58);
 
-  const forwardDistances = underPressure ? [34, 58, 82] : [62, 92, 126];
+  // Include forward=0 so pure lateral runs are always in the candidate set.
+  const forwardDistances = underPressure ? [34, 58, 82] : [0, 62, 92, 126];
   const lateralOptions = underPressure
     ? [-96, -64, -34, 34, 64, 96, 0]
-    : [-72, -42, -18, 0, 18, 42, 72];
+    : [-110, -80, -50, -22, 0, 22, 50, 80, 110];
   const candidates: Array<{ x: number; y: number; burst: boolean }> = [];
 
   for (const forward of forwardDistances) {
@@ -448,6 +450,33 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
       y: player.y + (awayY / len) * 54,
       burst: false,
     });
+  }
+
+  // Lateral escape from a tracking marker: generate candidates perpendicular to the
+  // marker's approach direction so the carrier can sidestep into open space.
+  if (myMarker) {
+    const mDx = myMarker.x - player.x;
+    const mDy = myMarker.y - player.y;
+    const mLen = Math.sqrt(mDx * mDx + mDy * mDy) || 1;
+    const perpX = -mDy / mLen;
+    const perpY = mDx / mLen;
+    for (const side of [1, -1]) {
+      for (const escDist of [60, 95, 130]) {
+        candidates.push({
+          x: player.x + perpX * side * escDist + dir * 22,
+          y: player.y + perpY * side * escDist,
+          burst: escDist >= 95,
+        });
+      }
+    }
+  }
+
+  // Wide lateral probing for attackers: even without a marker, explore large open
+  // pockets on either flank so wingers and strikers can shift the play into space.
+  if (attacker && !underPressure) {
+    for (const lat of [-145, -115, 115, 145]) {
+      candidates.push({ x: player.x + dir * 28, y: player.y + lat, burst: false });
+    }
   }
 
   let best = {
@@ -513,6 +542,13 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
     const pressureEscape = underPressure && nearestOpp
       ? clamp((dist(x, y, nearestOpp.x, nearestOpp.y) - nearestOppDist) / 60, -1, 1) * 18
       : 0;
+    // Reward positions that increase separation from the player tracking this carrier.
+    const markerEscape = myMarker
+      ? clamp(
+          (dist(x, y, myMarker.x, myMarker.y) - dist(player.x, player.y, myMarker.x, myMarker.y)) / 70,
+          -0.3, 1,
+        ) * 26
+      : 0;
     const boundaryPenalty = (x <= ctx.field.left + 18 || x >= ctx.field.right - 18) ? 30 : 0;
     // Near the opponent goal the GK always contributes heat to the grid, but the explicit
     // opponent-distance checks already exclude them (line above). Discount the heat-based
@@ -533,6 +569,7 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
       + passAngleScore
       + teammateSpace
       + pressureEscape
+      + markerEscape
       + goalYBias
       - boundaryPenalty
       - congestionPenalty
