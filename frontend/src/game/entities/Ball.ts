@@ -313,6 +313,10 @@ export class Ball extends Phaser.GameObjects.Arc {
     this.skin.setRotation(this.spinAngle);
   }
 
+  syncVisuals(): void {
+    this.updateVisualHeight();
+  }
+
   private updateVisualHeight(): void {
     const heightT = Math.min(this.flightHeight / BALL_PHYSICS.maxVisualHeight, 1);
     const visualScale = 1 + heightT * BALL_PHYSICS.maxHeightScaleBonus;

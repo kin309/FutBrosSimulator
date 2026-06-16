@@ -22,7 +22,9 @@ export interface HalftimeContext {
   teamAName: string;
   teamBName: string;
   currentProfile: TacticalProfile;
+  currentProfileB?: TacticalProfile;
   applyTactic: (profile: TacticalProfile) => void;
+  applyTacticB?: (profile: TacticalProfile) => void;
   resume: () => void;
   starters?: HalftimePlayerSnapshot[];
   bench?: HalftimePlayerSnapshot[];

@@ -3,6 +3,7 @@ import { DraftManager, generateRoundSequence } from './DraftManager';
 import { DraftPlayer, DraftRoundKind } from './DraftTypes';
 import { buildBotTeamFromPool, pickBotTeamNamesFromPool, renderFormationScreen, SavedFormationState } from './FormationApp';
 import { showHalftimePanel } from './HalftimePanel';
+import { DEFAULT_TACTICAL_PROFILE, TacticalProfile } from '../game/data/TacticalProfile';
 import { createGame } from '../game/FootballGame';
 import { KitColors, KitPattern, TeamData } from '../game/data/TeamFactory';
 import { PlayerRole } from '../game/data/PlayerRole';
@@ -655,6 +656,9 @@ function openLobby(
     runningMatchStartedAt: null as number | null,
     runningGame: null as ReturnType<typeof createGame> | null,
     spectatorPush: null as ((s: MultiplayerMatchLiveState) => void) | null,
+    applyGuestTactic: null as ((side: 'home' | 'away', profile: TacticalProfile) => void) | null,
+    guestCurrentTactic: null as TacticalProfile | null,
+    lastHalftimeAt: 0,
   };
   const managers = new Map<string, DraftManager>();
 
@@ -846,6 +850,8 @@ function openLobby(
         session.runningMatchId = null;
         session.runningMatchStartedAt = null;
         session.spectatorPush = null;
+        session.guestCurrentTactic = null;
+        session.lastHalftimeAt = 0;
         document.body.classList.remove('match-running');
         if (!root.isConnected) document.body.appendChild(root);
       }
@@ -859,6 +865,32 @@ function openLobby(
       if (matchState.phase === 'running') {
         if (!options.isHost) {
           session.spectatorPush?.(liveState);
+          if (liveState.event?.type === 'halftime' && liveState.updatedAt !== session.lastHalftimeAt) {
+            const ts = session.tournamentState;
+            if (ts && matchState.matchId) {
+              const activeMatch = ts.plan.matches.find((m) => m.id === matchState.matchId);
+              if (activeMatch) {
+                const isParticipant = [activeMatch.home.playerId, activeMatch.away.playerId].includes(options.player.id);
+                if (isParticipant) {
+                  session.lastHalftimeAt = liveState.updatedAt;
+                  const isHome = activeMatch.home.playerId === options.player.id;
+                  const side: 'home' | 'away' = isHome ? 'home' : 'away';
+                  const currentTactic = session.guestCurrentTactic ?? DEFAULT_TACTICAL_PROFILE;
+                  showHalftimePanel({
+                    scoreA: isHome ? liveState.scoreHome : liveState.scoreAway,
+                    scoreB: isHome ? liveState.scoreAway : liveState.scoreHome,
+                    teamAName: isHome ? liveState.homeName : liveState.awayName,
+                    teamBName: isHome ? liveState.awayName : liveState.homeName,
+                    currentProfile: currentTactic,
+                    applyTactic: (profile) => { session.guestCurrentTactic = profile; },
+                    resume: () => {
+                      post({ type: 'halftime-tactic', playerId: options.player.id, side, tacticalProfile: session.guestCurrentTactic ?? DEFAULT_TACTICAL_PROFILE });
+                    },
+                  });
+                }
+              }
+            }
+          }
         } else if (draftState) {
           renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, session, matchState, liveState);
         }
@@ -974,6 +1006,10 @@ function openLobby(
 
     if (message.type === 'match-result') {
       commitMatchResult(message.matchId, message.scoreHome, message.scoreAway);
+    }
+
+    if (message.type === 'halftime-tactic') {
+      session.applyGuestTactic?.(message.side, message.tacticalProfile);
     }
   }
 
@@ -1134,6 +1170,9 @@ function renderMultiplayerDraft(
     runningMatchStartedAt: number | null;
     runningGame: ReturnType<typeof createGame> | null;
     spectatorPush: ((s: MultiplayerMatchLiveState) => void) | null;
+    applyGuestTactic: ((side: 'home' | 'away', profile: TacticalProfile) => void) | null;
+    guestCurrentTactic: TacticalProfile | null;
+    lastHalftimeAt: number;
   },
   matchState: MultiplayerMatchState,
   liveState: MultiplayerMatchLiveState | null,
@@ -1234,6 +1273,8 @@ function renderMultiplayerDraft(
             session.runningGame.destroy(true);
             session.runningGame = null;
             session.spectatorPush = null;
+            session.guestCurrentTactic = null;
+            session.lastHalftimeAt = 0;
             if (!root.isConnected) document.body.appendChild(root);
             document.body.classList.remove('match-running');
           }
@@ -1266,6 +1307,8 @@ function renderMultiplayerDraft(
         const away = orientTeam(awayTeamHost, 'teamB', match.away.playerId ? awayTeamHost.color : 0xef4444, -1);
         root.remove();
         document.body.classList.add('match-running');
+        const hostSide = match.home.playerId === localPlayerId ? 'home'
+          : match.away.playerId === localPlayerId ? 'away' : null;
         const game = createGame({
           teams: [home, away],
           autoFinishDelayMs: 3500,
@@ -1287,9 +1330,23 @@ function renderMultiplayerDraft(
               },
             });
           },
+          onHalftime: hostSide === null ? ({ resume }) => resume() : ({ scoreA, scoreB, teamAName, teamBName, currentProfile, currentProfileB, applyTactic, applyTacticB, resume }) => {
+            const isHome = hostSide === 'home';
+            showHalftimePanel({
+              scoreA: isHome ? scoreA : scoreB,
+              scoreB: isHome ? scoreB : scoreA,
+              teamAName: isHome ? teamAName : teamBName,
+              teamBName: isHome ? teamBName : teamAName,
+              currentProfile: isHome ? currentProfile : currentProfileB,
+              applyTactic: isHome ? applyTactic : applyTacticB,
+              resume,
+            });
+          },
+          onHostApplyGuestTactic: (apply) => { session.applyGuestTactic = apply; },
           onMatchEnd: (scoreHome, scoreAway) => {
             game.destroy(true);
             session.runningGame = null;
+            session.applyGuestTactic = null;
             document.body.classList.remove('match-running');
             document.body.appendChild(root);
             session.runningMatchId = null;

@@ -1,6 +1,7 @@
 import { DraftPlayer, DraftRoundKind } from './DraftTypes';
 import { KitColors, TeamData } from '../game/data/TeamFactory';
 import { TournamentMode, TournamentState } from './Tournament';
+import type { TacticalProfile } from '../game/data/TacticalProfile';
 
 export type DraftVisibility = 'hidden' | 'public';
 
@@ -104,7 +105,8 @@ export type LobbyMessage =
   | { type: 'formation-ready'; playerId: string; matchId: string; team: TeamData }
   | { type: 'host-start-match'; matchId: string }
   | { type: 'match-live-state'; state: MultiplayerMatchLiveState }
-  | { type: 'match-result'; matchId: string; scoreHome: number; scoreAway: number };
+  | { type: 'match-result'; matchId: string; scoreHome: number; scoreAway: number }
+  | { type: 'halftime-tactic'; playerId: string; side: 'home' | 'away'; tacticalProfile: TacticalProfile };
 
 export const DEFAULT_LOBBY_SETTINGS: LobbySettings = {
   mode: 'champions-16',

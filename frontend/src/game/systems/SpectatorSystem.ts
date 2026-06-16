@@ -109,6 +109,7 @@ export class SpectatorSystem {
         x: lerp(this.prevBall.vx, this.targetBall.vx, t),
         y: lerp(this.prevBall.vy, this.targetBall.vy, t),
       };
+      ball.syncVisuals();
 
       for (const pd of this.targetPlayers) {
         const p = this.playerById.get(pd.id);
@@ -123,6 +124,7 @@ export class SpectatorSystem {
       // First frame ever: apply directly, no previous positions to lerp from
       ball.setPosition(s.replay.ball.x, s.replay.ball.y);
       ball.velocity = { x: s.replay.ball.vx, y: s.replay.ball.vy };
+      ball.syncVisuals();
       for (const pd of s.replay.players) {
         const p = this.playerById.get(pd.id);
         if (!p) continue;

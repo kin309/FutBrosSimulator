@@ -98,6 +98,7 @@ export default class MatchScene extends Phaser.Scene {
   private previousPossessorTeamId: string | null = null;
   private halftimeExitSpeeds = new Map<string, number>();
   private currentTacticalProfileA: TacticalProfile = DEFAULT_TACTICAL_PROFILE;
+  private currentTacticalProfileB: TacticalProfile = DEFAULT_TACTICAL_PROFILE;
   private simulationSpeed = 1.0;
   private speedIndicator!: Phaser.GameObjects.Text;
 
@@ -209,6 +210,15 @@ export default class MatchScene extends Phaser.Scene {
     if (this.setup?.playerInstructionsA) {
       this.aiA.setPlayerInstructions(this.setup.playerInstructionsA);
     }
+    this.setup?.onHostApplyGuestTactic?.((side, profile) => {
+      if (side === 'home') {
+        this.currentTacticalProfileA = profile;
+        this.aiA.setTacticalProfile(profile);
+      } else {
+        this.currentTacticalProfileB = profile;
+        this.aiB.setTacticalProfile(profile);
+      }
+    });
     this.heatMap = new FieldHeatMap(FIELD.left, FIELD.top, FIELD.right, FIELD.bottom);
     this.wireEvents();
     this.setupKeys();
@@ -484,9 +494,14 @@ export default class MatchScene extends Phaser.Scene {
           teamAName: this.setup?.teams[0].name ?? '',
           teamBName: this.setup?.teams[1].name ?? '',
           currentProfile: this.currentTacticalProfileA,
+          currentProfileB: this.currentTacticalProfileB,
           applyTactic: (profile) => {
             this.currentTacticalProfileA = profile;
             this.aiA.setTacticalProfile(profile);
+          },
+          applyTacticB: (profile) => {
+            this.currentTacticalProfileB = profile;
+            this.aiB.setTacticalProfile(profile);
           },
           resume: () => {
             this.matchManager.isPaused = false;

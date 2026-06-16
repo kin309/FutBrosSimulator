@@ -42,12 +42,16 @@ export interface MatchSetup {
     teamAName: string;
     teamBName: string;
     currentProfile: TacticalProfile;
+    currentProfileB: TacticalProfile;
     applyTactic: (profile: TacticalProfile) => void;
+    applyTacticB: (profile: TacticalProfile) => void;
     resume: () => void;
     starters?: Array<{ id: string; name: string; role: PlayerRole; jerseyNumber: number; stamina: number }>;
     bench?: Array<{ id: string; name: string; role: PlayerRole; jerseyNumber: number; stamina: number }>;
     applySubstitution?: (starterIndex: number, benchIndex: number) => void;
   }) => void;
+  /** Registra função para aplicar tática de um guest recebida via rede. side='home'→teamA, side='away'→teamB. */
+  onHostApplyGuestTactic?: (apply: (side: 'home' | 'away', profile: TacticalProfile) => void) => void;
 }
 
 export function createGame(setup?: MatchSetup): Phaser.Game {
