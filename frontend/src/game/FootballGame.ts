@@ -3,6 +3,8 @@ import MatchScene from './scenes/MatchScene';
 import { TeamData } from './data/TeamFactory';
 import type { MultiplayerMatchLiveState } from '../draft/MultiplayerLobby';
 import type { TacticalProfile } from './data/TacticalProfile';
+import type { PlayerInstructions } from './data/PlayerInstructions';
+import type { PlayerRole } from './data/PlayerRole';
 
 export interface LiveUpdatePayload {
   scoreA: number;
@@ -28,6 +30,11 @@ export interface MatchSetup {
   autoFinishDelayMs?: number;
   /** Perfil tático do time A (controlado pelo jogador). */
   tacticalProfileA?: TacticalProfile;
+  /**
+   * Instruções individuais por jogador para o time A.
+   * Chave: player.id. Sobrescreve comportamentos do TacticalProfile por jogador.
+   */
+  playerInstructionsA?: Map<string, PlayerInstructions>;
   /** Chamado no intervalo após a animação de saída. O callback deve chamar resume() para iniciar o 2º tempo. */
   onHalftime?: (ctx: {
     scoreA: number;
@@ -37,6 +44,9 @@ export interface MatchSetup {
     currentProfile: TacticalProfile;
     applyTactic: (profile: TacticalProfile) => void;
     resume: () => void;
+    starters?: Array<{ id: string; name: string; role: PlayerRole; jerseyNumber: number; stamina: number }>;
+    bench?: Array<{ id: string; name: string; role: PlayerRole; jerseyNumber: number; stamina: number }>;
+    applySubstitution?: (starterIndex: number, benchIndex: number) => void;
   }) => void;
 }
 

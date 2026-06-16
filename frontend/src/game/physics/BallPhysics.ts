@@ -14,4 +14,5 @@ export const BALL_PHYSICS = {
   spinDecayPerFrame: 0.985,
   rollingSpinPerSpeed: 0.045,
   maxSpinPerFrame: 0.18,
+  magnusForcePerSpin: 0.16,
 } as const;

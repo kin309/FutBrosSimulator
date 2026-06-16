@@ -45,6 +45,9 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
     if (!bypass) return;
   }
 
+  // tempoBias: 0=muito lento → 1.4× cooldown; 0.5=normal → ~1.0×; 1=muito rápido → 0.65×
+  const tempoScale = 1.4 - (ctx.tacticalProfile?.tempoBias ?? 0.5) * 0.75;
+
   if (player.hasBall) {
     player.markingTarget = null;
 
@@ -69,7 +72,7 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
       }
     }
 
-    player.aiCooldown = BALL_CARRIER_COOLDOWN;
+    player.aiCooldown = Math.round(BALL_CARRIER_COOLDOWN * tempoScale);
     const newState = decideWithBall(player, ctx);
     player.state = newState;
     if (newState !== PlayerState.Pass) {
@@ -80,7 +83,7 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
     // CarryBall is a light, repositioning decision — shorten the window so the
     // player re-evaluates and can switch to pass/shoot sooner.
     if (newState === PlayerState.CarryBall) {
-      player.aiCooldown = Math.round(BALL_CARRIER_COOLDOWN * 0.65); // ~170 ms
+      player.aiCooldown = Math.round(BALL_CARRIER_COOLDOWN * 0.65 * tempoScale);
     }
 
     if (newState === PlayerState.CarryBall) {
@@ -177,7 +180,7 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
     }
     if (player.state !== PlayerState.ReceivePass) {
       // GK repositions much more frequently — wide threats can appear in < 300 ms
-      player.aiCooldown = player.role === PlayerRole.Goalkeeper ? 180 : OFF_BALL_COOLDOWN;
+      player.aiCooldown = player.role === PlayerRole.Goalkeeper ? 180 : Math.round(OFF_BALL_COOLDOWN * tempoScale);
       const { state, tx, ty } = decideWithoutBall(player, ctx);
       player.state = state;
       if (state !== PlayerState.MarkOpponent) player.markingTarget = null;
@@ -650,6 +653,11 @@ function shouldBypassCooldownForDefensiveReaction(player: Player, ctx: AIContext
   const flyingTarget = ctx.ball.targetPlayer as Player | null;
   if (!ctx.ball.owner && flyingTarget && flyingTarget.teamId !== player.teamId && ctx.ball.getSpeed() > 1.5) {
     if (player.distanceToBall(ctx.ball) < 195) return true;
+  }
+
+  // Truly loose ball (no owner, no target) rolling nearby — any outfield player reacts immediately.
+  if (!ctx.ball.owner && !ctx.ball.targetPlayer && ctx.ball.getSpeed() > 1.5) {
+    if (player.distanceToBall(ctx.ball) < 150) return true;
   }
 
   if (player.role !== PlayerRole.Defender) return false;

@@ -3,6 +3,8 @@ import { BALL_PHYSICS } from './BallPhysics';
 import type { FieldBounds } from '../types';
 
 const BALL_FRICTION = BALL_PHYSICS.groundFrictionPerFrame;
+const MAGNUS = BALL_PHYSICS.magnusForcePerSpin;
+const SPIN_DECAY = BALL_PHYSICS.spinDecayPerFrame;
 
 function applyWallBounce(vx: number, vy: number, axis: 'horizontal' | 'vertical'): { vx: number; vy: number } {
   const speed = Math.sqrt(vx * vx + vy * vy);
@@ -14,10 +16,21 @@ function applyWallBounce(vx: number, vy: number, axis: 'horizontal' | 'vertical'
     : { vx: -vx * factor, vy: vy * factor };
 }
 
+function applyMagnus(vx: number, vy: number, spin: number): { vx: number; vy: number } {
+  const speed = Math.sqrt(vx * vx + vy * vy);
+  if (speed < 0.3) return { vx, vy };
+  const invSpeed = 1 / speed;
+  return {
+    vx: vx + (-vy * invSpeed) * spin * MAGNUS,
+    vy: vy + (vx * invSpeed) * spin * MAGNUS,
+  };
+}
+
 export function projectBallWithBounce(
   ball: BallState,
   frames: number,
   field: FieldBounds,
+  spinScale = 1,
 ): { x: number; y: number } {
   if (frames <= 0) return { x: ball.x, y: ball.y };
 
@@ -25,6 +38,7 @@ export function projectBallWithBounce(
   let y = ball.y;
   let vx = ball.velocity.x;
   let vy = ball.velocity.y;
+  let spin = (ball.spin ?? 0) * spinScale;
 
   const wholeFrames = Math.floor(frames);
   const partial = frames - wholeFrames;
@@ -34,6 +48,11 @@ export function projectBallWithBounce(
     y += vy;
     vx *= BALL_FRICTION;
     vy *= BALL_FRICTION;
+
+    if (Math.abs(spin) > 0.005) {
+      ({ vx, vy } = applyMagnus(vx, vy, spin));
+      spin *= SPIN_DECAY;
+    }
 
     if (y < field.top && vy < 0) {
       y = field.top;
@@ -58,6 +77,7 @@ export interface BallState {
   x: number;
   y: number;
   velocity: { x: number; y: number };
+  spin?: number;
 }
 
 export interface PlayerPos {
@@ -65,19 +85,48 @@ export interface PlayerPos {
   y: number;
 }
 
-export function projectBallAtFrames(ball: BallState, frames: number): { x: number; y: number } {
-  const wholeFrames = Math.max(0, Math.floor(frames));
-  const partialFrame = clamp(frames - wholeFrames, 0, 1);
-  const fullFrameFactor = wholeFrames > 0
-    ? (1 - Math.pow(BALL_FRICTION, wholeFrames)) / (1 - BALL_FRICTION)
-    : 0;
-  const partialVelocityFactor = Math.pow(BALL_FRICTION, wholeFrames) * partialFrame;
-  const displacementFactor = fullFrameFactor + partialVelocityFactor;
+export function projectBallAtFrames(ball: BallState, frames: number, spinScale = 1): { x: number; y: number } {
+  if (frames <= 0) return { x: ball.x, y: ball.y };
 
-  return {
-    x: ball.x + ball.velocity.x * displacementFactor,
-    y: ball.y + ball.velocity.y * displacementFactor,
-  };
+  const spin = (ball.spin ?? 0) * spinScale;
+
+  // Fast analytical path when no spin
+  if (Math.abs(spin) < 0.005) {
+    const wholeFrames = Math.max(0, Math.floor(frames));
+    const partialFrame = clamp(frames - wholeFrames, 0, 1);
+    const fullFrameFactor = wholeFrames > 0
+      ? (1 - Math.pow(BALL_FRICTION, wholeFrames)) / (1 - BALL_FRICTION)
+      : 0;
+    const partialVelocityFactor = Math.pow(BALL_FRICTION, wholeFrames) * partialFrame;
+    const displacementFactor = fullFrameFactor + partialVelocityFactor;
+    return {
+      x: ball.x + ball.velocity.x * displacementFactor,
+      y: ball.y + ball.velocity.y * displacementFactor,
+    };
+  }
+
+  // Iterative path with Magnus force
+  let x = ball.x;
+  let y = ball.y;
+  let vx = ball.velocity.x;
+  let vy = ball.velocity.y;
+  let currentSpin = spin;
+
+  const wholeFrames = Math.floor(frames);
+  const partial = frames - wholeFrames;
+
+  for (let f = 0; f < wholeFrames; f++) {
+    x += vx;
+    y += vy;
+    vx *= BALL_FRICTION;
+    vy *= BALL_FRICTION;
+    if (Math.abs(currentSpin) > 0.005) {
+      ({ vx, vy } = applyMagnus(vx, vy, currentSpin));
+      currentSpin *= SPIN_DECAY;
+    }
+  }
+
+  return { x: x + vx * partial, y: y + vy * partial };
 }
 
 export function findBallFramesToX(ball: BallState, lineX: number, maxFrames: number): number | null {
@@ -119,13 +168,13 @@ export function projectBallIntercept(ball: BallState, player: PlayerForIntercept
   const playerSpeed = Math.max(0.4, (player.stats.sprintSpeed / 100) * 1.85 * player.getStaminaFactor());
   const frames = clamp(d / playerSpeed, 0, 90);
 
-  const displacementFactor = (1 - Math.pow(BALL_FRICTION, frames)) / (1 - BALL_FRICTION);
   // 0.62 (reactions=0) → 1.0 (reactions=100)
   const anticipation = 0.62 + (player.stats.reactions / 100) * 0.38;
+  const projected = projectBallAtFrames(ball, frames);
 
   return {
-    x: clamp(ball.x + ball.velocity.x * displacementFactor * anticipation, field.left + 15, field.right - 15),
-    y: clamp(ball.y + ball.velocity.y * displacementFactor * anticipation, field.top + 15, field.bottom - 15),
+    x: clamp(projected.x * anticipation + ball.x * (1 - anticipation), field.left + 15, field.right - 15),
+    y: clamp(projected.y * anticipation + ball.y * (1 - anticipation), field.top + 15, field.bottom - 15),
   };
 }
 
@@ -195,13 +244,13 @@ export function planReceptionTarget(
   };
 }
 
-export function findClosestBallFrameToPlayer(ball: BallState, player: PlayerPos, maxFrames: number): number {
+export function findClosestBallFrameToPlayer(ball: BallState, player: PlayerPos, maxFrames: number, spinScale = 1): number {
   const sampleCount = Math.max(1, Math.ceil(maxFrames));
   let bestFrame = 0;
   let bestDistSq = Infinity;
 
   for (let frame = 0; frame <= sampleCount; frame++) {
-    const p = projectBallAtFrames(ball, Math.min(frame, maxFrames));
+    const p = projectBallAtFrames(ball, Math.min(frame, maxFrames), spinScale);
     const dx = p.x - player.x;
     const dy = p.y - player.y;
     const dSq = dx * dx + dy * dy;

@@ -78,9 +78,13 @@ export class Player extends Phaser.GameObjects.Container {
   private ring!: Phaser.GameObjects.Arc;
   private staminaArc!: Phaser.GameObjects.Graphics;
   private sprintGlow!: Phaser.GameObjects.Graphics;
+  private dangerGlow!: Phaser.GameObjects.Graphics;
   private patternGraphics!: Phaser.GameObjects.Graphics;
   private outlineCircle!: Phaser.GameObjects.Arc;
   private sprintGlowIntensity = 0;
+  private dangerGlowIntensity = 0;
+
+  dangerFree: boolean = false;
   private infoAlpha = 0.2;
   private label!: Phaser.GameObjects.Text;
   private jerseyText!: Phaser.GameObjects.Text;
@@ -136,13 +140,14 @@ export class Player extends Phaser.GameObjects.Container {
 
     this.circle = scene.add.arc(0, 0, 14, 0, 360, false, color, 1);
     this.outlineCircle = scene.add.arc(0, 0, 14, 0, 360, false, 0x000000, 0);
-    this.outlineCircle.setStrokeStyle(isHome ? 1.5 : 3, 0xffffff, isHome ? 0.3 : 1);
+    this.outlineCircle.setStrokeStyle(2, isHome ? 0xFFD700 : 0x00E5FF, isHome ? 0.6 : 0.85);
 
     this.ring = scene.add.arc(0, 0, 19, 0, 360, false, 0x000000, 0);
     this.ring.setVisible(false);
 
     // Both graphics live outside the container and draw at world coords each frame
     this.sprintGlow  = scene.add.graphics().setDepth(4); // behind player circle
+    this.dangerGlow  = scene.add.graphics().setDepth(3); // behind sprint glow
     this.staminaArc  = scene.add.graphics().setDepth(6); // in front
 
     this.jerseyText = scene.add.text(0, 1, String(jerseyNumber), {
@@ -514,6 +519,20 @@ export class Player extends Phaser.GameObjects.Container {
       this.outlineCircle.setAngle(0);
       this.outlineCircle.setScale(1, 1);
       this.outlineCircle.setAlpha(1);
+    }
+
+    // Danger-free indicator: pulsing green ring for teammates free in a threatening position
+    const targetDanger = this.dangerFree && !this.hasBall ? 1 : 0;
+    this.dangerGlowIntensity += (targetDanger - this.dangerGlowIntensity) * 0.10;
+    this.dangerGlow.clear();
+    if (this.dangerGlowIntensity > 0.02) {
+      const t = this.wanderTime / 1000;
+      const pulse = 0.55 + 0.45 * Math.sin(t * 3.8);
+      const alpha = this.dangerGlowIntensity * pulse;
+      this.dangerGlow.lineStyle(2.5, 0x4ade80, alpha * 0.90);
+      this.dangerGlow.strokeCircle(this.x, this.y, 20);
+      this.dangerGlow.lineStyle(1.5, 0x86efac, alpha * 0.40);
+      this.dangerGlow.strokeCircle(this.x, this.y, 25);
     }
 
     // Dribble glow: radial gradient arcs that oscillate while the player is dribbling

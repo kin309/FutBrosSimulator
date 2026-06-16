@@ -252,6 +252,17 @@ export class Ball extends Phaser.GameObjects.Arc {
       const friction = Math.pow(BALL_PHYSICS.groundFrictionPerFrame, scale);
       this.velocity.x *= friction;
       this.velocity.y *= friction;
+      if (Math.abs(this.spin) > 0.005) {
+        const speed = this.getSpeed();
+        if (speed > 0.5) {
+          const invSpeed = 1 / speed;
+          const perpX = -this.velocity.y * invSpeed;
+          const perpY =  this.velocity.x * invSpeed;
+          const force = this.spin * BALL_PHYSICS.magnusForcePerSpin * scale;
+          this.velocity.x += perpX * force;
+          this.velocity.y += perpY * force;
+        }
+      }
       this.updateFlight(scale);
     }
 
@@ -337,6 +348,11 @@ export class Ball extends Phaser.GameObjects.Arc {
     return (this.pickupBlockers.get(playerId) ?? 0) > 0;
   }
 
+  release(): void {
+    this.owner = null;
+    this.targetPlayer = null;
+  }
+
   attachToPlayer(player: IBallCarrier): void {
     let incomingX = this.velocity.x;
     let incomingY = this.velocity.y;
@@ -358,11 +374,6 @@ export class Ball extends Phaser.GameObjects.Arc {
     this.x = player.x + offset.x;
     this.y = player.y + offset.y;
     this.updateVisualHeight();
-  }
-
-  release(): void {
-    this.owner = null;
-    this.targetPlayer = null;
   }
 
   resetFlight(): void {

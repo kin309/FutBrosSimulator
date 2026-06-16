@@ -171,18 +171,17 @@ function loadMultiplayerReturnInvite(playerId: string): MultiplayerReturnInvite 
   }
 }
 
-function multiplayerFormationSaveKey(roomCode: string, matchId: string, playerId: string): string {
-  return `${MULTIPLAYER_FORMATION_SAVE_PREFIX}:${roomCode}:${matchId}:${playerId}`;
+function multiplayerFormationSaveKey(roomCode: string, playerId: string): string {
+  return `${MULTIPLAYER_FORMATION_SAVE_PREFIX}:${roomCode}:${playerId}`;
 }
 
 function saveMultiplayerFormation(
   roomCode: string,
-  matchId: string,
   playerId: string,
   formation: SavedFormationState,
 ): void {
   try {
-    localStorage.setItem(multiplayerFormationSaveKey(roomCode, matchId, playerId), JSON.stringify(formation));
+    localStorage.setItem(multiplayerFormationSaveKey(roomCode, playerId), JSON.stringify(formation));
   } catch {
     // ignore storage failures
   }
@@ -190,11 +189,10 @@ function saveMultiplayerFormation(
 
 function loadMultiplayerFormation(
   roomCode: string,
-  matchId: string,
   playerId: string,
 ): SavedFormationState | null {
   try {
-    const raw = localStorage.getItem(multiplayerFormationSaveKey(roomCode, matchId, playerId));
+    const raw = localStorage.getItem(multiplayerFormationSaveKey(roomCode, playerId));
     return raw ? (JSON.parse(raw) as SavedFormationState) : null;
   } catch {
     return null;
@@ -445,6 +443,8 @@ function startTournamentMatch(
     renderTournamentTable(root, state, () => {}, onBack);
     return;
   }
+
+  saveProgress(state, picked);
 
   const userIsHome = match.home.kind === 'player';
   const opponentName = userIsHome ? match.away.name : match.home.name;
@@ -1210,9 +1210,9 @@ function renderMultiplayerDraft(
           competitionName: `${session.tournamentState.plan.title} / ${match.stage}`,
           opponentName: opponent.name,
           opponentTeam: opponent.kind === 'bot' ? buildBotTeamFromPool(opponent.name, pools.fullPool) : undefined,
-          savedFormation: loadMultiplayerFormation(roomCode, match.id, localPlayerId),
+          savedFormation: loadMultiplayerFormation(roomCode, localPlayerId),
           onFormationChange: (formation) => {
-            saveMultiplayerFormation(roomCode, match.id, localPlayerId, formation);
+            saveMultiplayerFormation(roomCode, localPlayerId, formation);
           },
           startButtonLabel: ready ? 'Pronto enviado' : 'Estou pronto',
           startButtonDisabled: ready,

@@ -292,7 +292,28 @@ export class BallContactSystem {
         this.recalculateRoutes(target);
 
       } else if (!isOpponent && ballMoving) {
-        // Teammate in the way: ball deflects off them.
+        // Teammate in the way: poor-touch players may accidentally receive the ball;
+        // technically skilled players deflect it without interrupting the pass.
+        // Chance scales with poor reactions/first touch and drops for faster balls
+        // (a fast cross is hard to accidentally trap; a slow ground pass is easy).
+        const firstTouch = (player.stats.dribbling * 0.5 + player.stats.reactions * 0.5) / 100;
+        const speedFactor = clamp(1 - this.ball.getSpeed() / 10, 0, 1);
+        const accidentChance = clamp((1 - firstTouch) * 0.45 * speedFactor, 0, 0.40);
+        if (Math.random() < accidentChance) {
+          this.ball.targetPlayer = null;
+          target.state = PlayerState.FindSpace;
+          const oppTeamForAccident = player.teamId === 'teamA' ? this.teamB : this.teamA;
+          this.ball.attachToPlayer(player);
+          player.hasBall = true;
+          player.state = PlayerState.CarryBall;
+          player.aiCooldown = this.kickSystem.settleTime(player, oppTeamForAccident.getNearestPlayerTo(player.x, player.y));
+          this.kickSystem.applyFirstTouchMovement(player, oppTeamForAccident.getNearestPlayerTo(player.x, player.y));
+          this.recalculateRoutes(target);
+          this.scoreboard.logEvent(`${player.playerName} tomou a bola sem querer!`);
+          return;
+        }
+
+        // Normal deflection — skilled player steps aside / lets it ricochet
         const spd = this.ball.getSpeed() * 0.82;
         if (Math.random() < 0.30) {
           const currentAngle = Math.atan2(this.ball.velocity.y, this.ball.velocity.x);
@@ -438,7 +459,7 @@ export class BallContactSystem {
   private rotateBallVelocity(angle: number, speed: number): void {
     this.ball.velocity.x = Math.cos(angle) * speed;
     this.ball.velocity.y = Math.sin(angle) * speed;
-    this.ball.spin = Math.sin(angle * 1.3 + this.ball.x * 0.015) * (0.045 + speed * 0.012);
+    this.ball.spin = 0;
   }
 
   private deflectBallOffPlayer(player: Player, speed: number, maxNoiseRad: number): void {

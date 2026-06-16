@@ -139,7 +139,19 @@ export class PlayerKickSystem {
     const kickAngle = Math.atan2(destY - passer.y, destX - passer.x);
 
     const lift = isCross ? 4.1 : isThroughPass ? 1.4 : isCutback ? 0.35 : 0.65;
-    const spin = (passLane.openSide || 1) * (0.035 + power * (isCross ? 0.014 : 0.010));
+    // Crosses use inswinger spin; all other passes go straight (no Magnus deflection).
+    const crossingSkill = passer.stats.crossing / 100;
+    const crosserSide = Math.sign(passer.y - this.field.centerY) || 1;
+    const inswingerSign = (-crosserSide * passer.attackDirection) as -1 | 1;
+    // footSign > 0 = right foot used; footSign < 0 = left foot used.
+    const footSign = crosserSide * passer.attackDirection;
+    const crossOnNaturalSide = (footSign > 0 && passer.stats.preferredFoot === 1)
+      || (footSign < 0 && passer.stats.preferredFoot === 2);
+    const crossWeakFootFactor = crossOnNaturalSide ? 1.0 : 0.5 + (passer.stats.weakFootAbility / 5) * 0.5;
+    const crossSkillBonus = (passer.stats.skillMoves / 5) * 0.030;
+    const spin = isCross
+      ? inswingerSign * (0.040 + power * 0.012 + crossingSkill * 0.030 + crossSkillBonus) * crossWeakFootFactor
+      : 0;
     this.ball.kickTo(destX, destY, power, passer.id, { lift, spin });
     passer.showShotPulse(this.ball.x, this.ball.y, power);
     this.ball.targetPlayer = receiver;
@@ -374,7 +386,27 @@ export class PlayerKickSystem {
     const gkCanCover = gkSpeed * travelFrames * (1 + gkClosePressure * 0.55);
 
     const shotLift = clamp(1.0 + distanceFactor * 1.45 + finalShotLane.risk * 0.55, 0.8, 3.1);
-    const shotSpin = finalShotLane.openSide * (0.045 + power * 0.012 + shootingSkill * 0.035);
+    // Spin only on angled shots — central shots go straight.
+    // angleRatio: 0 when directly in front of goal, 1 when 200px+ off-center.
+    const goalCenterY = (targetGoal.top + targetGoal.bottom) / 2;
+    const angleRatio = clamp(Math.abs(shooter.y - goalCenterY) / 200, 0, 1);
+    let shotSpin = 0;
+    if (angleRatio > 0.15) {
+      // Technique stat: longShots outside the box, blend with finishing inside.
+      const spinTechSkill = shotDist > 220
+        ? shooter.stats.longShots / 100
+        : shooter.stats.finishing * 0.6 / 100 + shooter.stats.longShots * 0.4 / 100;
+      const spinSkillBonus = (shooter.stats.skillMoves / 5) * 0.020;
+      // Weak foot: same foot-side logic as crosses.
+      const shooterSide = Math.sign(shooter.y - goalCenterY) || 1;
+      const shotFootSign = shooterSide * shooter.attackDirection;
+      const shotOnNaturalSide = (shotFootSign > 0 && shooter.stats.preferredFoot === 1)
+        || (shotFootSign < 0 && shooter.stats.preferredFoot === 2);
+      const shotWeakFootFactor = shotOnNaturalSide ? 1.0 : 0.5 + (shooter.stats.weakFootAbility / 5) * 0.5;
+      shotSpin = finalShotLane.openSide
+        * (0.035 + power * 0.010 + spinTechSkill * 0.025 + spinSkillBonus)
+        * angleRatio * shotWeakFootFactor;
+    }
     this.ball.kickTo(targetGoal.centerX, safeY, inGoal ? power : power * 0.9, shooter.id, {
       lift: shotLift,
       spin: shotSpin,
@@ -429,7 +461,7 @@ export class PlayerKickSystem {
       this.ball.targetPlayer = target;
       this.ball.kickTo(destX, destY, power, gk.id, {
         lift: blocker ? 2.8 : 1.2,
-        spin: dir * (0.035 + power * 0.010),
+        spin: 0,
       });
       target.state = PlayerState.ReceivePass;
       const reception = planReceptionTarget(this.ball, target, oppTeam.getNearestPlayerTo(target.x, target.y), this.field);
@@ -514,7 +546,7 @@ export class PlayerKickSystem {
     const power = CLEARANCE_BASE_POWER + (gk.stats.longPassing / 100) * CLEARANCE_STAT_POWER;
     this.ball.kickTo(destX, destY, power, gk.id, {
       lift: clearTargetBlocker ? 4.2 : 3.4,
-      spin: dir * (0.050 + power * 0.013),
+      spin: 0,
     });
     if (clearTarget) {
       const reception = planReceptionTarget(this.ball, clearTarget, oppTeam.getNearestPlayerTo(clearTarget.x, clearTarget.y), this.field);

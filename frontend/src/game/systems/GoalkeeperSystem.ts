@@ -79,7 +79,11 @@ export class GoalkeeperSystem {
     const framesToGoal = findBallFramesToX(this.ball, lineX, 140);
     if (framesToGoal === null || framesToGoal <= 0 || framesToGoal > 118) return;
 
-    const projectedAtGoal = projectBallAtFrames(this.ball, framesToGoal);
+    const rawQuality = gkShotStoppingQuality(gk) / 100;
+    // Better GKs read more of the ball's spin: elite GK ≈ 100%, weak GK ≈ 30%
+    const spinReadFraction = 0.30 + rawQuality * 0.70;
+
+    const projectedAtGoal = projectBallAtFrames(this.ball, framesToGoal, spinReadFraction);
     const projectedGoalY = projectedAtGoal.y;
     if (projectedGoalY < ownGoal.top + 4 || projectedGoalY > ownGoal.bottom - 4) return;
 
@@ -93,8 +97,7 @@ export class GoalkeeperSystem {
     const ballInOwnTerritory = ownGoal.centerX < this.field.centerX
       ? this.ball.x < this.field.centerX
       : this.ball.x > this.field.centerX;
-    const closestFrames = findClosestBallFrameToPlayer(this.ball, gk, framesToGoal);
-    const rawQuality = gkShotStoppingQuality(gk) / 100;
+    const closestFrames = findClosestBallFrameToPlayer(this.ball, gk, framesToGoal, spinReadFraction);
     const quality = ballInOwnTerritory ? rawQuality : 0.18;
     const farReachReactionBonus = ballInOwnTerritory ? traitBonus(gk, TRAITS.FAR_REACH, 1.2, 0.8) : 0;
     const reactionFrames = clamp(
@@ -104,7 +107,7 @@ export class GoalkeeperSystem {
     );
     if (closestFrames > GK_DIVE_MAX_REACTION_FRAMES) return;
 
-    const intercept = projectBallAtFrames(this.ball, closestFrames);
+    const intercept = projectBallAtFrames(this.ball, closestFrames, spinReadFraction);
     const interceptX = intercept.x;
     const interceptY = intercept.y;
     const diveDistance = dist(gk.x, gk.y, interceptX, interceptY);

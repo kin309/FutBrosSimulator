@@ -18,6 +18,7 @@ import {
   tickSetPlay,
 } from './TacticalAI';
 import { TacticalProfile, DEFAULT_TACTICAL_PROFILE } from '../data/TacticalProfile';
+import { PlayerInstructions } from '../data/PlayerInstructions';
 
 // Minimum gap between two consecutive set plays (ms)
 const SET_PLAY_COOLDOWN_MS = 7000;
@@ -29,6 +30,7 @@ export class TeamAI {
   private manualPhase: TacticalPhase | null = null;
   private profile: TacticalProfile = DEFAULT_TACTICAL_PROFILE;
   private appliedLineDepthOffset = 0;
+  private playerInstructions: Map<string, PlayerInstructions> = new Map();
 
   constructor(team: Team) {
     this.team = team;
@@ -57,6 +59,14 @@ export class TeamAI {
 
   getTacticalProfile(): TacticalProfile {
     return this.profile;
+  }
+
+  setPlayerInstructions(map: Map<string, PlayerInstructions>): void {
+    this.playerInstructions = map;
+  }
+
+  getPlayerInstructions(): Map<string, PlayerInstructions> {
+    return this.playerInstructions;
   }
 
   // Human-controlled tactical override (null = auto-detect).
@@ -124,6 +134,7 @@ export class TeamAI {
       directive: this.directive,
       heatMap,
       tacticalProfile: this.profile,
+      playerInstructions: this.playerInstructions.size > 0 ? this.playerInstructions : undefined,
     };
 
     // ── Presser cap driven by tactical profile ────────────────────────────────
@@ -136,14 +147,16 @@ export class TeamAI {
     }
 
     for (const player of this.team.players) {
-      // Strikers that don't track back stay forward when team is defending
-      if (
-        !this.profile.strikersTrackBack
-        && player.role === PlayerRole.Striker
-        && !player.hasBall
-        && !this.team.hasPossession()
-      ) {
-        player.state = PlayerState.FindSpace;
+      // "Ficar na frente" (stay) sobrescreve strikersTrackBack por jogador.
+      // Instrução 'track-back' força o retorno mesmo para atacantes que normalmente ficam.
+      if (!player.hasBall && !this.team.hasPossession()) {
+        const inst = this.playerInstructions.get(player.id);
+        const defPartic = inst?.defensiveParticipation;
+        const shouldStayForward = defPartic === 'stay'
+          || (defPartic === undefined && !this.profile.strikersTrackBack && player.role === PlayerRole.Striker);
+        if (shouldStayForward) {
+          player.state = PlayerState.FindSpace;
+        }
       }
 
       const isSetPlayPresser = setPlay?.kind === 'press-trap' && setPlay.roles.has(player.id);

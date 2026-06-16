@@ -206,6 +206,9 @@ export default class MatchScene extends Phaser.Scene {
       this.currentTacticalProfileA = this.setup.tacticalProfileA;
       this.aiA.setTacticalProfile(this.setup.tacticalProfileA);
     }
+    if (this.setup?.playerInstructionsA) {
+      this.aiA.setPlayerInstructions(this.setup.playerInstructionsA);
+    }
     this.heatMap = new FieldHeatMap(FIELD.left, FIELD.top, FIELD.right, FIELD.bottom);
     this.wireEvents();
     this.setupKeys();
@@ -284,6 +287,30 @@ export default class MatchScene extends Phaser.Scene {
     const oppGoalB = this.teamB.attackDirection > 0 ? GOAL_RIGHT : GOAL_LEFT;
     this.aiA.update(simDelta, this.ball, this.teamB, ownGoalA, oppGoalA, FIELD, gameCtxA, this.heatMap);
     this.aiB.update(simDelta, this.ball, this.teamA, ownGoalB, oppGoalB, FIELD, gameCtxB, this.heatMap);
+
+    // Mark players that are free in dangerous positions (used for the visual glow indicator)
+    const aHasBall = this.teamA.hasPossession();
+    const bHasBall = this.teamB.hasPossession();
+    const goalHalfHA = (oppGoalA.bottom - oppGoalA.top) / 2;
+    const goalHalfHB = (oppGoalB.bottom - oppGoalB.top) / 2;
+    for (const p of this.teamA.players) {
+      if (!aHasBall || p.hasBall || p.role === PlayerRole.Goalkeeper) { p.dangerFree = false; continue; }
+      const goalDist = Math.abs(p.x - oppGoalA.centerX);
+      if (goalDist > 310) { p.dangerFree = false; continue; }
+      const shotAngle = 2 * Math.atan2(goalHalfHA, goalDist + 1);
+      const nearest = this.teamB.getNearestPlayerTo(p.x, p.y);
+      const freedom = nearest ? nearest.distanceTo(p) : 999;
+      p.dangerFree = shotAngle > 0.15 && freedom >= 60;
+    }
+    for (const p of this.teamB.players) {
+      if (!bHasBall || p.hasBall || p.role === PlayerRole.Goalkeeper) { p.dangerFree = false; continue; }
+      const goalDist = Math.abs(p.x - oppGoalB.centerX);
+      if (goalDist > 310) { p.dangerFree = false; continue; }
+      const shotAngle = 2 * Math.atan2(goalHalfHB, goalDist + 1);
+      const nearest = this.teamA.getNearestPlayerTo(p.x, p.y);
+      const freedom = nearest ? nearest.distanceTo(p) : 999;
+      p.dangerFree = shotAngle > 0.15 && freedom >= 60;
+    }
 
     // Update tactical HUD
     this.tacticalHud.setText(
@@ -432,6 +459,25 @@ export default class MatchScene extends Phaser.Scene {
       if (!this.setup?.spectatorMode) {
         this.matchManager.isPaused = true;
         const halftimeCb = this.setup?.onHalftime ?? showHalftimePanel;
+
+        // Capture stamina snapshots for the halftime panel
+        const starterSnapshots = this.teamA.players.map((p) => ({
+          id: p.id,
+          name: p.playerName,
+          role: p.role,
+          jerseyNumber: p.jerseyNumber,
+          stamina: p.currentStamina,
+        }));
+        const teamAData = this.setup?.teams[0];
+        const benchSnapshots = (teamAData?.bench ?? []).map((pd) => ({
+          id: pd.id,
+          name: pd.name,
+          role: pd.role,
+          jerseyNumber: pd.jerseyNumber,
+          stamina: 100,
+        }));
+        const usedBenchSet = new Set<number>();
+
         halftimeCb({
           scoreA: this.matchManager.scoreA,
           scoreB: this.matchManager.scoreB,
@@ -445,6 +491,48 @@ export default class MatchScene extends Phaser.Scene {
           resume: () => {
             this.matchManager.isPaused = false;
             startSecondHalf();
+          },
+          starters: starterSnapshots,
+          bench: benchSnapshots,
+          applySubstitution: (starterIndex: number, benchIndex: number) => {
+            const pd = teamAData?.bench?.[benchIndex];
+            if (!pd || usedBenchSet.has(benchIndex)) return;
+            const oldPlayer = this.teamA.players[starterIndex];
+            if (!oldPlayer) return;
+
+            const color = teamAData!.color;
+            const isGK = pd.role === PlayerRole.Goalkeeper;
+            const pColor = isGK ? complementaryColor(color) : color;
+            const pSecondary = isGK ? color : (teamAData!.secondaryColor ?? 0x000000);
+
+            const newPlayer = new Player(
+              this,
+              oldPlayer.x, oldPlayer.y,
+              pd.id,
+              pd.name,
+              pd.jerseyNumber,
+              'teamA',
+              pd.role,
+              pd.stats,
+              pColor,
+              pd.heightCm ?? 180,
+              pd.weightKg ?? 78,
+              pd.playstyles ?? [],
+              pd.playstylesPlus ?? [],
+              teamAData!.numberColor ?? 0xffffff,
+              pSecondary,
+              teamAData!.kitPattern ?? 'solid',
+              true,
+            );
+            newPlayer.baseX = oldPlayer.baseX;
+            newPlayer.baseY = oldPlayer.baseY;
+            newPlayer.currentStamina = 100;
+
+            this.tackleCooldowns.delete(oldPlayer.id);
+            this.tackleCooldowns.set(newPlayer.id, 0);
+            oldPlayer.destroy();
+            this.teamA.players[starterIndex] = newPlayer;
+            usedBenchSet.add(benchIndex);
           },
         });
       } else {
