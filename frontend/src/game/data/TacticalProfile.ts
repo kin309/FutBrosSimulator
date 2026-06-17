@@ -103,6 +103,13 @@ export interface TacticalProfile {
    * 0=não pressiona, 1=pressiona sempre
    */
   strikerPressBias: number;
+
+  /**
+   * 0–1: liberdade posicional — define o raio do heatmap individual de cada jogador.
+   * 0=manter forma estrita, 1=movimento livre pelo campo.
+   * Deriva da largura, transição ofensiva e pressão do esquema tático.
+   */
+  positionFreedom: number;
 }
 
 // ─── Compilador: TacticalScheme → TacticalProfile ────────────────────────────
@@ -174,6 +181,14 @@ const MARKING_MAP: Record<MarkingStyle, number> = {
   zone:  0.0,
   mixed: 0.5,
   man:   1.0,
+};
+
+const PRESSURE_FREEDOM_MAP: Record<PressureIntensity, number> = {
+  'very-low':  0.10,
+  'low':       0.25,
+  'medium':    0.50,
+  'high':      0.75,
+  'very-high': 0.90,
 };
 
 const OFFENSIVE_TRANSITION_MAP: Record<OffensiveTransition, number> = {
@@ -260,6 +275,10 @@ export function compileScheme(scheme: TacticalScheme): TacticalProfile {
     wingerDepthBias:        winger.depthBias,
     strikerDropBias:        striker.dropBias,
     strikerPressBias:       striker.pressBias,
+    positionFreedom:
+      WIDTH_MAP[scheme.width] * 0.35
+      + OFFENSIVE_TRANSITION_MAP[scheme.offensiveTransition] * 0.40
+      + PRESSURE_FREEDOM_MAP[scheme.pressure] * 0.25,
   };
 }
 

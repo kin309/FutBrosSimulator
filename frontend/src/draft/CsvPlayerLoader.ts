@@ -198,7 +198,7 @@ function toStats(row: string[], indexes: Record<string, number>, role: PlayerRol
 function toRole(position: string): PlayerRole {
   if (position === 'GK') return PlayerRole.Goalkeeper;
   if (['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(position)) return PlayerRole.Defender;
-  if (['LW', 'RW', 'LM', 'RM'].includes(position)) return PlayerRole.Winger;
+  if (['LW', 'RW'].includes(position)) return PlayerRole.Winger;
   if (['ST', 'CF'].includes(position)) return PlayerRole.Striker;
   return PlayerRole.Midfielder;
 }

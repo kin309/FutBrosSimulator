@@ -56,16 +56,30 @@ export class GoalkeeperSystem {
     if (this.ball.owner) return;
 
     const speed = this.ball.getSpeed();
-    if (speed < 3.8) return;
+    // Threshold baixo — cada GK aplica seu próprio mínimo baseado em stat dentro de tryGoalkeeperDive
+    if (speed < 2.8) return;
     const target = this.ball.targetPlayer as Player | null;
 
-    const targetedThreat = !!target
+    // Only skip dive when ball is headed to a non-GK field player at low speed.
+    // When target is a GK (backpass) or there's no target, always evaluate.
+    const isTargetFieldPlayer = target && target.role !== PlayerRole.Goalkeeper;
+    const targetedThreat = isTargetFieldPlayer
       && (speed >= GK_DIVE_MIN_TARGETED_THREAT_SPEED
         || (this.lastPassWasCross && speed >= GK_DIVE_MIN_CROSS_THREAT_SPEED));
-    if (target && !targetedThreat) return;
+    if (isTargetFieldPlayer && !targetedThreat) return;
 
-    this.tryGoalkeeperDive(this.teamA, this.teamA.attackDirection > 0 ? this.goalLeft : this.goalRight, target);
-    this.tryGoalkeeperDive(this.teamB, this.teamB.attackDirection > 0 ? this.goalLeft : this.goalRight, target);
+    // Don't dive on own ally's pass (backpass scenario) — GK should run to it, not dive.
+    const teamAKicked = this.ball.kickedById !== null
+      && this.teamA.players.some(p => p.id === this.ball.kickedById);
+    const teamBKicked = this.ball.kickedById !== null
+      && this.teamB.players.some(p => p.id === this.ball.kickedById);
+
+    if (!teamAKicked) {
+      this.tryGoalkeeperDive(this.teamA, this.teamA.attackDirection > 0 ? this.goalLeft : this.goalRight, target);
+    }
+    if (!teamBKicked) {
+      this.tryGoalkeeperDive(this.teamB, this.teamB.attackDirection > 0 ? this.goalLeft : this.goalRight, target);
+    }
   }
 
   private tryGoalkeeperDive(team: Team, ownGoal: GoalBounds, previousTarget: Player | null = null): void {
@@ -80,12 +94,18 @@ export class GoalkeeperSystem {
     if (framesToGoal === null || framesToGoal <= 0 || framesToGoal > 118) return;
 
     const rawQuality = gkShotStoppingQuality(gk) / 100;
-    // Better GKs read more of the ball's spin: elite GK ≈ 100%, weak GK ≈ 30%
-    const spinReadFraction = 0.30 + rawQuality * 0.70;
+    // GK bom lê muito mais do efeito da bola: elite ≈ 100%, fraco ≈ 20%
+    // Base reduzida (0.20) para ampliar a diferença entre GKs bons e ruins
+    const spinReadFraction = 0.20 + rawQuality * 0.80;
 
     const projectedAtGoal = projectBallAtFrames(this.ball, framesToGoal, spinReadFraction);
     const projectedGoalY = projectedAtGoal.y;
     if (projectedGoalY < ownGoal.top + 4 || projectedGoalY > ownGoal.bottom - 4) return;
+
+    // GK bom tenta mergulhos em bolas mais lentas (deflexões, chutes de ângulo)
+    // Fraco/jogador de linha precisa de bola mais veloz para reagir
+    const minDiveSpeed = 3.8 - rawQuality * 1.0;
+    if (this.ball.getSpeed() < minDiveSpeed) return;
 
     const speedSq = this.ball.velocity.x * this.ball.velocity.x + this.ball.velocity.y * this.ball.velocity.y;
     if (speedSq < 60) return;
@@ -100,8 +120,10 @@ export class GoalkeeperSystem {
     const closestFrames = findClosestBallFrameToPlayer(this.ball, gk, framesToGoal, spinReadFraction);
     const quality = ballInOwnTerritory ? rawQuality : 0.18;
     const farReachReactionBonus = ballInOwnTerritory ? traitBonus(gk, TRAITS.FAR_REACH, 1.2, 0.8) : 0;
+    // Sem camada tática no dive — stat influencia diretamente e com mais força
+    // GK elite reage 5 frames mais rápido que jogador de linha no gol
     const reactionFrames = clamp(
-      12 - quality * 8 - farReachReactionBonus,
+      12 - quality * 10 - farReachReactionBonus,
       GK_DIVE_MIN_REACTION_FRAMES,
       12,
     );
@@ -111,13 +133,17 @@ export class GoalkeeperSystem {
     const interceptX = intercept.x;
     const interceptY = intercept.y;
     const diveDistance = dist(gk.x, gk.y, interceptX, interceptY);
+    // defending domina o alcance: técnica de GK determina até onde ele consegue se estender
     const reach = clamp(
-      GK_DIVE_BASE_REACH + gk.stats.sprintSpeed * 0.42 + gk.stats.defending * 0.28 + traitBonus(gk, TRAITS.FAR_REACH, 24, 14),
+      GK_DIVE_BASE_REACH + gk.stats.defending * 0.42 + gk.stats.sprintSpeed * 0.28 + traitBonus(gk, TRAITS.FAR_REACH, 24, 14),
       GK_DIVE_BASE_REACH,
       GK_DIVE_MAX_REACH,
     ) * gk.getStaminaFactor();
+    // Zona fingertip: GK estica os dedos além do alcance normal — resulta em espalme, não catch
+    // Elite GK estende ~24% a mais; fraco ~14%
+    const fingertipReach = reach * (1.14 + rawQuality * 0.10);
 
-    if (diveDistance < GK_DIVE_MIN_DISTANCE || diveDistance > reach) return;
+    if (diveDistance < GK_DIVE_MIN_DISTANCE || diveDistance > fingertipReach) return;
 
     const cutDirX = (interceptX - gk.x) / diveDistance;
     const cutDirY = (interceptY - gk.y) / diveDistance;
@@ -132,7 +158,13 @@ export class GoalkeeperSystem {
       dirX = cutDirX;
       dirY = cutDirY;
     }
-    const displacement = Math.max(diveDistance + GK_DIVE_OVERSHOOT, GK_DIVE_MIN_DISPLACEMENT);
+    // Stretch save: GK para antes — a borda do corpo (catch radius) toca a bola, não o centro
+    // Normal: overshoota além da bola para cobrir o gol com o corpo
+    const isStretchZone = diveDistance > reach * 0.80;
+    const rawDisplacement = isStretchZone
+      ? diveDistance - GK_DIVE_CATCH_RADIUS
+      : diveDistance + GK_DIVE_OVERSHOOT;
+    const displacement = Math.max(rawDisplacement, GK_DIVE_MIN_DISPLACEMENT);
     const minDiveX = lineX < this.field.centerX ? this.field.left - GK_DIVE_GOAL_LINE_MARGIN : this.field.left + 15;
     const maxDiveX = lineX > this.field.centerX ? this.field.right + GK_DIVE_GOAL_LINE_MARGIN : this.field.right - 15;
     const saveX = clamp(gk.x + dirX * displacement, minDiveX, maxDiveX);
@@ -142,21 +174,25 @@ export class GoalkeeperSystem {
     const diveFrames = diveDurationMs / 16.67;
     const interceptTravelRatio = clamp(diveDistance / Math.max(actualDisplacement, 1), 0.42, 0.88);
     const framesToReachIntercept = diveFrames * interceptTravelRatio;
+    // timingLeadFrames: janela de antecipação — GK bom "lê" o chute bem antes e TENTA mais mergulhos
+    // Sem tática aqui: quality age diretamente e forte (×3.5 — sem amortecimento)
     const timingLeadFrames = clamp(
       0.3
-        + quality * 1.8
+        + quality * 3.5
         + farKickRead * 0.7
         + (ballInOwnTerritory ? traitBonus(gk, TRAITS.FAR_REACH, 0.35, 0.2) : 0)
-        - reactionFrames * 0.12
+        - reactionFrames * 0.38
         - closeKickPressure * 0.7
         - speedPressure * 0.45,
       0.1,
-      2.4,
+      5.0,
     );
     if (closestFrames > framesToReachIntercept + timingLeadFrames) return;
 
-    const lateGraceFrames = clamp(3 + quality * 7 - closeKickPressure * 1.4 - speedPressure * 1.1, 1.4, 9.5);
-    const emergencyCloseShot = framesToGoal < 18 && diveDistance < reach * (0.72 + quality * 0.20);
+    // lateGraceFrames: janela de tolerância tardia — GK bom tem mais margem para ainda alcançar
+    // Cap elevado de 9.5 → 12 para GKs elite não serem limitados pelo clamp
+    const lateGraceFrames = clamp(1.5 + quality * 14 - closeKickPressure * 1.4 - speedPressure * 1.1, 1.5, 16);
+    const emergencyCloseShot = framesToGoal < 18 && diveDistance < reach * (0.68 + quality * 0.28);
     if (closestFrames + lateGraceFrames < framesToReachIntercept && !emergencyCloseShot) return;
 
     if (previousTarget && previousTarget !== gk && !previousTarget.hasBall) {
@@ -164,14 +200,15 @@ export class GoalkeeperSystem {
       previousTarget.aiCooldown = 0;
     }
     this.ball.targetPlayer = gk;
-    gk.stretchSave = false;
+    // Stretch save: GK na ponta do alcance — espalmará em vez de segurar
+    gk.stretchSave = diveDistance > reach * 0.80;
     gk.diveToward(saveX, saveY, this.ball.x, this.ball.y, this.ball.velocity.x, this.ball.velocity.y, diveDurationMs);
     gk.aiCooldown = Math.max(gk.aiCooldown, 520);
     this.scoreboard.logEvent(`${gk.playerName} mergulha na bola!`);
   }
 
   private estimateGkDiveDurationMs(gk: Player, displacement: number): number {
-    return clamp(205 + displacement * 1.75 - gk.stats.sprintSpeed * 0.10, 225, 460);
+    return clamp(275 + displacement * 2.20 - gk.stats.sprintSpeed * 0.10, 340, 600);
   }
 
   getGkPhysicalClaimRadius(player: Player): number {
@@ -186,7 +223,7 @@ export class GoalkeeperSystem {
     if (ballGoalDist > PENALTY_AREA_W + 10 || ballCentralDist > PENALTY_AREA_H / 2) return CONTACT_RADIUS;
 
     const depthFactor = clamp(1 - ballGoalDist / 250, 0, 1);
-    const skillBonus = gkShotStoppingQuality(player) * 0.035;
+    const skillBonus = gkShotStoppingQuality(player) * 0.055;
     const depthBonus = depthFactor * 3;
     return CONTACT_RADIUS + skillBonus + depthBonus;
   }
@@ -197,7 +234,7 @@ export class GoalkeeperSystem {
     const physicalClaimRadius = this.getGkPhysicalClaimRadius(target);
     if (target.state !== PlayerState.GkDive) return Math.max(CONTACT_RADIUS, physicalClaimRadius);
 
-    const diveSkillBonus = gkShotStoppingQuality(target) * 0.025;
+    const diveSkillBonus = gkShotStoppingQuality(target) * 0.05;
     return Math.max(physicalClaimRadius, GK_DIVE_CATCH_RADIUS + diveSkillBonus);
   }
 

@@ -23,6 +23,7 @@ export interface HalftimeContext {
   teamBName: string;
   currentProfile: TacticalProfile;
   currentProfileB?: TacticalProfile;
+  currentScheme?: TacticalScheme;
   applyTactic: (profile: TacticalProfile) => void;
   applyTacticB?: (profile: TacticalProfile) => void;
   resume: () => void;
@@ -48,7 +49,9 @@ export function showHalftimePanel(ctx: HalftimeContext): void {
   overlay.className = 'halftime-overlay';
 
   let selectedScheme: TacticalScheme =
-    TACTICAL_SCHEMES.find(s => s.name === ctx.currentProfile.name) ?? TACTICAL_SCHEMES[0];
+    ctx.currentScheme ??
+    TACTICAL_SCHEMES.find(s => s.name === ctx.currentProfile.name) ??
+    TACTICAL_SCHEMES[0];
   let tacticViewMode: 'preset' | 'advanced' = 'preset';
 
   // ── Substitution state ───────────────────────────────────────────────────────

@@ -20,7 +20,9 @@ export class MatchFlowSystem {
 
   private advTeamId = '';
   private advText: { destroy(): void } | null = null;
-  private advPrevBallX = 0;
+  private advInitialSide: -1 | 1 = 1; // which half the ball started in: 1 = right, -1 = left
+  private advElapsedMs = 0;
+  private static readonly MAX_ADVANTAGE_MS = 35_000;
 
   constructor(ctx: MatchContext) {
     this.ball = ctx.ball;
@@ -35,20 +37,32 @@ export class MatchFlowSystem {
 
   beginAdvantage(teamId: string, ballX: number, text: { destroy(): void }): void {
     this.advTeamId = teamId;
-    this.advPrevBallX = ballX;
+    this.advInitialSide = ballX < this.field.centerX ? -1 : 1;
     this.advText = text;
+    this.advElapsedMs = 0;
   }
 
-  updateAdvantage(_delta: number): void {
-    const CROSS_BUFFER = 15;
-    const prevSide = this.advPrevBallX < this.field.centerX ? -1 : 1;
-    const crossedLeft  = prevSide ===  1 && this.ball.x < this.field.centerX - CROSS_BUFFER;
-    const crossedRight = prevSide === -1 && this.ball.x > this.field.centerX + CROSS_BUFFER;
-    if (crossedLeft || crossedRight) {
+  updateAdvantage(delta: number): void {
+    this.advElapsedMs += delta;
+    if (this.advElapsedMs >= MatchFlowSystem.MAX_ADVANTAGE_MS) {
       this.endAdvantage();
       return;
     }
-    this.advPrevBallX = this.ball.x;
+    // End when ball is cleared to the other half (regardless of how slowly it drifted there)
+    const CROSS_BUFFER = 30;
+    const clearedToOtherHalf =
+      (this.advInitialSide ===  1 && this.ball.x < this.field.centerX - CROSS_BUFFER) ||
+      (this.advInitialSide === -1 && this.ball.x > this.field.centerX + CROSS_BUFFER);
+    if (clearedToOtherHalf) {
+      this.endAdvantage();
+      return;
+    }
+
+    // End when the opposing team gains possession
+    const oppTeam = this.advTeamId === 'teamA' ? this.teamB : this.teamA;
+    if (oppTeam.getBallCarrier() !== null) {
+      this.endAdvantage();
+    }
   }
 
   endAdvantage(): void {
@@ -56,7 +70,6 @@ export class MatchFlowSystem {
     this.advText?.destroy();
     this.advText = null;
     this.advTeamId = '';
-    this.advPrevBallX = 0;
     this.matchManager.forceFinish();
   }
 

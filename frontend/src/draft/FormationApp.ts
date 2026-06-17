@@ -137,11 +137,14 @@ export interface MatchContext {
   opponentTeam?: TeamData;
   matchId?: string;
   userIsHome?: boolean;
-  onMatchEnd?: (scoreA: number, scoreB: number) => void;
+  onMatchEnd?: (scoreA: number, scoreB: number, finalStaminas?: Record<string, number>) => void;
+  onGoalScored?: import('../game/FootballGame').MatchSetup['onGoalScored'];
+  initialStaminas?: Record<string, number>;
   onHalftime?: import('../game/FootballGame').MatchSetup['onHalftime'];
   startButtonLabel?: string;
   startButtonDisabled?: boolean;
   onReady?: (team: TeamData) => void;
+  onUnready?: () => void;
   savedFormation?: SavedFormationState | null;
   onFormationChange?: (formation: SavedFormationState) => void;
   initialKitColors?: KitColors;
@@ -185,6 +188,10 @@ function wireFormationScreen(
   });
 
   root.querySelector<HTMLButtonElement>('[data-action="start-match"]')?.addEventListener('click', () => {
+    if (context.onUnready) {
+      context.onUnready();
+      return;
+    }
     if (context.onReady) {
       context.onFormationChange?.(serializeFormationState(state));
       context.onReady(toTeamData(state));
@@ -192,23 +199,49 @@ function wireFormationScreen(
     }
 
     const mappedInstructions = new Map<string, PlayerInstructions>();
+    // Build bidirectional index: DraftPlayer.id ↔ a${index} (positional game ID)
+    const draftIdToSlot = new Map<string, string>();
+    const slotToDraftId = new Map<string, string>();
     state.starters.forEach((starter, index) => {
+      const slot = `a${index}`;
+      draftIdToSlot.set(starter.player.id, slot);
+      slotToDraftId.set(slot, starter.player.id);
       const inst = state.playerInstructions.get(starter.player.id);
-      if (inst) mappedInstructions.set(`a${index}`, inst);
+      if (inst) mappedInstructions.set(slot, inst);
     });
+
+    // Convert context.initialStaminas (keyed by DraftPlayer.id) to slot-keyed map
+    const slotInitialStaminas: Record<string, number> | undefined = context.initialStaminas
+      ? Object.fromEntries(
+          Object.entries(context.initialStaminas)
+            .map(([draftId, val]) => [draftIdToSlot.get(draftId) ?? '', val])
+            .filter(([slot]) => slot !== ''),
+        )
+      : undefined;
 
     root.remove();
     document.body.classList.add('match-running');
     const game = createGame({
       teams: [toTeamData(state), context.opponentTeam ?? createOpponentTeam(context.opponentName)],
       tacticalProfileA: state.tacticalProfile,
+      tacticalSchemeA: state.tacticalScheme,
       playerInstructionsA: mappedInstructions.size > 0 ? mappedInstructions : undefined,
       onHalftime: context.onHalftime,
-      onMatchEnd: context.onMatchEnd ? (scoreA, scoreB) => {
+      onGoalScored: context.onGoalScored,
+      initialStaminas: slotInitialStaminas,
+      onMatchEnd: context.onMatchEnd ? (scoreA, scoreB, finalStaminas) => {
         game.destroy(true);
         document.body.classList.remove('match-running');
         document.body.appendChild(root);
-        context.onMatchEnd!(scoreA, scoreB);
+        // Convert slot-keyed finalStaminas back to DraftPlayer.id keys
+        const draftFinalStaminas: Record<string, number> | undefined = finalStaminas
+          ? Object.fromEntries(
+              Object.entries(finalStaminas)
+                .map(([slot, val]) => [slotToDraftId.get(slot) ?? '', val])
+                .filter(([draftId]) => draftId !== ''),
+            )
+          : undefined;
+        context.onMatchEnd!(scoreA, scoreB, draftFinalStaminas);
       } : undefined,
     });
   });
@@ -230,6 +263,7 @@ function wireFormationScreen(
     button.addEventListener('click', () => {
       state.editMode = button.dataset.editMode as FormationState['editMode'];
       state.selectedId = null;
+      if (state.editMode === 'instructions' || state.editMode === 'lineup') state.tacticViewMode = 'preset';
       render();
     });
   });
@@ -450,7 +484,7 @@ function createFormationState(
     starters,
     bench: picked.filter((player) => !used.has(player.id)),
     selectedId: null,
-    editMode: 'positions',
+    editMode: 'lineup',
     kitColors: defaultKitColors,
     customJerseyNumbers: {},
     tacticalProfile: TACTICAL_PROFILES[0],
@@ -517,7 +551,7 @@ function createFormationStateFromSaved(
       ...picked.filter((player) => !used.has(player.id)),
     ],
     selectedId: null,
-    editMode: 'positions',
+    editMode: 'lineup',
     kitColors: { ...defaultKitColors, ...(saved.kitColors ?? {}) } as KitColors,
     customJerseyNumbers: saved.customJerseyNumbers ?? {},
     tacticalProfile: compileScheme(tacticalScheme),
@@ -827,7 +861,7 @@ function instructionPanelView(state: FormationState, ovr: number): string {
   `;
 }
 
-function squadPanelView(state: FormationState, ovr: number): string {
+function squadPanelView(state: FormationState, ovr: number, staminas: Record<string, number> = {}): string {
   return `
     <div class="squad-header">
       <h2>${state.editMode === 'lineup' ? 'Trocar jogadores' : 'Titulares'}</h2>
@@ -842,6 +876,7 @@ function squadPanelView(state: FormationState, ovr: number): string {
         state.editMode === 'lineup' && state.selectedId === starter.player.id,
         state.editMode,
         state.customJerseyNumbers[starter.player.id] ?? (index + 1),
+        staminas[starter.player.id] ?? 100,
       )).join('')}
     </ol>
     <div class="bench-header">
@@ -849,7 +884,7 @@ function squadPanelView(state: FormationState, ovr: number): string {
       <span>${state.bench.length}</span>
     </div>
     <ol class="formation-list bench-list">
-      ${state.bench.map((player) => benchItem(player, state.selectedId === player.id, state.editMode)).join('')}
+      ${state.bench.map((player) => benchItem(player, state.selectedId === player.id, state.editMode, staminas[player.id] ?? 100)).join('')}
     </ol>
   `;
 }
@@ -924,7 +959,7 @@ function formationView(state: FormationState, context: MatchContext): string {
           <div class="pitch-box pitch-box-left"></div>
           <div class="pitch-box pitch-box-right"></div>
           <div class="pitch-circle"></div>
-          ${state.starters.map((starter) => playerMarker(starter, state)).join('')}
+          ${state.starters.map((starter, index) => playerMarker(starter, state, state.customJerseyNumbers[starter.player.id] ?? (index + 1))).join('')}
         </div>
       </section>
 
@@ -933,13 +968,13 @@ function formationView(state: FormationState, context: MatchContext): string {
           ? advancedTacticPanelView(state, ovr)
           : state.editMode === 'instructions'
             ? instructionPanelView(state, ovr)
-            : squadPanelView(state, ovr)}
+            : squadPanelView(state, ovr, context.initialStaminas ?? {})}
       </aside>
     </main>
   `;
 }
 
-function playerMarker(starter: FormationPlayer, state: FormationState): string {
+function playerMarker(starter: FormationPlayer, state: FormationState, jerseyNum: number): string {
   const isSelected = state.editMode === 'lineup'
     ? state.selectedId === starter.player.id
     : state.editMode === 'instructions'
@@ -955,14 +990,14 @@ function playerMarker(starter: FormationPlayer, state: FormationState): string {
       style="left: ${toPitchLeft(starter.x)}%; top: ${toPitchTop(starter.y)}%"
       title="${escapeHtml(starter.player.name)}${outOfPos ? ' (fora de posição)' : ''}${hasInst ? ' (tem instruções)' : ''}"
     >
-      <span>${starter.player.overall}${outOfPos ? '⚠' : ''}</span>
-      <strong>${escapeHtml(shortName(starter.player.name))}</strong>
+      <span>${starter.player.overall}</span>
+      <strong><em>#${jerseyNum}</em>${escapeHtml(shortName(starter.player.name))}</strong>
       <small>${escapeHtml(positionLabel(starter.player.position))}</small>
     </button>
   `;
 }
 
-function starterItem(starter: FormationPlayer, selected: boolean, editMode: FormationState['editMode'], jerseyNum: number): string {
+function starterItem(starter: FormationPlayer, selected: boolean, editMode: FormationState['editMode'], jerseyNum: number, stamina: number): string {
   const outOfPos = isOutOfPosition(starter.player.role, starter.role, starter.player.alternateRoles);
   return `
     <li class="starter-list-item">
@@ -973,54 +1008,54 @@ function starterItem(starter: FormationPlayer, selected: boolean, editMode: Form
       >
         <span>${starter.player.overall}</span>
         <div>
-          <strong>${escapeHtml(starter.player.name)}</strong>
+          <div class="player-name-row"><strong>${escapeHtml(starter.player.name)}</strong>${flagImg(starter.player)}</div>
           <small>
             <b>${escapeHtml(positionLabel(starter.player.position))}</b>
             ${starter.player.alternatePositions.map((p) => `<span class="alt-pos-badge">${escapeHtml(positionLabel(p))}</span>`).join('')}
-            ${outOfPos ? `<span class="oop-badge" title="Fora de posição — atributos penalizados">↗ ${roleLabel(starter.role)}</span>` : ''}
-            / ${playerMeta(starter.player)}
+            ${outOfPos ? `<span class="oop-badge" title="Fora de posição">↗ ${roleLabel(starter.role)}</span>` : ''}
           </small>
         </div>
       </button>
-      <input
-        class="jersey-num-input"
-        type="number"
-        min="1"
-        max="99"
-        value="${jerseyNum}"
-        data-jersey-player="${escapeHtml(starter.player.id)}"
-        title="Número da camisa"
-      >
+      <div class="starter-footer">
+        <label class="jersey-label">
+          <span>Camisa</span>
+          <input class="jersey-num-input" type="number" min="1" max="99" value="${jerseyNum}" data-jersey-player="${escapeHtml(starter.player.id)}" title="Número da camisa">
+        </label>
+        ${staminaBar(stamina)}
+      </div>
     </li>
   `;
 }
 
-function benchItem(player: DraftPlayer, selected: boolean, editMode: FormationState['editMode']): string {
+function benchItem(player: DraftPlayer, selected: boolean, editMode: FormationState['editMode'], stamina: number): string {
   return `
     <li>
       <button class="${selected ? 'is-selected' : ''}" data-select-player="${escapeHtml(player.id)}" ${editMode === 'positions' || editMode === 'instructions' ? 'disabled' : ''}>
         <span>${player.overall}</span>
         <div>
-          <strong>${escapeHtml(player.name)}</strong>
+          <div class="player-name-row"><strong>${escapeHtml(player.name)}</strong>${flagImg(player)}</div>
           <small>
             ${escapeHtml(positionLabel(player.position))}
             ${player.alternatePositions.map((p) => `<span class="alt-pos-badge">${escapeHtml(positionLabel(p))}</span>`).join('')}
-            / ${playerMeta(player, true)}
+            / ${escapeHtml(player.team)}
           </small>
+          ${staminaBar(stamina)}
         </div>
       </button>
     </li>
   `;
 }
 
-function playerMeta(player: DraftPlayer, includeTeam = false): string {
+function flagImg(player: DraftPlayer): string {
   const flagCode = nationalityFlagCode(player.nationality);
-  const flag = flagCode
-    ? `<img class="flag" src="https://flagcdn.com/20x15/${flagCode}.png" alt="" loading="lazy"> `
+  return flagCode
+    ? `<img class="flag" src="https://flagcdn.com/20x15/${flagCode}.png" alt="${escapeHtml(player.nationality)}" loading="lazy"> `
     : '';
-  const nationality = `${flag}${escapeHtml(player.nationality)}`;
-  const team = includeTeam ? `${escapeHtml(player.team)} / ` : '';
-  return `${team}${nationality}`;
+}
+
+function staminaBar(stamina: number): string {
+  const cls = stamina > 65 ? 'is-green' : stamina > 35 ? 'is-yellow' : 'is-red';
+  return `<div class="stamina-bar-wrap"><div class="stamina-bar ${cls}" style="width:${stamina}%"></div></div>`;
 }
 
 function positionFromPointer(pitch: HTMLElement, clientX: number, clientY: number): { x: number; y: number } {

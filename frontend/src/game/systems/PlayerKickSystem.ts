@@ -20,12 +20,12 @@ const CONTACT_RADIUS: number = BALL_PHYSICS.contactRadius;
 const BALL_FRICTION: number = BALL_PHYSICS.groundFrictionPerFrame;
 const SHOT_BASE_POWER = 8.5;
 const SHOT_STAT_POWER = 4.0;
-const SHOT_DISTANCE_POWER = 3.2;
+const SHOT_DISTANCE_POWER = 5.5;
 const SHOT_MIN_POWER = 8.5;
 const SHOT_MAX_POWER = 15.0;
 const SHOT_ELITE_MAX_POWER_BONUS = 3.8;
-const SHOT_DISTANCE_POWER_START = 180;
-const SHOT_DISTANCE_POWER_FULL = 620;
+const SHOT_DISTANCE_POWER_START = 190;
+const SHOT_DISTANCE_POWER_FULL = 420;
 const CLEARANCE_BASE_POWER = 7.0;
 const CLEARANCE_STAT_POWER = 2.6;
 
@@ -72,12 +72,33 @@ export class PlayerKickSystem {
     passer.state = PlayerState.FindSpace;
     passer.aiCooldown = 600;
 
-    const intendedX = passer.passTargetX ?? receiver.x;
-    const intendedY = passer.passTargetY ?? receiver.y;
+    let intendedX = passer.passTargetX ?? receiver.x;
+    let intendedY = passer.passTargetY ?? receiver.y;
     const passKind = passer.passKind;
     const isThroughPass = passKind === 'through';
     const isCross = passKind === 'cross';
     const isCutback = passKind === 'cutback';
+    const isLofted = passKind === 'lofted';
+
+    // Lofted / cross passes: aim at the receiver's PREDICTED position at ball landing,
+    // not their current position. Each pass type has its own airborne frame budget.
+    const crossLift  = 4.1;
+    const loftedLift = 2.8;
+    const crossAirFrames  = (crossLift  * 2) / BALL_PHYSICS.verticalGravityPerFrame; // ≈ 24.1
+    const loftedAirFrames = (loftedLift * 2) / BALL_PHYSICS.verticalGravityPerFrame; // ≈ 16.5
+    if (isCross || isLofted) {
+      const airFrames = isCross ? crossAirFrames : loftedAirFrames;
+      const toTargetX = receiver.targetX - receiver.x;
+      const toTargetY = receiver.targetY - receiver.y;
+      const toTargetLen = Math.sqrt(toTargetX * toTargetX + toTargetY * toTargetY);
+      if (toTargetLen > 8) {
+        const rxSpeed = (receiver.stats.sprintSpeed / 100) * 1.85 * receiver.getStaminaFactor();
+        const rxTravel = rxSpeed * airFrames * 0.55;
+        intendedX = clamp(receiver.x + (toTargetX / toTargetLen) * rxTravel, this.field.left + 20, this.field.right - 20);
+        intendedY = clamp(receiver.y + (toTargetY / toTargetLen) * rxTravel, this.field.top  + 20, this.field.bottom - 20);
+      }
+    }
+
     const passDist = dist(passer.x, passer.y, intendedX, intendedY);
     const passLane = this.analyzeBallLane(
       passer.x,
@@ -87,24 +108,26 @@ export class PlayerKickSystem {
       this.getAllPlayers().filter(p => p !== passer && p !== receiver),
       passer.teamId,
     );
-    const targetFrames = clamp(passDist / 9.2, 18, 44);
-    // Blend shortPassing↔longPassing based on distance; crosses use crossing stat
+    // Aerial passes use air-time as frame budget; flat passes use distance-based estimate.
+    const targetFrames = isCross ? crossAirFrames : isLofted ? loftedAirFrames : clamp(passDist / 9.2, 18, 44);
+    // Blend shortPassing↔longPassing based on distance; crosses use crossing stat; lofted uses longPassing
     const passSkill = isCross || isCutback
       ? passer.stats.crossing
-      : passDist < 160
-        ? passer.stats.shortPassing
-        : passDist > 280
-          ? passer.stats.longPassing
-          : Math.round(passer.stats.shortPassing * (280 - passDist) / 120 + passer.stats.longPassing * (passDist - 160) / 120);
+      : isLofted
+        ? passer.stats.longPassing
+        : passDist < 160
+          ? passer.stats.shortPassing
+          : passDist > 280
+            ? passer.stats.longPassing
+            : Math.round(passer.stats.shortPassing * (280 - passDist) / 120 + passer.stats.longPassing * (passDist - 160) / 120);
     // statMult range 0.62–0.86: poor passers noticeably underpowered; elite passers crisp
     const statMult = 0.62 + (passSkill / 100) * 0.24;
     // Whipped Pass: harder, faster crosses and cutbacks (+0.14 power regular, +0.10 extra for Plus)
     const whippedBoost = (isCross || isCutback) ? traitBonus(passer, TRAITS.WHIPPED_PASS, 0.14, 0.10) : 0;
-    const servicePower = (isCross ? 1.24 : isCutback ? 0.96 : isThroughPass ? 1.14 : 1.0) + whippedBoost;
-    // Friction-corrected v0: exact initial velocity to cover passDist in targetFrames
-    // under the same per-frame friction used by Ball.updateBall. Formula: v0 = D*(1-f)/(1-f^n)
-    const baseVelocity = passDist * (1 - BALL_FRICTION) / (1 - Math.pow(BALL_FRICTION, targetFrames));
+    const servicePower = (isCutback ? 0.96 : isThroughPass ? 1.14 : 1.0) + whippedBoost;
     const lanePowerBoost = 1 + passLane.risk * (isCross ? 0.05 : isCutback ? 0.04 : 0.09);
+
+    const baseVelocity = passDist * (1 - BALL_FRICTION) / (1 - Math.pow(BALL_FRICTION, targetFrames));
     const power = clamp(baseVelocity * statMult * servicePower * lanePowerBoost, 2.1, 16.0);
 
     // Angular accuracy: same angular error = larger positional miss at distance.
@@ -118,11 +141,12 @@ export class PlayerKickSystem {
     const pressure = clamp((60 - minOppDist) / 60, 0, 1);
     // Through-pass extra error decreases with long passing: stat=60→1.30°, stat=91→0.68°, stat=100→0.5°
     const throughExtra = Math.max(0.5, 2.5 - (passer.stats.longPassing / 100) * 2.0);
-    const kindExtra = isThroughPass ? throughExtra : isCross ? 2.5 : isCutback ? 0.5 : 0;
+    const loftedExtra = Math.max(0.4, 2.0 - traitBonus(passer, TRAITS.LONG_BALL_PASS, 0.8, 0.6));
+    const kindExtra = isThroughPass ? throughExtra : isCross ? 2.5 : isCutback ? 0.5 : isLofted ? loftedExtra : 0;
     const laneExtra = passLane.risk * (isCutback ? 1.2 : 2.4) * (1 - passSkill / 140);
     const maxDevDeg = (1 - passSkill / 100) * 4.5
       + pressure * 3.5
-      + (1 - passer.getStaminaFactor()) * 1.5
+      + (1 - passer.getStaminaFactor()) * 3.5
       + kindExtra
       + laneExtra;
     const maxDevRad = Phaser.Math.DegToRad(maxDevDeg);
@@ -138,8 +162,19 @@ export class PlayerKickSystem {
     const destY = clamp(passer.y + Math.sin(actualAngle) * passDist, this.field.top  + 15, this.field.bottom - 15);
     const kickAngle = Math.atan2(destY - passer.y, destX - passer.x);
 
-    const lift = isCross ? 4.1 : isThroughPass ? 1.4 : isCutback ? 0.35 : 0.65;
-    // Crosses use inswinger spin; all other passes go straight (no Magnus deflection).
+    // Lift: timing-aware interception threat. Only lift if an opponent can actually
+    // reach the ball's path before it passes them — not just whether they're nearby.
+    const liftOpponents = (passer.teamId === 'teamA' ? this.teamB.players : this.teamA.players)
+      .filter(p => p !== receiver);
+    const estimatedFrames = clamp(passDist / 9.2, 18, 44);
+    const interceptionThreat = this.computeInterceptionThreat(
+      passer.x, passer.y, intendedX, intendedY, liftOpponents, estimatedFrames,
+      passer.stats.vision, passer.stats.reactions,
+    );
+    const distFraction = clamp((passDist - 80) / 300, 0, 1); // 0 at ≤80px, 1 at ≥380px
+    const normalLift = clamp(0.30 + distFraction * 0.60 + interceptionThreat * 1.50, 0.25, 1.80);
+    const lift = isCross ? crossLift : isLofted ? loftedLift : isThroughPass ? 2.0 : isCutback ? 0.35 : normalLift;
+    // Crosses use inswinger spin; regular passes curve around lane blockers when skilled.
     const crossingSkill = passer.stats.crossing / 100;
     const crosserSide = Math.sign(passer.y - this.field.centerY) || 1;
     const inswingerSign = (-crosserSide * passer.attackDirection) as -1 | 1;
@@ -149,9 +184,26 @@ export class PlayerKickSystem {
       || (footSign < 0 && passer.stats.preferredFoot === 2);
     const crossWeakFootFactor = crossOnNaturalSide ? 1.0 : 0.5 + (passer.stats.weakFootAbility / 5) * 0.5;
     const crossSkillBonus = (passer.stats.skillMoves / 5) * 0.030;
-    const spin = isCross
-      ? inswingerSign * (0.040 + power * 0.012 + crossingSkill * 0.030 + crossSkillBonus) * crossWeakFootFactor
-      : 0;
+    const crossSpin = inswingerSign * (0.040 + power * 0.012 + crossingSkill * 0.030 + crossSkillBonus) * crossWeakFootFactor;
+    // Intentional curve on regular passes: skilled passers bend the ball around a lane blocker.
+    // Curve Ball: amplifies blocked-lane curve AND adds natural inswing on all passes.
+    let curveSpin = 0;
+    if (!isCross) {
+      const spinTech = (passer.stats.vision * 0.40 + passSkill * 0.45 + (passer.stats.skillMoves / 5) * 15) / 100;
+      const curveBallMult = 1 + traitBonus(passer, TRAITS.FINESSE_SHOT, 0.55, 0.45);
+      if (passLane.blocker !== null && passLane.risk > 0.18) {
+        curveSpin = passLane.openSide * (0.022 + spinTech * 0.062 + power * 0.004) * curveBallMult;
+      } else if (curveBallMult > 1) {
+        // Finesse Shot / Whipped Pass: natural inswing on every pass even with a clear lane
+        curveSpin = inswingerSign * (0.014 + spinTech * 0.028 + power * 0.0018) * (curveBallMult - 1);
+      }
+      // Whipped Pass also adds extra inswing on top of any existing curve
+      const whippedPassSpin = traitBonus(passer, TRAITS.WHIPPED_PASS, 0.018, 0.014);
+      if (whippedPassSpin > 0) {
+        curveSpin += inswingerSign * (whippedPassSpin + power * 0.0015);
+      }
+    }
+    const spin = isCross ? crossSpin : curveSpin;
     this.ball.kickTo(destX, destY, power, passer.id, { lift, spin });
     passer.showShotPulse(this.ball.x, this.ball.y, power);
     this.ball.targetPlayer = receiver;
@@ -231,13 +283,15 @@ export class PlayerKickSystem {
       0,
       1,
     );
+    const powerShotBonus = traitBonus(shooter, TRAITS.POWER_SHOT, 1.0, 0.6);
     let power = clamp(
       SHOT_BASE_POWER
         + shootingSkill * SHOT_STAT_POWER
         + physicalPower * 1.15
-        + distanceFactor * SHOT_DISTANCE_POWER,
+        + distanceFactor * SHOT_DISTANCE_POWER
+        + powerShotBonus,
       SHOT_MIN_POWER,
-      maxShotPower,
+      maxShotPower + powerShotBonus,
     );
 
     // Pressure from nearest opponent
@@ -276,7 +330,8 @@ export class PlayerKickSystem {
         + intelligenceFactor * 0.26
         + shooter.stats.physical / 100 * 0.08
         - pressure * 0.18
-        - (1 - shooter.getStaminaFactor()) * 0.22,
+        - (1 - shooter.getStaminaFactor()) * 0.38
+        + traitBonus(shooter, TRAITS.LOW_DRIVEN_SHOT, 0.14, 0.10),
       0.10,
       0.92,
     );
@@ -294,11 +349,13 @@ export class PlayerKickSystem {
       ? aimLow + bestGap * 0.48
       : aimHigh - bestGap * 0.48;
     const deliberateCornerChance = clamp(
-      0.18 + executionSkill * 0.50 + intelligenceFactor * 0.22 - pressure * 0.20,
+      0.18 + executionSkill * 0.50 + intelligenceFactor * 0.22 - pressure * 0.20
+        + traitBonus(shooter, TRAITS.LOW_DRIVEN_SHOT, 0.15, 0.10),
       0.08,
       0.88,
     );
-    const smartAimY = Math.random() < deliberateCornerChance ? openSideAimY : centerGapAimY;
+    const isDeliberateCorner = Math.random() < deliberateCornerChance;
+    const smartAimY = isDeliberateCorner ? openSideAimY : centerGapAimY;
     // Low intelligence → drifts toward a naive random aim; high → stays on the open side
     // blendWeight: 0.18 (int=0) → 0.83 (int=100)
     const naiveAimY = aimLow + Math.random() * (aimHigh - aimLow);
@@ -350,13 +407,20 @@ export class PlayerKickSystem {
     const clinicalBonus = shotDist < 220 ? traitBonus(shooter, TRAITS.CLINICAL, 1.8, 1.2) : 0;
     // Long Shot: better accuracy on attempts beyond normal range (−1.4° regular, −1.0° extra for Plus)
     const longShotBonus = shotDist > 250 ? traitBonus(shooter, TRAITS.LONG_SHOT, 1.4, 1.0) : 0;
+    // Low Driven Shot: precision bonus only when the player chose to go for the corner
+    const lowDrivenBonus = isDeliberateCorner ? traitBonus(shooter, TRAITS.LOW_DRIVEN_SHOT, 1.2, 0.8) : 0;
+    // Precision Header: shooter just won an aerial duel — directs the header with accuracy
+    const headerBonus = shooter.wonAerialHeader ? traitBonus(shooter, TRAITS.PRECISION_HEADER, 1.8, 1.2) : 0;
+    shooter.wonAerialHeader = false;
     const maxDevDeg = Math.max(0.4,
       (1 - executionSkill) * 7.5
       + pressure * 5.5 * (1 - pressureResist)
       + selectedShotLane.risk * 3.2 * (1 - executionSkill * 0.55)
-      + (1 - shooter.getStaminaFactor()) * 2.5
+      + (1 - shooter.getStaminaFactor()) * 4.5
       - clinicalBonus
-      - longShotBonus,
+      - longShotBonus
+      - lowDrivenBonus
+      - headerBonus,
     );
     const maxDevRad = Phaser.Math.DegToRad(maxDevDeg);
     const baseAngle = Math.atan2(aimY - shooter.y, targetGoal.centerX - shooter.x);
@@ -385,13 +449,18 @@ export class PlayerKickSystem {
     const travelFrames = actualShotDist / (power * 0.82);
     const gkCanCover = gkSpeed * travelFrames * (1 + gkClosePressure * 0.55);
 
-    const shotLift = clamp(1.0 + distanceFactor * 1.45 + finalShotLane.risk * 0.55, 0.8, 3.1);
+    // Low Driven Shot: ball stays near the ground only when the player chose to aim for the corner
+    const lowDrivenReduction = isDeliberateCorner ? traitBonus(shooter, TRAITS.LOW_DRIVEN_SHOT, 1.6, 0.8) : 0;
+    const shotLift = clamp(1.0 + distanceFactor * 1.45 + finalShotLane.risk * 0.55 - lowDrivenReduction, 0.4, 3.1);
     // Spin only on angled shots — central shots go straight.
     // angleRatio: 0 when directly in front of goal, 1 when 200px+ off-center.
+    // Curve Ball lowers the threshold so the trait kicks in from closer to center.
     const goalCenterY = (targetGoal.top + targetGoal.bottom) / 2;
     const angleRatio = clamp(Math.abs(shooter.y - goalCenterY) / 200, 0, 1);
+    const curveBallAngleThreshold = 0.15 - traitBonus(shooter, TRAITS.FINESSE_SHOT, 0.09, 0.05);
+    const curveBallSpinBonus = traitBonus(shooter, TRAITS.FINESSE_SHOT, 0.055, 0.045);
     let shotSpin = 0;
-    if (angleRatio > 0.15) {
+    if (angleRatio > curveBallAngleThreshold) {
       // Technique stat: longShots outside the box, blend with finishing inside.
       const spinTechSkill = shotDist > 220
         ? shooter.stats.longShots / 100
@@ -404,7 +473,7 @@ export class PlayerKickSystem {
         || (shotFootSign < 0 && shooter.stats.preferredFoot === 2);
       const shotWeakFootFactor = shotOnNaturalSide ? 1.0 : 0.5 + (shooter.stats.weakFootAbility / 5) * 0.5;
       shotSpin = finalShotLane.openSide
-        * (0.035 + power * 0.010 + spinTechSkill * 0.025 + spinSkillBonus)
+        * (0.035 + power * 0.010 + spinTechSkill * 0.025 + spinSkillBonus + curveBallSpinBonus)
         * angleRatio * shotWeakFootFactor;
     }
     this.ball.kickTo(targetGoal.centerX, safeY, inGoal ? power : power * 0.9, shooter.id, {
@@ -657,6 +726,65 @@ export class PlayerKickSystem {
     return findAttackingOpenSpace(player, ctx);
   }
 
+  // Returns 0–1: how likely an opponent intercepts this pass given ball travel timing.
+  // Passer perception is imperfect: low vision assumes a generic average speed for all
+  // opponents; high vision + reactions reads each opponent more accurately.
+  private computeInterceptionThreat(
+    fromX: number, fromY: number,
+    toX: number, toY: number,
+    opponents: Player[],
+    ballTotalFrames: number,
+    passerVision: number,
+    passerReactions: number,
+  ): number {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq < 1) return 0;
+
+    // perception 0–1: how accurately the passer reads opponent movement capability.
+    // vision=30+reactions=30 → ~0.32; vision=70+reactions=70 → ~0.62; both=90 → ~0.77
+    const perception = clamp((passerVision * 0.55 + passerReactions * 0.45) / 100, 0.20, 0.85);
+
+    // Assumed opponent speed when perception is low: ~68% of max sprint (generic average).
+    // Better perception blends toward each opponent's real speed.
+    const baselineSpeed = 1.85 * 0.68;
+
+    let maxThreat = 0;
+
+    for (const opp of opponents) {
+      const relX = opp.x - fromX;
+      const relY = opp.y - fromY;
+      const t = (relX * dx + relY * dy) / lenSq;
+      if (t < 0.05 || t > 0.95) continue;
+
+      // Perpendicular distance from opponent to the pass line
+      const closestX = fromX + t * dx;
+      const closestY = fromY + t * dy;
+      const lateralDist = dist(opp.x, opp.y, closestX, closestY);
+
+      // Frames until ball reaches this projection point
+      const framesUntil = t * ballTotalFrames;
+
+      // Perceived opponent speed: blend between generic baseline and actual speed
+      const actualSpeed = (opp.stats.sprintSpeed / 100) * 1.85 * opp.getStaminaFactor();
+      const perceivedSpeed = baselineSpeed + (actualSpeed - baselineSpeed) * perception;
+
+      // Reaction lag also perceived imprecisely: low vision assumes more lag (easier to ignore)
+      const perceivedReactionFrames = 4 + (1 - perception) * 4; // 4–8 frames
+      const reachable = perceivedSpeed * Math.max(0, framesUntil - perceivedReactionFrames);
+
+      // Threat only if the opponent can close the gap to contact radius
+      const margin = reachable + CONTACT_RADIUS - lateralDist;
+      if (margin > 0) {
+        const threat = clamp(margin / (CONTACT_RADIUS * 3), 0, 1);
+        if (threat > maxThreat) maxThreat = threat;
+      }
+    }
+
+    return maxThreat;
+  }
+
   private analyzeBallLane(
     fromX: number,
     fromY: number,
@@ -697,7 +825,8 @@ export class PlayerKickSystem {
 
       const laneDist = distancePointToSegment(player.x, player.y, fromX, fromY, toX, toY);
       const lateralSpeed = Math.abs(player.vx * perpX + player.vy * perpY);
-      const dangerRadius = CONTACT_RADIUS + 5 + clamp(lateralSpeed * 3.0, 0, 10);
+      const blockReach = player.teamId !== owningTeamId ? traitBonus(player, TRAITS.BLOCK, 5, 3) : 0;
+      const dangerRadius = CONTACT_RADIUS + 5 + clamp(lateralSpeed * 3.0, 0, 10) + blockReach;
       const warningRadius = dangerRadius + 18;
       if (laneDist > warningRadius) continue;
 

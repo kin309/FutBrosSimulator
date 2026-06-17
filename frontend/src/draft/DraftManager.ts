@@ -5,15 +5,15 @@ const DEFAULT_CONFIG: DraftConfig = {
   totalPicks: 15,
   totalRerolls: 2,
   boosterSize: 6,
-  famousRoundChance: 0.06,
+  famousRoundChance: 0.05,
   maxFamousRounds: 1,
 };
 
-const ELITE_ROUND_CHANCE = 0.03;
+const ELITE_ROUND_CHANCE = 0.01;
 const MAX_ELITE_ROUNDS = 1;
 const ELITE_MIN_OVERALL = 85;
 const NATIONALITY_ROUND_CHANCE = 0.08;
-const MAX_NATIONALITY_ROUNDS = 1;
+const MAX_NATIONALITY_ROUNDS = 2;
 const POSITION_ROUND_CHANCE = 0.08;
 const MAX_POSITION_ROUNDS = 1;
 
@@ -102,6 +102,7 @@ export class DraftManager {
   private readonly famousPool: DraftPlayer[];
   private readonly roundKinds: DraftRoundKind[] | null;
   private picked: DraftPlayer[] = [];
+  private shownIds: Set<string> = new Set();
   private currentPlayers: DraftPlayer[] = [];
   private currentKind: DraftRoundKind = 'normal';
   private rerollsLeft: number;
@@ -244,6 +245,7 @@ export class DraftManager {
 
   private createBooster(kind: DraftRoundKind): DraftPlayer[] {
     const pickedIds = new Set(this.picked.map((player) => player.id));
+    const excludedIds = new Set([...pickedIds, ...this.shownIds]);
     const currentIds = new Set<string>();
     const booster: DraftPlayer[] = [];
 
@@ -262,7 +264,7 @@ export class DraftManager {
       source = this.fullPool;
     }
 
-    const available = source.filter((player) => !pickedIds.has(player.id));
+    const available = source.filter((player) => !excludedIds.has(player.id));
 
     if (kind === 'famous-clubs') {
       const elite = available.filter((player) => player.overall >= 83);
@@ -280,6 +282,10 @@ export class DraftManager {
       currentIds.add(player.id);
     }
 
+    for (const player of booster) {
+      this.shownIds.add(player.id);
+    }
+
     return shuffle(booster);
   }
 
@@ -288,8 +294,11 @@ export class DraftManager {
     if (candidates.length === 0) return null;
 
     const roll = Math.random();
-    const isSpecial = kind === 'famous-clubs' || kind === 'elite' || kind.startsWith('nationality:') || kind.startsWith('position:');
-    const target = isSpecial ? specialTier(roll) : normalTier(roll);
+    const target = (kind === 'famous-clubs' || kind === 'elite')
+      ? specialTier(roll)
+      : (kind.startsWith('nationality:') || kind.startsWith('position:'))
+        ? themeTier(roll)
+        : normalTier(roll);
 
     const tierCandidates = candidates.filter((player) => isInTier(player.overall, target));
     return randomItem(tierCandidates.length > 0 ? tierCandidates : candidates);
@@ -310,13 +319,21 @@ export function roundTitle(kind: DraftRoundKind): string {
 function normalTier(roll: number): [number, number] {
   if (roll < 0.48) return [60, 69];
   if (roll < 0.82) return [70, 79];
-  if (roll < 0.97) return [80, 84];
+  if (roll < 0.98) return [80, 84];
+  return [85, 99];
+}
+
+// Nação e posição: melhor que normal, mas sem viés de rodada elite
+function themeTier(roll: number): [number, number] {
+  if (roll < 0.20) return [60, 69];
+  if (roll < 0.55) return [70, 79];
+  if (roll < 0.90) return [80, 84];
   return [85, 99];
 }
 
 function specialTier(roll: number): [number, number] {
   if (roll < 0.20) return [70, 79];
-  if (roll < 0.70) return [80, 84];
+  if (roll < 0.80) return [80, 84];
   return [85, 99];
 }
 

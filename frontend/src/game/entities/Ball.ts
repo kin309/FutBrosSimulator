@@ -36,6 +36,10 @@ export class Ball extends Phaser.GameObjects.Arc {
   // for kickCooldown ms, preventing instant self-interception.
   kickedById: string | null = null;
   private kickCooldown = 0;
+
+  // Persistent touch history for goal attribution (not affected by cooldown reset).
+  lastToucherId: string | null = null;
+  previousToucherId: string | null = null;
   private pickupBlockers = new Map<string, number>();
 
   private shadow!: Phaser.GameObjects.Arc;
@@ -44,8 +48,8 @@ export class Ball extends Phaser.GameObjects.Arc {
   private trailGfx!: Phaser.GameObjects.Graphics;
   private readonly trailPos: Array<{ x: number; y: number }> = [];
   private trailFrame = 0;
-  private static readonly TRAIL_MAX = 18;
-  private static readonly TRAIL_SAMPLE_EVERY = 4;
+  private static readonly TRAIL_MAX = 28;
+  private static readonly TRAIL_SAMPLE_EVERY = 2;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, BALL_PHYSICS.radius, 0, 360, false, 0xffffff, 0);
@@ -252,16 +256,12 @@ export class Ball extends Phaser.GameObjects.Arc {
       const friction = Math.pow(BALL_PHYSICS.groundFrictionPerFrame, scale);
       this.velocity.x *= friction;
       this.velocity.y *= friction;
-      if (Math.abs(this.spin) > 0.005) {
-        const speed = this.getSpeed();
-        if (speed > 0.5) {
-          const invSpeed = 1 / speed;
-          const perpX = -this.velocity.y * invSpeed;
-          const perpY =  this.velocity.x * invSpeed;
-          const force = this.spin * BALL_PHYSICS.magnusForcePerSpin * scale;
-          this.velocity.x += perpX * force;
-          this.velocity.y += perpY * force;
-        }
+      if (Math.abs(this.spin) > 0.005 && this.getSpeed() > 0.5) {
+        const magnusFactor = this.spin * BALL_PHYSICS.magnusForcePerSpin * scale;
+        const oldVx = this.velocity.x;
+        const oldVy = this.velocity.y;
+        this.velocity.x += -oldVy * magnusFactor;
+        this.velocity.y +=  oldVx * magnusFactor;
       }
       this.updateFlight(scale);
     }
@@ -275,10 +275,16 @@ export class Ball extends Phaser.GameObjects.Arc {
     this.lastKickX = this.x;
     this.lastKickY = this.y;
     const angle = Math.atan2(targetY - this.y, targetX - this.x);
+    const lift = options.lift ?? 0;
     this.velocity.x = Math.cos(angle) * power;
     this.velocity.y = Math.sin(angle) * power;
-    this.verticalVelocity = Math.max(this.verticalVelocity, options.lift ?? 0);
+    this.verticalVelocity = Math.max(this.verticalVelocity, lift);
     this.spin = options.spin ?? this.inferKickSpin(power, angle);
+    if (this.spin !== 0) {
+      const speedRetention = 1 - Math.min(Math.abs(this.spin) * BALL_PHYSICS.spinSpeedCostFactor, 0.35);
+      this.velocity.x *= speedRetention;
+      this.velocity.y *= speedRetention;
+    }
     if (kickerId) {
       this.markTouchedBy(kickerId);
     }
@@ -334,10 +340,14 @@ export class Ball extends Phaser.GameObjects.Arc {
 
   private inferKickSpin(power: number, angle: number): number {
     const direction = Math.sin(angle * 1.7 + this.x * 0.013 + this.y * 0.017) >= 0 ? 1 : -1;
-    return direction * Math.min(0.035 + power * 0.012, 0.16);
+    return direction * Math.min(0.06 + power * 0.018, 0.26);
   }
 
   markTouchedBy(playerId: string, cooldownMs: number = 300): void {
+    if (this.lastToucherId !== playerId) {
+      this.previousToucherId = this.lastToucherId;
+    }
+    this.lastToucherId = playerId;
     this.kickedById = playerId;
     this.kickCooldown = cooldownMs;
     this.preventPickup(playerId, cooldownMs);
@@ -395,7 +405,7 @@ export class Ball extends Phaser.GameObjects.Arc {
   private updateTrail(): void {
     const speed = this.getSpeed();
 
-    if (!this.owner && speed > 2.0) {
+    if (!this.owner && speed > 1.0) {
       this.trailFrame++;
       if (this.trailFrame >= Ball.TRAIL_SAMPLE_EVERY) {
         this.trailFrame = 0;
@@ -427,11 +437,11 @@ export class Ball extends Phaser.GameObjects.Arc {
       };
     }
 
-    const speedFactor = Math.min((speed - 2.0) / 8.0, 1);
+    const speedFactor = Math.min((speed - 2.0) / 5.0, 1);
     for (let i = 1; i < total; i++) {
       const t = i / total; // 0 = oldest (tail), 1 = newest (head)
-      const alpha = t * t * 0.50 * speedFactor;
-      const width = (0.2 + t * t * t * 14.0) * speedFactor;
+      const alpha = t * t * 0.75 * speedFactor;
+      const width = (0.3 + t * t * t * 10.0) * speedFactor;
       this.trailGfx.lineStyle(width, 0xffffff, alpha);
       this.trailGfx.beginPath();
       this.trailGfx.moveTo(pts[i - 1].x, pts[i - 1].y);

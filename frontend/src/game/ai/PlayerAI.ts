@@ -112,8 +112,12 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
       const backDir = -ctx.ownTeam.attackDirection;
       const nearestOpp = ctx.oppTeam.getNearestPlayerTo(player.x, player.y);
       if (nearestOpp && nearestOpp.distanceTo(player) < 80) {
-        const dx = player.x - nearestOpp.x;
-        const dy = player.y - nearestOpp.y;
+        // Predict where the opponent will be in ~7 frames to shield from their approach direction,
+        // not just their current position.
+        const predOppX = nearestOpp.x + nearestOpp.vx * 7;
+        const predOppY = nearestOpp.y + nearestOpp.vy * 7;
+        const dx = player.x - predOppX;
+        const dy = player.y - predOppY;
         const dlen = Math.sqrt(dx * dx + dy * dy) || 1;
         player.setTarget(
           clamp(player.x + (dx / dlen) * 32 + backDir * 14, ctx.field.left + 15, ctx.field.right - 15),
@@ -140,23 +144,31 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
       const dir = ctx.ownTeam.attackDirection;
       const skill = (player.stats.dribbling * 0.72 + player.stats.sprintSpeed * 0.28) / 100;
 
-      // Pick the side of the blocker with fewer opponents in the escape lane
       const pastDistance = 66 + skill * 34 + Math.random() * 24;
       const lateralDistance = 46 + skill * 24 + Math.random() * 22;
       const pastX = blocker.x + dir * pastDistance;
       const leftY  = blocker.y - lateralDistance;
       const rightY = blocker.y + lateralDistance;
-      const leftThreat  = ctx.oppTeam.players.filter(
-        p => p !== blocker && dist(p.x, p.y, pastX, leftY)  < 70,
-      ).length;
-      const rightThreat = ctx.oppTeam.players.filter(
-        p => p !== blocker && dist(p.x, p.y, pastX, rightY) < 70,
-      ).length;
 
-      const targetY = leftThreat <= rightThreat ? leftY : rightY;
+      // Scan both escape lanes with a wider net: check defenders near the corridor
+      // between player and escape point, not just at the destination.
+      const scanThreat = (ey: number) => ctx.oppTeam.players.filter(p => {
+        if (p === blocker) return false;
+        const dToLane = distancePointToSegment(p.x, p.y, player.x, player.y, pastX, ey);
+        return dToLane < 58 || dist(p.x, p.y, pastX, ey) < 80;
+      }).length;
+      const leftThreat  = scanThreat(leftY);
+      const rightThreat = scanThreat(rightY);
+
+      const escapeY = leftThreat <= rightThreat ? leftY : rightY;
+
+      // Approach target: arrive alongside the blocker from the escape side rather
+      // than charging head-on. The carrier angles toward the blocker's flank during
+      // the commit window; the burst in doDribble carries them past.
+      const approachX = blocker.x + dir * (pastDistance * 0.20);
       player.setTarget(
-        clamp(pastX, ctx.field.left + 15, ctx.field.right - 15),
-        clamp(targetY, ctx.field.top + 15, ctx.field.bottom - 15),
+        clamp(approachX, ctx.field.left + 15, ctx.field.right - 15),
+        clamp(escapeY, ctx.field.top + 15, ctx.field.bottom - 15),
       );
       player.dribbleCommitMs = Math.round(95 + skill * 165 + Math.random() * 140);
       player.dribbleContactRadius = 32 + Math.random() * 13;
@@ -224,11 +236,15 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
             const progress     = (wx - player.x) * attackDir;
             const progressScore = clamp(progress / 350, -0.4, 1.0);
 
-            // Proximity to the tactically ideal position (AI formation target).
-            const dFromIdeal  = dist(wx, wy, tx, ty);
-            const idealScore  = clamp(1 - dFromIdeal / (radius * Math.max(cellW, cellH)), 0, 1);
+            // Personal heatmap: Gaussian weight peaking at the player's formation
+            // center. Tight spread = stay in position; wide spread = roam freely.
+            const homeScore = player.positionHeatMap?.getWeight(wx, wy) ?? 1.0;
 
-            const score = coldScore * 0.45 + progressScore * 0.35 + idealScore * 0.20;
+            // Proximity to the tactically computed target (minor pull).
+            const dFromIdeal  = dist(wx, wy, tx, ty);
+            const idealScore  = clamp(1 - dFromIdeal / (radius * Math.max(cellW, cellH) * 1.5), 0, 1);
+
+            const score = coldScore * 0.40 + progressScore * 0.30 + homeScore * 0.20 + idealScore * 0.10;
             if (score > bestScore) {
               bestScore = score;
               bestX = wx;
@@ -445,8 +461,11 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
   }
 
   if (underPressure && nearestOpp) {
-    const awayX = player.x - nearestOpp.x;
-    const awayY = player.y - nearestOpp.y;
+    // Use predicted opp position to escape toward where the steal threat is NOT heading.
+    const predOppX = nearestOpp.x + nearestOpp.vx * 7;
+    const predOppY = nearestOpp.y + nearestOpp.vy * 7;
+    const awayX = player.x - predOppX;
+    const awayY = player.y - predOppY;
     const len = Math.sqrt(awayX * awayX + awayY * awayY) || 1;
     candidates.push({
       x: player.x + (awayX / len) * 46 + dir * 18,
@@ -458,8 +477,9 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
   // Lateral escape from a tracking marker: generate candidates perpendicular to the
   // marker's approach direction so the carrier can sidestep into open space.
   if (myMarker) {
-    const mDx = myMarker.x - player.x;
-    const mDy = myMarker.y - player.y;
+    // Blend marker's current position with their velocity to get true approach direction.
+    const mDx = (myMarker.x + myMarker.vx * 7) - player.x;
+    const mDy = (myMarker.y + myMarker.vy * 7) - player.y;
     const mLen = Math.sqrt(mDx * mDx + mDy * mDy) || 1;
     const perpX = -mDy / mLen;
     const perpY = mDx / mLen;
@@ -599,10 +619,10 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
 // Duration also scales with remaining stamina; urgency adds a small adrenaline boost.
 function resolveSprintMs(player: Player, baseDurationMs: number, urgency = 0): number {
   const s = player.currentStamina;
-  if (s >= 70) return baseDurationMs;
+  if (s >= 80) return baseDurationMs;
   if (s < 12) return 0; // MIN_STAMINA_TO_SPRINT enforced by requestSprint too
-  if (Math.random() > Math.pow(s / 70, 1.5 - urgency)) return 0;
-  const durationFactor = clamp(0.35 + (s / 70) * 0.65 + urgency * 0.10, 0.35, 1.10);
+  if (Math.random() > Math.pow(s / 80, 1.5 - urgency)) return 0;
+  const durationFactor = clamp(0.35 + (s / 80) * 0.65 + urgency * 0.10, 0.35, 1.10);
   const ms = Math.round(baseDurationMs * durationFactor);
   return ms < 120 ? 0 : ms;
 }
@@ -637,6 +657,8 @@ function shouldBypassCooldownForDefensiveReaction(player: Player, ctx: AIContext
   if (player.role === PlayerRole.Goalkeeper) {
     const goalCenterY = (ctx.ownGoal.top + ctx.ownGoal.bottom) / 2;
     const target = ctx.ball.targetPlayer as Player | null;
+    // Backpass directly to this GK: bypass cooldown so they react immediately, wherever the ball is.
+    if (target === player && !ctx.ball.owner) return true;
     const projectedX = ctx.ball.x + ctx.ball.velocity.x * 10;
     const projectedY = ctx.ball.y + ctx.ball.velocity.y * 10;
     const ballInClaimZone = Math.abs(projectedX - ctx.ownGoal.centerX) < 220
@@ -660,6 +682,22 @@ function shouldBypassCooldownForDefensiveReaction(player: Player, ctx: AIContext
     if (player.distanceToBall(ctx.ball) < 150) return true;
   }
 
+  // Ball in flight toward a teammate: attackers and midfielders reposition immediately
+  // to arrive in space as the new carrier controls it (third-man timing).
+  if (!ctx.ball.owner && flyingTarget && flyingTarget.teamId === player.teamId
+      && flyingTarget !== player && ctx.ball.getSpeed() > 1.5) {
+    if (player.role === PlayerRole.Striker || player.role === PlayerRole.Winger
+        || player.role === PlayerRole.Midfielder) {
+      return true;
+    }
+  }
+
+  // Midfielders re-evaluate quickly when a carrier enters their zone
+  if (player.role === PlayerRole.Midfielder) {
+    const carrier = ctx.oppTeam.getBallCarrier();
+    return !!carrier && player.distanceTo(carrier) < 175 && isDangerousArea(carrier, ctx.ownGoal.centerX);
+  }
+
   if (player.role !== PlayerRole.Defender) return false;
 
   const target = ctx.ball.targetPlayer as Player | null;
@@ -668,5 +706,5 @@ function shouldBypassCooldownForDefensiveReaction(player: Player, ctx: AIContext
   }
 
   const carrier = ctx.oppTeam.getBallCarrier();
-  return !!carrier && player.distanceTo(carrier) < 120 && isDangerousArea(carrier, ctx.ownGoal.centerX);
+  return !!carrier && player.distanceTo(carrier) < 170 && isDangerousArea(carrier, ctx.ownGoal.centerX);
 }

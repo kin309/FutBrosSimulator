@@ -17,12 +17,11 @@ function applyWallBounce(vx: number, vy: number, axis: 'horizontal' | 'vertical'
 }
 
 function applyMagnus(vx: number, vy: number, spin: number): { vx: number; vy: number } {
-  const speed = Math.sqrt(vx * vx + vy * vy);
-  if (speed < 0.3) return { vx, vy };
-  const invSpeed = 1 / speed;
+  if (Math.sqrt(vx * vx + vy * vy) < 0.5) return { vx, vy };
+  const f = spin * MAGNUS;
   return {
-    vx: vx + (-vy * invSpeed) * spin * MAGNUS,
-    vy: vy + (vx * invSpeed) * spin * MAGNUS,
+    vx: vx + (-vy) * f,
+    vy: vy + vx * f,
   };
 }
 
@@ -78,6 +77,8 @@ export interface BallState {
   y: number;
   velocity: { x: number; y: number };
   spin?: number;
+  flightHeight?: number;
+  verticalVelocity?: number;
 }
 
 export interface PlayerPos {
@@ -154,7 +155,7 @@ export function findBallFramesToX(ball: BallState, lineX: number, maxFrames: num
 export interface PlayerForIntercept {
   x: number;
   y: number;
-  stats: { sprintSpeed: number; reactions: number };
+  stats: { sprintSpeed: number; reactions: number; vision: number };
   getStaminaFactor(): number;
 }
 
@@ -162,19 +163,56 @@ export function projectBallIntercept(ball: BallState, player: PlayerForIntercept
   const speed = Math.sqrt(ball.velocity.x * ball.velocity.x + ball.velocity.y * ball.velocity.y);
   if (speed < 0.8) return { x: ball.x, y: ball.y };
 
+  // Aerial ball: run to the landing spot, not to the closest point on the arc mid-air.
+  const fh = ball.flightHeight ?? 0;
+  if (fh > 5) {
+    const vz = ball.verticalVelocity ?? 0;
+    const g = BALL_PHYSICS.verticalGravityPerFrame;
+    const disc = vz * vz + 2 * g * fh;
+    const landFrames = disc > 0 ? clamp((vz + Math.sqrt(disc)) / g, 0, 120) : 0;
+    const landing = projectBallWithBounce(ball, landFrames, field);
+    return {
+      x: clamp(landing.x, field.left + 15, field.right - 15),
+      y: clamp(landing.y, field.top + 15, field.bottom - 15),
+    };
+  }
+
   const dx = player.x - ball.x;
   const dy = player.y - ball.y;
   const d = Math.sqrt(dx * dx + dy * dy);
   const playerSpeed = Math.max(0.4, (player.stats.sprintSpeed / 100) * 1.85 * player.getStaminaFactor());
-  const frames = clamp(d / playerSpeed, 0, 90);
 
-  // 0.62 (reactions=0) → 1.0 (reactions=100)
+  // Iterate through the ball's actual trajectory to find the earliest frame the player
+  // can physically reach — the true closest intercept point, not the ball's final position.
+  const maxSearch = clamp(Math.ceil(d / playerSpeed) + 20, 20, 120);
+  let interceptFrames = maxSearch;
+  for (let t = 1; t <= maxSearch; t++) {
+    const bp = projectBallAtFrames(ball, t);
+    const bdx = bp.x - player.x;
+    const bdy = bp.y - player.y;
+    if (Math.sqrt(bdx * bdx + bdy * bdy) <= playerSpeed * t) {
+      interceptFrames = t;
+      break;
+    }
+  }
+
+  // High vision → cuts to the true earliest intercept (closest reachable point on trajectory).
+  // Low vision → overshoots, aiming further along the trajectory than necessary.
+  const visionFactor = clamp((player.stats.vision - 30) / 70, 0, 1);
+  const frames = clamp(interceptFrames + (1 - visionFactor) * 22, 0, 90);
+
+  // reactions: how early they commit to the projected position vs current ball position
   const anticipation = 0.62 + (player.stats.reactions / 100) * 0.38;
-  const projected = projectBallAtFrames(ball, frames);
+  // Low reactions: follows straight path (misses the curve); high reactions: tracks full spin curve
+  const spinAwareness = clamp((player.stats.reactions - 35) / 65, 0, 1);
+  const projectedFull = projectBallAtFrames(ball, frames, 1);
+  const projectedFlat = projectBallAtFrames(ball, frames, 0);
+  const projX = projectedFlat.x + (projectedFull.x - projectedFlat.x) * spinAwareness;
+  const projY = projectedFlat.y + (projectedFull.y - projectedFlat.y) * spinAwareness;
 
   return {
-    x: clamp(projected.x * anticipation + ball.x * (1 - anticipation), field.left + 15, field.right - 15),
-    y: clamp(projected.y * anticipation + ball.y * (1 - anticipation), field.top + 15, field.bottom - 15),
+    x: clamp(projX * anticipation + ball.x * (1 - anticipation), field.left + 15, field.right - 15),
+    y: clamp(projY * anticipation + ball.y * (1 - anticipation), field.top + 15, field.bottom - 15),
   };
 }
 

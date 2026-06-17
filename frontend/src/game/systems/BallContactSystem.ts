@@ -12,11 +12,18 @@ import { FieldBounds, GoalBounds } from '../types';
 import { dist, clamp, distancePointToSegment } from '../utils/MathUtils';
 import { BALL_PHYSICS } from '../physics/BallPhysics';
 import { projectBallIntercept, planReceptionTarget } from '../physics/BallProjection';
+import { traitBonus, TRAITS } from '../data/PlayerTraits';
 import type { MatchContext } from './MatchContext';
 
 const CONTACT_RADIUS: number = BALL_PHYSICS.contactRadius;
 const BALL_FRICTION: number = BALL_PHYSICS.groundFrictionPerFrame;
 const BALL_PICKUP_RADIUS: number = BALL_PHYSICS.pickupRadius;
+
+// Height thresholds: below GROUND_CONTACT the ball is at foot level (full interception);
+// above PASS_OVER it flies completely over any standing player.
+// Peak heights: normal pass ~0.6, through ~2.9, medium loft (lift=2.8) ~11, cross ~24.
+const BALL_HEIGHT_GROUND_CONTACT = 5;
+const BALL_HEIGHT_PASS_OVER = 14;
 
 export class BallContactSystem {
   private ball: Ball;
@@ -151,6 +158,9 @@ export class BallContactSystem {
           this.scoreboard.logEvent(`${closestDef.playerName} ganhou o duelo aéreo!`);
           return;
         }
+        if (target.playstyles.includes('Precision Header') || target.playstylesPlus.includes('Precision Header')) {
+          target.wonAerialHeader = true;
+        }
         this.scoreboard.logEvent(`${target.playerName} ganhou o duelo aéreo!`);
       }
     } else {
@@ -160,10 +170,25 @@ export class BallContactSystem {
     const isGKCatch = target.role === PlayerRole.Goalkeeper;
 
     if (isGKCatch) {
-      // stretchSave: GK dived visually but has comfortable reach — resolve as routine save
-      const isDive  = target.state === PlayerState.GkDive && !target.stretchSave;
+      const isDiving  = target.state === PlayerState.GkDive;
+      const isStretch = isDiving && target.stretchSave;
+      const isDive    = isDiving && !target.stretchSave;
       target.stretchSave = false;
-      const result  = this.resolver.resolveGkSave(target, isDive, this.ball.getSpeed());
+
+      // Backpass: ball kicked by a teammate — GK collects cleanly, no save needed
+      const kicker = this.ball.kickedById
+        ? this.getAllPlayers().find(p => p.id === this.ball.kickedById) ?? null
+        : null;
+      const isBackpass = !isDiving && kicker !== null && kicker.teamId === target.teamId;
+      if (isBackpass) {
+        target.hasBall = true;
+        target.state = PlayerState.Clearance;
+        this.ball.attachToPlayer(target);
+        this.scoreboard.logEvent(`${target.playerName} recebe o recuo`);
+        return;
+      }
+
+      const result = this.resolver.resolveGkSave(target, isDive, isStretch, this.ball.getSpeed());
 
       if (result === 'catch') {
         target.hasBall = true;
@@ -176,12 +201,14 @@ export class BallContactSystem {
         target.aiCooldown = 650;
         this.kickSystem.doParry(target);
         this.stats.recordSave(target.teamId);
-        this.scoreboard.logEvent(`${target.playerName} espalmou!`);
+        this.scoreboard.logEvent(isStretch
+          ? `${target.playerName} espalmou na ponta!`
+          : `${target.playerName} espalmou!`);
       } else {
         target.state = PlayerState.ReturnToShape;
         target.aiCooldown = 900;
         this.scoreboard.logEvent(
-          isDive ? `${target.playerName} não alcançou!` : `${target.playerName} soltou!`,
+          isDiving ? `${target.playerName} não alcançou!` : `${target.playerName} soltou!`,
         );
       }
       return;
@@ -226,6 +253,7 @@ export class BallContactSystem {
       if (this.getBallPlayerContactDistance(player) >= contactRadius) continue;
 
       if (player.role === PlayerRole.Goalkeeper && gkClaimRadius > CONTACT_RADIUS) {
+        // GK claim is height-independent — goalkeeper can jump to gather the ball.
         this.ball.targetPlayer = null;
         this.ball.attachToPlayer(player);
         player.hasBall = true;
@@ -234,6 +262,18 @@ export class BallContactSystem {
         this.scoreboard.logEvent(`${player.playerName} saiu e segurou!`);
         return;
       }
+
+      // Aerial pass-over: outfield players cannot contest a ball that is flying high.
+      // Tall/heavy players have a higher reach — their thresholds shift up via aerialBodyScore.
+      // heightFactor = 1 at ground level, 0 at or above the player's personal pass-over height.
+      const aerialScore = player.getAerialBodyScore(); // −12 (short/light) … +18 (tall/heavy)
+      const playerPassOver = clamp(BALL_HEIGHT_PASS_OVER + aerialScore * 0.35, 8, 22);
+      const playerGroundContact = clamp(BALL_HEIGHT_GROUND_CONTACT + aerialScore * 0.25, 1.5, 10);
+      const h = this.ball.flightHeight;
+      if (h >= playerPassOver) continue; // ball too high for this player — passes over
+      const heightFactor = h > playerGroundContact
+        ? clamp((playerPassOver - h) / (playerPassOver - playerGroundContact), 0, 1)
+        : 1.0;
 
       if (!this.ball.targetPlayer) {
         break;
@@ -249,10 +289,10 @@ export class BallContactSystem {
         const interceptTrait = player.playstyles.includes('Intercept') || player.playstylesPlus.includes('Intercept')
           ? (player.playstylesPlus.includes('Intercept') ? 0.10 : 0.06)
           : 0;
-        const interceptChance = 0.22
+        const interceptChance = (0.22
           + (player.stats.defending / 100) * 0.38
           + (player.stats.reactions / 100) * 0.14
-          + interceptTrait;
+          + interceptTrait) * heightFactor;
         if (Math.random() < interceptChance) {
           this.stats.recordInterception(player.teamId);
           this.ball.targetPlayer = null;
@@ -267,15 +307,17 @@ export class BallContactSystem {
 
         // 2. Deflection — ball hits defender body. Absorbed/scattered, not elastic bounce.
         const ballSpeedFactor = clamp((this.ball.getSpeed() - 4.5) / 7.5, 0, 1);
-        const deflectChance = 0.28 + (player.stats.defending / 100) * 0.18 + ballSpeedFactor * 0.22;
+        const blockBonus = traitBonus(player, TRAITS.BLOCK, isShot ? 0.14 : 0.07, isShot ? 0.10 : 0.05);
+        const deflectChance = (0.28 + (player.stats.defending / 100) * 0.18 + ballSpeedFactor * 0.22 + blockBonus) * heightFactor;
         if (Math.random() < deflectChance) {
-          const spd = this.ball.getSpeed() * (isShot ? 0.58 : 0.64);
-          if (Math.random() < 0.50) {
+          const absorbFactor = Math.random() < 0.40 ? 0.38 + Math.random() * 0.18 : 0.55 + Math.random() * 0.15;
+          const spd = this.ball.getSpeed() * (isShot ? absorbFactor * 0.90 : absorbFactor);
+          if (Math.random() < 0.65) {
             const currentAngle = Math.atan2(this.ball.velocity.y, this.ball.velocity.x);
-            const deviation = (Math.random() - 0.5) * 1.60;
+            const deviation = (Math.random() - 0.5) * 2.30;
             this.rotateBallVelocity(currentAngle + deviation, spd);
           } else {
-            this.deflectBallOffPlayer(player, spd, 1.10);
+            this.deflectBallOffPlayer(player, spd, 1.55);
           }
           this.ball.targetPlayer = null;
           target.state = PlayerState.FindSpace;
@@ -285,7 +327,11 @@ export class BallContactSystem {
           return;
         }
 
-        // 3. Glance — barely touches, pass continues with a noticeable deviation
+        // 3. Glance — only if ball is near ground; high balls pass over without touching.
+        if (Math.random() >= heightFactor) {
+          // Ball grazes over the player — the rare "nutmeg/caneta" equivalent for lofted passes.
+          break;
+        }
         const spd = this.ball.getSpeed() * 0.87;
         this.glanceBallOffPlayer(player, spd, 0.55);
         this.ball.markTouchedBy(player.id, 220);
@@ -298,7 +344,7 @@ export class BallContactSystem {
         // (a fast cross is hard to accidentally trap; a slow ground pass is easy).
         const firstTouch = (player.stats.dribbling * 0.5 + player.stats.reactions * 0.5) / 100;
         const speedFactor = clamp(1 - this.ball.getSpeed() / 10, 0, 1);
-        const accidentChance = clamp((1 - firstTouch) * 0.45 * speedFactor, 0, 0.40);
+        const accidentChance = clamp((1 - firstTouch) * 0.45 * speedFactor, 0, 0.40) * heightFactor;
         if (Math.random() < accidentChance) {
           this.ball.targetPlayer = null;
           target.state = PlayerState.FindSpace;
@@ -311,6 +357,11 @@ export class BallContactSystem {
           this.recalculateRoutes(target);
           this.scoreboard.logEvent(`${player.playerName} tomou a bola sem querer!`);
           return;
+        }
+
+        // Airborne ball drifts through teammate — no deflection if flying high enough
+        if (Math.random() >= heightFactor) {
+          break;
         }
 
         // Normal deflection — skilled player steps aside / lets it ricochet
@@ -388,6 +439,10 @@ export class BallContactSystem {
 
     for (const p of this.getAllPlayers()) {
       if (this.ball.isPickupBlocked(p.id)) continue;
+      // Each player can only pick up a ball they can physically reach in the air.
+      const aerialScore = p.getAerialBodyScore();
+      const playerPickupHeight = clamp(BALL_HEIGHT_GROUND_CONTACT + aerialScore * 0.25, 1.5, 10);
+      if (this.ball.flightHeight > playerPickupHeight) continue;
       const d = p.distanceToBall(this.ball);
       if (d < nearestDist) { nearestDist = d; nearest = p; }
     }

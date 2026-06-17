@@ -63,22 +63,26 @@ const PENALTY: Record<PlayerRole, Record<PlayerRole, StatPenalties>> = {
     [PlayerRole.Defender]:   { shooting:0,finishing:0,shotPower:0,longShots:0, passing:0,shortPassing:0,longPassing:0,crossing:0,vision:0, dribbling:0, defending:0.24,interceptions:0.18, intelligence:0.20,composure:0,reactions:0, aggression:0.06 },
     [PlayerRole.Midfielder]: { shooting:0,finishing:0,shotPower:0,longShots:0, passing:0.07,shortPassing:0.06,longPassing:0.07,crossing:0,vision:0, dribbling:0, defending:0.06,interceptions:0, intelligence:0.07,composure:0,reactions:0, aggression:0 },
     [PlayerRole.Winger]:     NONE,
-    [PlayerRole.Striker]:    { shooting:0.07,finishing:0.08,shotPower:0.05,longShots:0.10, passing:0,shortPassing:0,longPassing:0,crossing:0,vision:0, dribbling:0, defending:0,interceptions:0, intelligence:0.07,composure:0,reactions:0, aggression:0 },
+    [PlayerRole.Striker]:    NONE,
   },
 
   [PlayerRole.Striker]: {
     [PlayerRole.Goalkeeper]: { shooting:0,finishing:0,shotPower:0,longShots:0, passing:0.26,shortPassing:0.26,longPassing:0.24,crossing:0.38,vision:0.28, dribbling:0.36, defending:0.45,interceptions:0.36, intelligence:0.46,composure:0.40,reactions:0.32, aggression:0 },
     [PlayerRole.Defender]:   { shooting:0,finishing:0,shotPower:0,longShots:0, passing:0,shortPassing:0,longPassing:0,crossing:0,vision:0, dribbling:0, defending:0.32,interceptions:0.26, intelligence:0.30,composure:0,reactions:0, aggression:0.08 },
     [PlayerRole.Midfielder]: { shooting:0,finishing:0,shotPower:0,longShots:0, passing:0.13,shortPassing:0.10,longPassing:0.13,crossing:0.14,vision:0.10, dribbling:0, defending:0.13,interceptions:0.08, intelligence:0.16,composure:0.10,reactions:0.08, aggression:0.05 },
-    [PlayerRole.Winger]:     { shooting:0,finishing:0,shotPower:0,longShots:0, passing:0,shortPassing:0,longPassing:0,crossing:0,vision:0, dribbling:0, defending:0.06,interceptions:0, intelligence:0.08,composure:0,reactions:0, aggression:0 },
+    [PlayerRole.Winger]:     NONE,
     [PlayerRole.Striker]:    NONE,
   },
 };
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
+const ATTACK_ROLES = new Set([PlayerRole.Winger, PlayerRole.Striker]);
+
 export function isOutOfPosition(naturalRole: PlayerRole, slotRole: PlayerRole, alternateRoles: PlayerRole[] = []): boolean {
-  return naturalRole !== slotRole && !alternateRoles.includes(slotRole);
+  if (naturalRole === slotRole || alternateRoles.includes(slotRole)) return false;
+  if (ATTACK_ROLES.has(naturalRole) && ATTACK_ROLES.has(slotRole)) return false;
+  return true;
 }
 
 export function applyOutOfPositionPenalty(
@@ -94,13 +98,11 @@ export function applyOutOfPositionPenalty(
     pct === 0 ? value : Math.max(1, Math.round(value * (1 - pct)));
 
   return {
-    // display-only aggregates — never touched by position penalty
     overall:      stats.overall,
     speed:        stats.speed,
     shooting:     stats.shooting,
     passing:      stats.passing,
     intelligence: stats.intelligence,
-    // athletic — never penalized
     acceleration:     stats.acceleration,
     sprintSpeed:      stats.sprintSpeed,
     physical:         stats.physical,
@@ -112,7 +114,6 @@ export function applyOutOfPositionPenalty(
     skillMoves:       stats.skillMoves,
     weakFootAbility:  stats.weakFootAbility,
     preferredFoot:    stats.preferredFoot,
-    // technical — penalized for wrong role
     finishing:    cut(stats.finishing,    p.finishing),
     shotPower:    cut(stats.shotPower,    p.shotPower),
     longShots:    cut(stats.longShots,    p.longShots),

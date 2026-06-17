@@ -104,18 +104,43 @@ export class PlayerMovementSystem {
           carrier.hasBall = false;
           this.ball.release();
           carrier.state = PlayerState.FindSpace;
-          // Ball squirts away from the defender's approach direction — more realistic than pure random.
           const approachX = carrier.x - defender.x;
           const approachY = carrier.y - defender.y;
           const approachLen = Math.max(Math.sqrt(approachX * approachX + approachY * approachY), 1);
-          const scatter = (Math.random() - 0.5) * 2.5;
-          this.ball.velocity.x = (approachX / approachLen) * 2.5 + scatter;
-          this.ball.velocity.y = (approachY / approachLen) * 2.5 + scatter;
+          const r = Math.random();
+          if (r < 0.22) {
+            // Ball squirts backward past the carrier — loose ball behind the play
+            const backDir = -carrier.attackDirection;
+            this.ball.velocity.x = backDir * (1.8 + Math.random() * 1.8);
+            this.ball.velocity.y = (Math.random() - 0.5) * 3.2;
+          } else if (r < 0.40) {
+            // Ball squirts sideways — neither player has immediate advantage
+            const side = Math.random() < 0.5 ? 1 : -1;
+            this.ball.velocity.x = (approachX / approachLen) * 1.0;
+            this.ball.velocity.y = side * (2.0 + Math.random() * 2.0);
+          } else {
+            // Ball squirts forward toward the tackling defender
+            const scatter = (Math.random() - 0.5) * 2.0;
+            this.ball.velocity.x = (approachX / approachLen) * 2.5 + scatter;
+            this.ball.velocity.y = (approachY / approachLen) * 2.5 + scatter;
+          }
           this.scoreboard.logEvent(`${defender.playerName} roubou de ${carrier.playerName}!`);
         } else {
           const dx = carrier.x - defender.x;
           const dy = carrier.y - defender.y;
           defender.setTarget(defender.x - dx * 0.4, defender.y - dy * 0.4);
+          // Failed tackle disrupts the carrier's route — they don't glide through untouched.
+          // Push their target perpendicular to the tackle approach so they must re-route.
+          const len = Math.max(Math.sqrt(dx * dx + dy * dy), 1);
+          const perpX = -dy / len;
+          const perpY = dx / len;
+          const side = Math.random() < 0.5 ? 1 : -1;
+          const disruption = 18 + Math.random() * 22;
+          carrier.setTarget(
+            clamp(carrier.targetX + perpX * side * disruption, this.field.left + 15, this.field.right - 15),
+            clamp(carrier.targetY + perpY * side * disruption, this.field.top + 15, this.field.bottom - 15),
+          );
+          if (carrier.aiCooldown < 180) carrier.aiCooldown = 180;
         }
         break;
       }

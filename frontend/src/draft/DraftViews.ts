@@ -108,7 +108,8 @@ const TRAIT_PT_DESCRIPTIONS: Record<string, string> = {
 const IMPLEMENTED_TRAITS = new Set([
   'Rapid', 'Quick Step', 'Relentless', 'Technical', 'First Touch',
   'Incisive Pass', 'Whipped Pass', 'Intercept', 'Jockey', 'Clinical',
-  'Long Shot', 'Crosser', 'Far Reach',
+  'Long Shot', 'Crosser', 'Far Reach', 'Finesse Shot', 'Bruiser', 'Aerial Fortress', 'Long Ball Pass',
+  'Power Shot', 'Low Driven Shot', 'Block', 'Precision Header', 'Enforcer',
 ]);
 
 // ── Shared utilities ──────────────────────────────────────────────────────────

@@ -20,12 +20,14 @@ export class EventResolver {
   resolveTackle(defender: Player, ballCarrier: Player, positioningBonus = 0): boolean {
     const defScore = (defender.stats.defending   / 100) * 55
       + (defender.stats.physical  / 100) * 30
-      + (defender.stats.reactions / 100) * 20;
+      + (defender.stats.reactions / 100) * 20
+      + traitBonus(defender, TRAITS.BRUISER, 8, 5)
+      + traitBonus(defender, TRAITS.ENFORCER, 6, 4);
     const attScore = (ballCarrier.stats.dribbling   / 100) * 55
       + (ballCarrier.stats.sprintSpeed / 100) * 22
       + (ballCarrier.stats.reactions   / 100) * 14;
-    const defFatigue = (1 - defender.getStaminaFactor()) * 14;
-    const attFatigue = (1 - ballCarrier.getStaminaFactor()) * 9;
+    const defFatigue = (1 - defender.getStaminaFactor()) * 18;
+    const attFatigue = (1 - ballCarrier.getStaminaFactor()) * 12;
     const chance = 20 + (defScore - attScore) - defFatigue + attFatigue + positioningBonus;
     return roll(clamp(chance, 10, 82));
   }
@@ -35,17 +37,19 @@ export class EventResolver {
       + (playerA.stats.strength  / 100) * 25
       + (playerA.stats.defending / 100) * 25
       + (playerA.stats.reactions / 100) * 25
-      + (playerA.getBodyMassFactor() - 1) * 12;
+      + (playerA.getBodyMassFactor() - 1) * 12
+      + traitBonus(playerA, TRAITS.BRUISER, 10, 6);
     const scoreB = (playerB.stats.sprintSpeed / 100) * 25
       + (playerB.stats.strength  / 100) * 25
       + (playerB.stats.defending / 100) * 25
       + (playerB.stats.reactions / 100) * 25
-      + (playerB.getBodyMassFactor() - 1) * 12;
+      + (playerB.getBodyMassFactor() - 1) * 12
+      + traitBonus(playerB, TRAITS.BRUISER, 10, 6);
     const total = scoreA + scoreB;
     return Math.random() * total < scoreA ? playerA : playerB;
   }
 
-  resolveGkSave(gk: Player, isDive: boolean, ballSpeed: number): 'catch' | 'parry' | 'miss' {
+  resolveGkSave(gk: Player, isDive: boolean, isStretch: boolean, ballSpeed: number): 'catch' | 'parry' | 'miss' {
     const quality = (gk.stats.defending   / 100) * 55
       + (gk.stats.sprintSpeed / 100) * 20
       + (gk.stats.reactions   / 100) * 20
@@ -53,11 +57,19 @@ export class EventResolver {
     const r = Math.random() * 100;
     const speedFactor = clamp((ballSpeed - 4.5) / 7.5, 0, 1);
 
+    if (isStretch) {
+      // Ponta dos dedos: não consegue segurar, mas bola poderosa é redirecionada
+      // bola rápida ainda resulta em parry — o impacto empurra a bola pra fora
+      const parryT = Math.max(0, quality * 0.52 - speedFactor * 3);
+      if (r < parryT) return 'parry';
+      return 'miss';
+    }
+
     if (isDive) {
       const catchPenalty = speedFactor * 14;
-      const parryPenalty = speedFactor * 10;
       const catchT = Math.max(0, 0.10 * quality * 0.18 - catchPenalty);
-      const parryT = catchT + Math.max(0, quality * 0.43 - parryPenalty);
+      // Bola rápida aumenta chance de espalme: GK desvia sem controle
+      const parryT = catchT + Math.max(0, quality * 0.43 + speedFactor * 7);
       if (r < catchT) return 'catch';
       if (r < parryT) return 'parry';
       return 'miss';
@@ -74,8 +86,8 @@ export class EventResolver {
 
   resolveDribble(carrier: Player, defender: Player): boolean {
     const technicalBonus = traitBonus(carrier, TRAITS.TECHNICAL, 8, 4);
-    const carrierFatigue = (1 - carrier.getStaminaFactor()) * 10;
-    const defFatigue     = (1 - defender.getStaminaFactor()) * 7;
+    const carrierFatigue = (1 - carrier.getStaminaFactor()) * 14;
+    const defFatigue     = (1 - defender.getStaminaFactor()) * 10;
     const chance = (carrier.stats.dribbling   / 100) * 45
       + (carrier.stats.sprintSpeed / 100) * 25
       + (carrier.stats.agility     / 100) * 15
@@ -92,12 +104,15 @@ export class EventResolver {
       + (attacker.stats.reactions  / 100) * 30
       + (attacker.stats.sprintSpeed / 100) * 20
       + attacker.getAerialBodyScore()
-      + (1 - attacker.getStaminaFactor()) * -12;
+      + traitBonus(attacker, TRAITS.AERIAL_FORTRESS, 12, 8)
+      + traitBonus(attacker, TRAITS.PRECISION_HEADER, 10, 6)
+      + (1 - attacker.getStaminaFactor()) * -16;
     const defScore = (defender.stats.physical    / 100) * 45
       + (defender.stats.defending  / 100) * 35
       + (defender.stats.reactions  / 100) * 20
       + defender.getAerialBodyScore()
-      + (1 - defender.getStaminaFactor()) * -10;
+      + traitBonus(defender, TRAITS.AERIAL_FORTRESS, 12, 8)
+      + (1 - defender.getStaminaFactor()) * -13;
     const total = Math.max(attScore, 1) + Math.max(defScore, 1);
     return Math.random() * total < Math.max(attScore, 1) ? attacker : defender;
   }

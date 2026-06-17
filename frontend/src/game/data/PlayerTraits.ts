@@ -13,6 +13,15 @@ export const TRAITS = {
   LONG_SHOT: 'Long Shot',
   CROSSER: 'Crosser',
   FAR_REACH: 'Far Reach',
+  FINESSE_SHOT: 'Finesse Shot',
+  BRUISER: 'Bruiser',
+  AERIAL_FORTRESS: 'Aerial Fortress',
+  LONG_BALL_PASS: 'Long Ball Pass',
+  POWER_SHOT: 'Power Shot',
+  LOW_DRIVEN_SHOT: 'Low Driven Shot',
+  BLOCK: 'Block',
+  PRECISION_HEADER: 'Precision Header',
+  ENFORCER: 'Enforcer',
 } as const;
 
 interface WithTraits {

@@ -8,7 +8,7 @@ import { TacticalProfile } from '../data/TacticalProfile';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type TacticalPhase = 'build-up' | 'hold-shape' | 'high-press' | 'counterattack';
+export type TacticalPhase = 'build-up' | 'attacking' | 'hold-shape' | 'high-press' | 'counterattack';
 
 export type SetPlayKind = 'press-trap' | 'overlap' | 'counter-launch';
 
@@ -46,10 +46,13 @@ export function detectPhase(
   gameCtx: GameContext,
   manualPhase: TacticalPhase | null,
   pressStaminaThreshold = 28,
+  maxPressers = 2,
 ): TacticalPhase {
   if (manualPhase !== null) return manualPhase;
 
   const dir = ownTeam.attackDirection;
+  const fieldLength = field.right - field.left;
+  const ownGoalX = dir > 0 ? field.left : field.right;
 
   if (ownTeam.hasPossession()) {
     const carrier = ownTeam.getBallCarrier();
@@ -64,7 +67,9 @@ export function detectPhase(
         if (runnersAhead >= 1) return 'counterattack';
       }
     }
-    return 'build-up';
+    // Ball in own defensive third → cautious build-up; middle/attacking third → attack
+    const distBallFromOwn = (ball.x - ownGoalX) * dir;
+    return distBallFromOwn < fieldLength / 3 ? 'build-up' : 'attacking';
   }
 
   const carrier = oppTeam.getBallCarrier();
@@ -75,9 +80,11 @@ export function detectPhase(
     const energyOk = avgStamina > pressStaminaThreshold || losingLate;
 
     if (energyOk) {
-      // Opponent carrier in their own half → press them back
-      const carrierInOppHalf = (carrier.x - field.centerX) * (-dir) < 60;
-      if (carrierInOppHalf) return 'high-press';
+      const distCarrierFromOwn = (carrier.x - ownGoalX) * dir;
+      // High-pressure teams (maxPressers >= 4) press from the middle third onward;
+      // other teams only press when carrier is in the opponent's half
+      const pressThreshold = maxPressers >= 4 ? fieldLength / 3 : fieldLength / 2;
+      if (distCarrierFromOwn > pressThreshold) return 'high-press';
     }
   }
 
@@ -98,7 +105,8 @@ export function tryTriggerSetPlay(
   switch (phase) {
     case 'counterattack': return tryCounterLaunch(ownTeam, oppGoal, field);
     case 'high-press':    return tryPressTrap(ownTeam, oppTeam, field, profile?.pressCoordination ?? 0.4);
-    case 'build-up':      return tryOverlap(ownTeam, field);
+    case 'build-up':
+    case 'attacking':     return tryOverlap(ownTeam, field);
     default:              return null;
   }
 }

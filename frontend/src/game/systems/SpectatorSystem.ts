@@ -116,9 +116,18 @@ export class SpectatorSystem {
         if (!p) continue;
         const prev = this.prevPlayerPos.get(pd.id);
         if (prev) {
-          p.setPosition(lerp(prev.x, pd.x, t), lerp(prev.y, pd.y, t));
+          const oldX = p.x;
+          const oldY = p.y;
+          const newX = lerp(prev.x, pd.x, t);
+          const newY = lerp(prev.y, pd.y, t);
+          if (delta > 0) {
+            p.vx = (newX - oldX) / delta;
+            p.vy = (newY - oldY) / delta;
+          }
+          p.setPosition(newX, newY);
         }
         p.updateLabelAlpha(ball.x, ball.y);
+        p.updateSpectatorEffects(delta);
       }
     } else if (s.replay) {
       // First frame ever: apply directly, no previous positions to lerp from
@@ -130,6 +139,7 @@ export class SpectatorSystem {
         if (!p) continue;
         p.applySpectatorFrame(pd);
         p.updateLabelAlpha(s.replay.ball.x, s.replay.ball.y);
+        p.updateSpectatorEffects(delta);
       }
     }
   }

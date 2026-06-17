@@ -31,6 +31,16 @@ export class TeamAI {
   private profile: TacticalProfile = DEFAULT_TACTICAL_PROFILE;
   private appliedLineDepthOffset = 0;
   private playerInstructions: Map<string, PlayerInstructions> = new Map();
+  private activePhase: TacticalPhase = 'hold-shape';
+  private phaseTimer = 0;
+
+  private static readonly PHASE_MIN_DURATION: Record<TacticalPhase, number> = {
+    'high-press':    1500,
+    'counterattack': 1200,
+    'attacking':      700,
+    'build-up':       700,
+    'hold-shape':     400,
+  };
 
   constructor(team: Team) {
     this.team = team;
@@ -106,13 +116,21 @@ export class TeamAI {
     }
     this.setPlayCooldown = Math.max(0, this.setPlayCooldown - delta);
 
-    // ── Detect tactical phase ─────────────────────────────────────────────────
-    const phase = detectPhase(
+    // ── Detect tactical phase (hysteresis prevents frame-to-frame flickering) ──
+    const detectedPhase = detectPhase(
       this.team, oppTeam, ball, field,
       gameCtx ?? { scoreOwn: 0, scoreOpp: 0, elapsedMs: 0, halfLengthMs: 150_000 },
       this.manualPhase,
       this.profile.pressStaminaThreshold,
+      this.profile.maxPressers,
     );
+    this.phaseTimer += delta;
+    const minDuration = TeamAI.PHASE_MIN_DURATION[this.activePhase];
+    if (this.manualPhase !== null || (detectedPhase !== this.activePhase && this.phaseTimer >= minDuration)) {
+      this.activePhase = detectedPhase;
+      this.phaseTimer = 0;
+    }
+    const phase = this.activePhase;
 
     // ── Try to trigger a set play ─────────────────────────────────────────────
     let setPlay = this.directive.setPlay;
@@ -140,7 +158,7 @@ export class TeamAI {
     // ── Presser cap driven by tactical profile ────────────────────────────────
     const maxPressers = phase === 'high-press'
       ? this.profile.maxPressers
-      : Math.min(1, this.profile.maxPressers);
+      : Math.max(1, Math.floor(this.profile.maxPressers / 2));
     let presserCount = 0;
     for (const p of this.team.players) {
       if (p.state === PlayerState.PressBall && !p.hasBall) presserCount++;

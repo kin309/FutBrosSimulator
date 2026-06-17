@@ -3,7 +3,7 @@ import { DraftManager, generateRoundSequence } from './DraftManager';
 import { DraftPlayer, DraftRoundKind } from './DraftTypes';
 import { buildBotTeamFromPool, pickBotTeamNamesFromPool, renderFormationScreen, SavedFormationState } from './FormationApp';
 import { showHalftimePanel } from './HalftimePanel';
-import { DEFAULT_TACTICAL_PROFILE, TacticalProfile } from '../game/data/TacticalProfile';
+import { compileScheme, DEFAULT_TACTICAL_PROFILE, TACTICAL_SCHEMES, TacticalProfile } from '../game/data/TacticalProfile';
 import { createGame } from '../game/FootballGame';
 import { KitColors, KitPattern, TeamData } from '../game/data/TeamFactory';
 import { PlayerRole } from '../game/data/PlayerRole';
@@ -24,10 +24,12 @@ import {
 } from './MultiplayerLobby';
 import { createTransport } from './transport/createTransport';
 import {
+  accumulatePlayerStats,
   advanceAndSimulateKnockout,
   createTournamentPlan,
   createTournamentState,
   getNextUserMatch,
+  GoalEvent,
   isTournamentComplete,
   simulateRoundBotMatches,
   simulateRoundBotMatchesBefore,
@@ -392,7 +394,15 @@ function render(root: HTMLDivElement, manager: DraftManager, tournament: Tournam
   root.querySelector<HTMLButtonElement>('[data-action="start-match"]')?.addEventListener('click', () => {
     clearProgress();
     const state = createTournamentState(tournament);
-    startTournamentMatch(root, round.picked, state, pools, () => render(root, manager, tournament, pools));
+    const backToDraft = () => render(root, manager, tournament, pools);
+    const launchTournament = () => startTournamentMatch(root, round.picked, state, pools, backToDraft);
+    renderFormationScreen(root, round.picked, backToDraft, {
+      competitionName: tournament.title,
+      startButtonLabel: 'Iniciar torneio',
+      savedFormation: loadLastFormation(),
+      onFormationChange: saveLastFormation,
+      onReady: (_team) => launchTournament(),
+    });
   });
 }
 
@@ -458,18 +468,24 @@ function startTournamentMatch(
     });
   };
 
+  const matchGoals: GoalEvent[] = [];
+
   const commitResult = (scoreHome: number, scoreAway: number, penHome?: number, penAway?: number): void => {
     state.results[match.id] = {
       scoreHome,
       scoreAway,
       ...(penHome !== undefined ? { penaltiesHome: penHome, penaltiesAway: penAway } : {}),
+      goals: matchGoals.slice(),
     };
+    accumulatePlayerStats(state, matchGoals);
     simulateRoundBotMatches(state, match.round);
     advanceAndSimulateKnockout(state);
     saveProgress(state, picked);
     onAfterResult?.();
     goToTable();
   };
+
+  const staminaById = new Map(picked.map((p) => [p.id, p.stats.stamina]));
 
   renderFormationScreen(root, picked, goToTable, {
     competitionName: state.plan.title,
@@ -479,8 +495,21 @@ function startTournamentMatch(
     userIsHome,
     savedFormation: loadLastFormation(),
     onFormationChange: saveLastFormation,
+    initialStaminas: state.playerStaminas,
     onHalftime: (ctx) => showHalftimePanel(ctx),
-    onMatchEnd: (scoreA, scoreB) => {
+    onGoalScored: (g) => matchGoals.push(g),
+    onMatchEnd: (scoreA, scoreB, finalStaminas) => {
+      if (finalStaminas) {
+        const recovered: Record<string, number> = {};
+        for (const [id, endStamina] of Object.entries(finalStaminas)) {
+          const staminaStat = staminaById.get(id) ?? 75;
+          // stat=50 → 50% recovery, stat=80 → 62%, stat=100 → 70%
+          const recoveryRate = 0.30 + (staminaStat / 100) * 0.40;
+          recovered[id] = Math.round(endStamina + (100 - endStamina) * recoveryRate);
+        }
+        state.playerStaminas = recovered;
+      }
+
       const scoreHome = userIsHome ? scoreA : scoreB;
       const scoreAway = userIsHome ? scoreB : scoreA;
 
@@ -658,7 +687,11 @@ function openLobby(
     spectatorPush: null as ((s: MultiplayerMatchLiveState) => void) | null,
     applyGuestTactic: null as ((side: 'home' | 'away', profile: TacticalProfile) => void) | null,
     guestCurrentTactic: null as TacticalProfile | null,
+    guestTeamData: null as TeamData | null,
+    applyGuestSubstitution: null as ((side: 'home' | 'away', subs: Array<{ starterIndex: number; benchIndex: number }>) => void) | null,
     lastHalftimeAt: 0,
+    pendingHalftimeResume: null as { resume: () => void; remaining: Set<string>; timeoutId: ReturnType<typeof setTimeout> } | null,
+    baseFormationDone: (options.restore?.tournamentState != null) as boolean,
   };
   const managers = new Map<string, DraftManager>();
 
@@ -851,6 +884,8 @@ function openLobby(
         session.runningMatchStartedAt = null;
         session.spectatorPush = null;
         session.guestCurrentTactic = null;
+        session.guestTeamData = null;
+        session.applyGuestSubstitution = null;
         session.lastHalftimeAt = 0;
         document.body.classList.remove('match-running');
         if (!root.isConnected) document.body.appendChild(root);
@@ -876,6 +911,28 @@ function openLobby(
                   const isHome = activeMatch.home.playerId === options.player.id;
                   const side: 'home' | 'away' = isHome ? 'home' : 'away';
                   const currentTactic = session.guestCurrentTactic ?? DEFAULT_TACTICAL_PROFILE;
+                  const guestTeamId: 'teamA' | 'teamB' = isHome ? 'teamA' : 'teamB';
+                  const livePlayerMap = new Map(
+                    (liveState.replay?.players ?? [])
+                      .filter(p => p.teamId === guestTeamId)
+                      .map(p => [p.id, p]),
+                  );
+                  const teamData = session.guestTeamData;
+                  const starters = teamData?.players.map(pd => ({
+                    id: pd.id,
+                    name: pd.name,
+                    role: pd.role,
+                    jerseyNumber: pd.jerseyNumber,
+                    stamina: livePlayerMap.get(pd.id)?.stamina ?? 100,
+                  }));
+                  const bench = teamData?.bench?.map(pd => ({
+                    id: pd.id,
+                    name: pd.name,
+                    role: pd.role,
+                    jerseyNumber: pd.jerseyNumber,
+                    stamina: 100,
+                  }));
+                  const pendingSubs: Array<{ starterIndex: number; benchIndex: number }> = [];
                   showHalftimePanel({
                     scoreA: isHome ? liveState.scoreHome : liveState.scoreAway,
                     scoreB: isHome ? liveState.scoreAway : liveState.scoreHome,
@@ -883,8 +940,11 @@ function openLobby(
                     teamBName: isHome ? liveState.awayName : liveState.homeName,
                     currentProfile: currentTactic,
                     applyTactic: (profile) => { session.guestCurrentTactic = profile; },
+                    starters,
+                    bench,
+                    applySubstitution: bench && bench.length > 0 ? (si, bi) => { pendingSubs.push({ starterIndex: si, benchIndex: bi }); } : undefined,
                     resume: () => {
-                      post({ type: 'halftime-tactic', playerId: options.player.id, side, tacticalProfile: session.guestCurrentTactic ?? DEFAULT_TACTICAL_PROFILE });
+                      post({ type: 'halftime-tactic', playerId: options.player.id, side, tacticalProfile: session.guestCurrentTactic ?? DEFAULT_TACTICAL_PROFILE, substitutions: pendingSubs });
                     },
                   });
                 }
@@ -999,6 +1059,17 @@ function openLobby(
       broadcastMatch();
     }
 
+    if (message.type === 'formation-unready') {
+      if (matchState.phase !== 'formation' || matchState.matchId !== message.matchId) return;
+      const { [message.playerId]: _removed, ...remainingTeams } = matchState.teams;
+      matchState = {
+        ...matchState,
+        readyPlayerIds: matchState.readyPlayerIds.filter((id) => id !== message.playerId),
+        teams: remainingTeams,
+      };
+      broadcastMatch();
+    }
+
     if (message.type === 'host-start-match') {
       if (matchState.phase !== 'formation' || matchState.matchId !== message.matchId) return;
       if (autoStartMatchIfReady()) broadcastMatch();
@@ -1010,6 +1081,17 @@ function openLobby(
 
     if (message.type === 'halftime-tactic') {
       session.applyGuestTactic?.(message.side, message.tacticalProfile);
+      if (message.substitutions?.length) {
+        session.applyGuestSubstitution?.(message.side, message.substitutions);
+      }
+      if (session.pendingHalftimeResume) {
+        session.pendingHalftimeResume.remaining.delete(message.playerId);
+        if (session.pendingHalftimeResume.remaining.size === 0) {
+          clearTimeout(session.pendingHalftimeResume.timeoutId);
+          session.pendingHalftimeResume.resume();
+          session.pendingHalftimeResume = null;
+        }
+      }
     }
   }
 
@@ -1171,8 +1253,12 @@ function renderMultiplayerDraft(
     runningGame: ReturnType<typeof createGame> | null;
     spectatorPush: ((s: MultiplayerMatchLiveState) => void) | null;
     applyGuestTactic: ((side: 'home' | 'away', profile: TacticalProfile) => void) | null;
+    applyGuestSubstitution: ((side: 'home' | 'away', subs: Array<{ starterIndex: number; benchIndex: number }>) => void) | null;
     guestCurrentTactic: TacticalProfile | null;
+    guestTeamData: TeamData | null;
     lastHalftimeAt: number;
+    pendingHalftimeResume: { resume: () => void; remaining: Set<string>; timeoutId: ReturnType<typeof setTimeout> } | null;
+    baseFormationDone: boolean;
   },
   matchState: MultiplayerMatchState,
   liveState: MultiplayerMatchLiveState | null,
@@ -1215,6 +1301,23 @@ function renderMultiplayerDraft(
       if (nextMatch) simulateRoundBotMatchesBefore(ts, nextMatch.round, nextMatch.matchdayOrder);
       post({ type: 'tournament-state', state: ts });
     }
+
+    if (!session.baseFormationDone && localTeam.picked.length > 0) {
+      const localPlayerData = state.players.find((p) => p.id === localPlayerId);
+      renderFormationScreen(root, localTeam.picked, backToDraft, {
+        competitionName: ts.plan.title,
+        startButtonLabel: 'Confirmar formação',
+        savedFormation: loadMultiplayerFormation(roomCode, localPlayerId),
+        onFormationChange: (formation) => saveMultiplayerFormation(roomCode, localPlayerId, formation),
+        initialKitColors: localPlayerData?.kitColors,
+        onReady: (_team) => {
+          session.baseFormationDone = true;
+          renderMultiplayerDraft(root, pools, roomCode, localPlayerId, isHost, state, post, managers, session, matchState, liveState);
+        },
+      });
+      return;
+    }
+
     renderTournamentTable(root, ts,
       (match) => {
         if (isHost) post({ type: 'prepare-match', matchId: match.id });
@@ -1253,15 +1356,22 @@ function renderMultiplayerDraft(
           onFormationChange: (formation) => {
             saveMultiplayerFormation(roomCode, localPlayerId, formation);
           },
-          startButtonLabel: ready ? 'Pronto enviado' : 'Estou pronto',
-          startButtonDisabled: ready,
+          startButtonLabel: ready ? 'Cancelar prontidão' : 'Estou pronto',
+          startButtonDisabled: false,
           initialKitColors: localPlayerData?.kitColors,
-          onReady: (team) => {
+          onReady: ready ? undefined : (team) => {
+            if (!isHost) session.guestTeamData = team;
             post({ type: 'formation-ready', playerId: localPlayerId, matchId: match.id, team });
           },
+          onUnready: ready ? () => {
+            post({ type: 'formation-unready', playerId: localPlayerId, matchId: match.id });
+          } : undefined,
         });
       } else {
         root.innerHTML = multiplayerSpectatorWaitingView(match, state, matchState);
+        root.querySelector<HTMLButtonElement>('[data-action="view-table"]')?.addEventListener('click', () => {
+          renderTournamentTable(root, session.tournamentState!, () => {}, backToDraft, { canPlayNext: false });
+        });
       }
       return;
     }
@@ -1309,9 +1419,20 @@ function renderMultiplayerDraft(
         document.body.classList.add('match-running');
         const hostSide = match.home.playerId === localPlayerId ? 'home'
           : match.away.playerId === localPlayerId ? 'away' : null;
+        const hostSavedFormation = hostSide !== null ? loadMultiplayerFormation(roomCode, localPlayerId) : null;
+        const hostScheme = hostSavedFormation
+          ? (() => {
+              const base = TACTICAL_SCHEMES.find(s => s.name === hostSavedFormation.tacticalProfileName) ?? TACTICAL_SCHEMES[0];
+              return hostSavedFormation.tacticalScheme ? { ...base, ...hostSavedFormation.tacticalScheme } : base;
+            })()
+          : undefined;
+        const multiMatchGoals: GoalEvent[] = [];
         const game = createGame({
           teams: [home, away],
           autoFinishDelayMs: 3500,
+          tacticalSchemeA: hostSide === 'home' ? hostScheme : undefined,
+          tacticalSchemeB: hostSide === 'away' ? hostScheme : undefined,
+          onGoalScored: (g) => multiMatchGoals.push(g),
           onLiveUpdate: (live) => {
             post({
               type: 'match-live-state',
@@ -1330,27 +1451,55 @@ function renderMultiplayerDraft(
               },
             });
           },
-          onHalftime: hostSide === null ? ({ resume }) => resume() : ({ scoreA, scoreB, teamAName, teamBName, currentProfile, currentProfileB, applyTactic, applyTacticB, resume }) => {
+          onHalftime: hostSide === null ? ({ resume }) => {
+            const participants = [match.home, match.away]
+              .filter(c => c.playerId)
+              .map(c => c.playerId as string);
+            if (participants.length === 0) {
+              resume();
+            } else {
+              const timeoutId = setTimeout(() => {
+                if (session.pendingHalftimeResume) {
+                  session.pendingHalftimeResume.resume();
+                  session.pendingHalftimeResume = null;
+                }
+              }, 5 * 60 * 1000);
+              session.pendingHalftimeResume = { resume, remaining: new Set(participants), timeoutId };
+            }
+          } : ({ scoreA, scoreB, teamAName, teamBName, currentProfile, currentProfileB, currentScheme, currentSchemeB, applyTactic, applyTacticB, resume, starters, bench, applySubstitution, startersB, benchB, applySubstitutionB }) => {
             const isHome = hostSide === 'home';
             showHalftimePanel({
               scoreA: isHome ? scoreA : scoreB,
               scoreB: isHome ? scoreB : scoreA,
               teamAName: isHome ? teamAName : teamBName,
               teamBName: isHome ? teamBName : teamAName,
-              currentProfile: isHome ? currentProfile : currentProfileB,
+              currentProfile: isHome ? currentProfile : (currentProfileB ?? currentProfile),
+              currentScheme: isHome ? currentScheme : currentSchemeB,
               applyTactic: isHome ? applyTactic : applyTacticB,
               resume,
+              starters: isHome ? starters : startersB,
+              bench: isHome ? bench : benchB,
+              applySubstitution: isHome ? applySubstitution : applySubstitutionB,
             });
           },
           onHostApplyGuestTactic: (apply) => { session.applyGuestTactic = apply; },
+          onHostApplyGuestSubstitution: (apply) => { session.applyGuestSubstitution = apply; },
           onMatchEnd: (scoreHome, scoreAway) => {
             game.destroy(true);
             session.runningGame = null;
             session.applyGuestTactic = null;
+            session.applyGuestSubstitution = null;
+            if (session.pendingHalftimeResume) {
+              clearTimeout(session.pendingHalftimeResume.timeoutId);
+              session.pendingHalftimeResume = null;
+            }
             document.body.classList.remove('match-running');
             document.body.appendChild(root);
             session.runningMatchId = null;
             session.runningMatchStartedAt = null;
+            if (multiMatchGoals.length > 0) {
+              accumulatePlayerStats(getOrCreateTs(), multiMatchGoals);
+            }
             post({ type: 'match-result', matchId: match.id, scoreHome, scoreAway });
           },
         });
@@ -1522,6 +1671,7 @@ function isHostHandledMessage(message: LobbyMessage): boolean {
     || message.type === 'reroll'
     || message.type === 'prepare-match'
     || message.type === 'formation-ready'
+    || message.type === 'formation-unready'
     || message.type === 'host-start-match'
     || message.type === 'match-result'
   );

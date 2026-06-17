@@ -35,16 +35,59 @@ export interface TournamentPlan {
   matches: TournamentMatch[];
 }
 
+export interface GoalEvent {
+  scorerId: string;
+  scorerName: string;
+  scorerTeamName: string;
+  assistId?: string;
+  assistName?: string;
+}
+
+export interface PlayerTournamentStats {
+  playerName: string;
+  teamName: string;
+  goals: number;
+  assists: number;
+}
+
 export interface MatchResult {
   scoreHome: number;
   scoreAway: number;
   penaltiesHome?: number;
   penaltiesAway?: number;
+  goals?: GoalEvent[];
 }
 
 export interface TournamentState {
   plan: TournamentPlan;
   results: Record<string, MatchResult>;
+  /** Stamina de cada jogador do time do usuário após a última partida. Chave = player.id. */
+  playerStaminas?: Record<string, number>;
+  /** Estatísticas por jogador acumuladas ao longo do torneio. Chave = player.id. */
+  playerStats?: Record<string, PlayerTournamentStats>;
+}
+
+export function accumulatePlayerStats(state: TournamentState, goals: GoalEvent[]): void {
+  if (goals.length === 0) return;
+  if (!state.playerStats) state.playerStats = {};
+  for (const goal of goals) {
+    const scorer = (state.playerStats[goal.scorerId] ??= {
+      playerName: goal.scorerName,
+      teamName: goal.scorerTeamName,
+      goals: 0,
+      assists: 0,
+    });
+    scorer.goals++;
+    if (goal.assistId && goal.assistName) {
+      const assister = (state.playerStats[goal.assistId] ??= {
+        playerName: goal.assistName,
+        teamName: goal.scorerTeamName,
+        goals: 0,
+        assists: 0,
+      });
+      assister.assists++;
+    }
+  }
 }
 
 export interface GroupStanding {

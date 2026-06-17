@@ -7,8 +7,9 @@ import { dist, clamp } from '../utils/MathUtils';
 import { FieldBounds } from '../types';
 import { traitBonus, TRAITS } from '../data/PlayerTraits';
 import type { SpectatorPlayerState } from '../../draft/MultiplayerLobby';
+import type { PlayerHeatMap } from '../ai/PlayerHeatMap';
 
-const PLAYER_SPEED_SCALE = 1.62;
+const PLAYER_SPEED_SCALE = 2.1;
 const PLAYER_ACCELERATION_FAR = 0.07;
 const PLAYER_ACCELERATION_NEAR = 0.050;
 const PLAYER_DIVE_ACCELERATION = 0.20;
@@ -33,17 +34,19 @@ export class Player extends Phaser.GameObjects.Container {
   state: PlayerState = PlayerState.ReturnToShape;
   hasBall: boolean = false;
   currentStamina: number = 100;
+  wonAerialHeader: boolean = false;
   attackDirection: 1 | -1 = 1;
 
   baseX: number;
   baseY: number;
   targetX: number;
   targetY: number;
+  positionHeatMap: PlayerHeatMap | null = null;
 
   passTarget: Player | null = null;
   passTargetX: number | null = null;
   passTargetY: number | null = null;
-  passKind: 'normal' | 'through' | 'cross' | 'cutback' = 'normal';
+  passKind: 'normal' | 'through' | 'cross' | 'cutback' | 'lofted' = 'normal';
   dribbleTarget: Player | null = null;
   dribbleCommitMs = 0;
   dribbleContactRadius = 38;
@@ -265,13 +268,15 @@ export class Player extends Phaser.GameObjects.Container {
     this.updateVisuals();
   }
 
-  // Returns the speed multiplier based on current stamina (1.0 when fresh, 0.82 when exhausted).
-  // Curve is piecewise: stays full until ~70, drops gently to 0.92 by 40, then softer to 0.82.
+  // Returns the speed/efficiency multiplier based on current stamina.
+  // Penalty starts at 80, drops meaningfully through the 40-70 range typical of a tired player.
+  // s=80→1.0  s=60→0.90  s=40→0.78  s=20→0.68  s=0→0.62
   getStaminaFactor(): number {
     const s = this.currentStamina;
-    if (s >= 70) return 1.0;
-    if (s >= 40) return 0.92 + ((s - 40) / 30) * 0.08;
-    return 0.82 + (s / 40) * 0.10;
+    if (s >= 80) return 1.0;
+    if (s >= 50) return 0.85 + ((s - 50) / 30) * 0.15; // 0.85–1.0
+    if (s >= 20) return 0.70 + ((s - 20) / 30) * 0.15; // 0.70–0.85
+    return 0.62 + (s / 20) * 0.08;                      // 0.62–0.70
   }
 
   getBodyMassFactor(): number {
@@ -307,7 +312,12 @@ export class Player extends Phaser.GameObjects.Container {
     // Approximate velocity so GkDive ellipse rotates correctly
     this.vx = data.dirX * 2;
     this.vy = data.dirY * 2;
-    this.wanderTime += 16;
+  }
+
+  /** Called every frame in spectator mode to keep visual effects running. */
+  updateSpectatorEffects(delta: number): void {
+    this.wanderTime += delta;
+    this.emitSprintDust(delta);
     this.updateVisuals();
   }
 
@@ -343,32 +353,27 @@ export class Player extends Phaser.GameObjects.Container {
     const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
 
     const physicalFactor = this.stats.physical / 100;
-    // Physical reduces base depletion by up to 15%. Stamina stat reduces by up to 30%
-    // (coefficient 0.003 — halved from old 0.006 so the drain gap between low/high stamina
-    // players stays small; the stat now matters more for recovery than for drain).
     const physicalMult = 1 - physicalFactor * 0.15;
     const relentlessMult = 1 - traitBonus(this, TRAITS.RELENTLESS, 0.15, 0.07);
-    // Wider stamina gap: base 0.50, coefficient 0.005 → stat=60 drains 28% more than stat=91
-    // (was 0.42 * 0.003 → only 12% gap). Average at stat=55 is equivalent to before.
-    const deplRate = 0.50 * (1 - this.stats.stamina * 0.005) * physicalMult * relentlessMult;
+    // Base 0.85: higher drain so players visibly tire across a 75s half.
+    // Stamina stat reduces drain by up to 27.5% (coefficient 0.005 × base).
+    const deplRate = 0.85 * (1 - this.stats.stamina * 0.005) * physicalMult * relentlessMult;
 
     let staminaDelta: number;
     if (speed > 1.2) {
-      // Physical cushions sprint cost by up to 18% (was 28%) — less compounding with base reduction.
       const physSprintShield = 1 - physicalFactor * 0.18;
       const sprintDrain = this.isSprinting() ? SPRINT_STAMINA_DRAIN_MULTIPLIER * physSprintShield : 1.0;
-      // Fatigue amplifier: sprinting when depleted still costs more, but gentler slope.
-      // At 25 stamina → +15% cost; at 10 stamina → +24% cost.
+      // Fatigue amplifier: sprinting when depleted costs more.
       const fatigueAmp = this.isSprinting() && this.currentStamina < 50
         ? 1 + (1 - this.currentStamina / 50) * 0.30
         : 1.0;
       staminaDelta = -deplRate * (this.hasBall ? 1.6 : 1.0) * sprintDrain * fatigueAmp * dt;
     } else {
-      // Recovery: stamina contributes 65% of the rate, base 35% always.
-      // Gap stat=60 vs stat=91: ~27% (was 15%). Physical boosts by up to 18%.
+      // Recovery: stamina stat controls 65% of rate; physical boosts by up to 18%.
+      // Reduced base (0.10 vs old 0.17) so rest doesn't fully erase match fatigue.
       const recoveryBoost = (1 + physicalFactor * 0.18)
         * (1 + traitBonus(this, TRAITS.RELENTLESS, 0.30, 0.15));
-      staminaDelta = 0.17 * (0.35 + (this.stats.stamina / 100) * 0.65) * recoveryBoost * dt;
+      staminaDelta = 0.10 * (0.35 + (this.stats.stamina / 100) * 0.65) * recoveryBoost * dt;
     }
 
     this.currentStamina = clamp(this.currentStamina + staminaDelta, 0, 100);
@@ -403,14 +408,15 @@ export class Player extends Phaser.GameObjects.Container {
     const baseSpeed = (0.55 + (this.stats.sprintSpeed / 100) * 0.45) * PLAYER_SPEED_SCALE;
     // Rapid: +6 % top sprint speed (Plus: +10 %)
     const rapidBoost = this.isSprinting() ? 1 + traitBonus(this, TRAITS.RAPID, 0.06, 0.04) : 1;
-    const sprintMult = this.isSprinting() && !isDiving ? SPRINT_SPEED_MULTIPLIER : 1.0;
-    // Extra burst when actively dribbling past a defender — agility sharpens the cut, dribbling adds carry speed
-    const dribbleBoost = (this.hasBall && this.state === PlayerState.Dribble && this.isSprinting())
-      ? 1.06 + (this.stats.dribbling / 100) * 0.08 + (this.stats.agility / 100) * 0.08
-      : 1.0;
+    // 4 speed tiers: sprint sem bola (1.28) > dribble state (1.10) > condução sprint (1.00) > condução normal (0.82)
     const maxSpeed = (this.hasBall
-      ? baseSpeed * (0.88 + (this.stats.dribbling / 100) * 0.20)
-      : baseSpeed) * this.getStaminaFactor() * sprintMult * rapidBoost * dribbleBoost;
+      ? baseSpeed * (
+          this.state === PlayerState.Dribble && this.isSprinting() ? 1.10 :
+          this.isSprinting() ? 1.00 :
+          0.82
+        )
+      : baseSpeed * (this.isSprinting() && !isDiving ? SPRINT_SPEED_MULTIPLIER : 1.0)
+    ) * this.getStaminaFactor() * rapidBoost;
 
     // Dive snaps much faster to target; normal: snappier when far, softer near
     // Quick Step: faster acceleration ramp when starting a sprint (+35 % far, +20 % near; Plus adds 20 %/10 % more)

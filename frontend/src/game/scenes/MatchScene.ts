@@ -7,6 +7,7 @@ import { Scoreboard } from '../systems/Scoreboard';
 import { EventResolver } from '../systems/EventResolver';
 import { TeamAI } from '../ai/TeamAI';
 import { FieldHeatMap } from '../ai/FieldHeatMap';
+import { PlayerHeatMap, calcPositionSpread } from '../ai/PlayerHeatMap';
 import { TacticalPhase, GameContext } from '../ai/TacticalAI';
 import type { MatchSetup } from '../FootballGame';
 import { createTeams } from '../data/TeamFactory';
@@ -100,6 +101,8 @@ export default class MatchScene extends Phaser.Scene {
   private currentTacticalProfileA: TacticalProfile = DEFAULT_TACTICAL_PROFILE;
   private currentTacticalProfileB: TacticalProfile = DEFAULT_TACTICAL_PROFILE;
   private simulationSpeed = 1.0;
+  private guestSubHandlerA: ((starterIndex: number, benchIndex: number) => void) | null = null;
+  private guestSubHandlerB: ((starterIndex: number, benchIndex: number) => void) | null = null;
   private speedIndicator!: Phaser.GameObjects.Text;
 
   private keys!: {
@@ -214,12 +217,19 @@ export default class MatchScene extends Phaser.Scene {
       if (side === 'home') {
         this.currentTacticalProfileA = profile;
         this.aiA.setTacticalProfile(profile);
+        this.updatePlayerHeatMaps(this.teamA, profile);
       } else {
         this.currentTacticalProfileB = profile;
         this.aiB.setTacticalProfile(profile);
+        this.updatePlayerHeatMaps(this.teamB, profile);
       }
     });
+    this.setup?.onHostApplyGuestSubstitution?.((side, subs) => {
+      const fn = side === 'home' ? this.guestSubHandlerA : this.guestSubHandlerB;
+      if (fn) subs.forEach(({ starterIndex, benchIndex }) => fn(starterIndex, benchIndex));
+    });
     this.heatMap = new FieldHeatMap(FIELD.left, FIELD.top, FIELD.right, FIELD.bottom);
+    this.initPlayerHeatMaps();
     this.wireEvents();
     this.setupKeys();
     this.flowSystem.resetPlayersToKickoffShape();
@@ -238,6 +248,7 @@ export default class MatchScene extends Phaser.Scene {
     this.spectatorSystem.tickLiveUpdate(simDelta);
     if (this.matchManager.isPaused) return;
     if (this.matchManager.state === 'halftime') {
+      this.ball.updateBall(simDelta);
       if (this.halftimeExitActive) {
         for (const p of this.allPlayers()) {
           p.y += (this.halftimeExitSpeeds.get(p.id) ?? 0.1) * delta;
@@ -367,6 +378,26 @@ export default class MatchScene extends Phaser.Scene {
   }
 
   // ──────────────────────────────────────────────
+  // Player heatmaps
+  // ──────────────────────────────────────────────
+
+  private initPlayerHeatMaps(): void {
+    this.updatePlayerHeatMaps(this.teamA, this.currentTacticalProfileA);
+    this.updatePlayerHeatMaps(this.teamB, this.currentTacticalProfileB);
+  }
+
+  private updatePlayerHeatMaps(team: Team, profile: TacticalProfile): void {
+    for (const p of team.players) {
+      const spread = calcPositionSpread(profile, p.role);
+      if (p.positionHeatMap) {
+        p.positionHeatMap.setSpread(spread);
+      } else {
+        p.positionHeatMap = new PlayerHeatMap(p.baseX, p.baseY, spread);
+      }
+    }
+  }
+
+  // ──────────────────────────────────────────────
   // Build
   // ──────────────────────────────────────────────
 
@@ -376,11 +407,14 @@ export default class MatchScene extends Phaser.Scene {
     this.teamA = new Team(dataA.id, dataA.name, dataA.color, dataA.attackDirection, dataA.formationName);
     this.teamB = new Team(dataB.id, dataB.name, dataB.color, dataB.attackDirection, dataB.formationName);
 
+    const initialStaminas = this.setup?.initialStaminas ?? {};
+
     for (const pd of dataA.players) {
       const isGK = pd.role === PlayerRole.Goalkeeper;
       const pColor = isGK ? complementaryColor(dataA.color) : dataA.color;
       const pSecondary = isGK ? dataA.color : (dataA.secondaryColor ?? 0x000000);
       const p = new Player(this, pd.baseX, pd.baseY, pd.id, pd.name, pd.jerseyNumber, 'teamA', pd.role, pd.stats, pColor, pd.heightCm, pd.weightKg, pd.playstyles ?? [], pd.playstylesPlus ?? [], dataA.numberColor ?? 0xffffff, pSecondary, dataA.kitPattern ?? 'solid', true);
+      if (initialStaminas[pd.id] !== undefined) p.currentStamina = initialStaminas[pd.id];
       this.teamA.players.push(p);
       this.tackleCooldowns.set(pd.id, 0);
     }
@@ -398,9 +432,44 @@ export default class MatchScene extends Phaser.Scene {
     this.matchManager.onGoal = (teamId) => {
       const scorer   = teamId === 'teamA' ? this.teamA : this.teamB;
       const conceder = teamId === 'teamA' ? this.teamB : this.teamA;
+
+      // Resolve scorer and assist from ball touch history
+      const allPlayers = this.allPlayers();
+      const scorerPlayer = this.ball.lastToucherId
+        ? allPlayers.find(p => p.id === this.ball.lastToucherId) ?? null
+        : null;
+      const assistCandidate = this.ball.previousToucherId && this.ball.previousToucherId !== this.ball.lastToucherId
+        ? allPlayers.find(p => p.id === this.ball.previousToucherId) ?? null
+        : null;
+      const assistPlayer = assistCandidate?.teamId === scorerPlayer?.teamId ? assistCandidate : null;
+
+      const scorerLabel = scorerPlayer ? scorerPlayer.playerName : scorer.name;
+      const eventDesc = assistPlayer
+        ? `⚽ ${scorerLabel} (assist: ${assistPlayer.playerName})`
+        : `⚽ ${scorerLabel}`;
       this.scoreboard.showGoalBanner(scorer.name);
-      this.scoreboard.logEvent(`⚽ GOL! ${scorer.name} marca!`);
-      this.spectatorSystem.emitLiveUpdate(`GOL! ${scorer.name} marca!`, { type: 'goal', text: scorer.name, teamId });
+      this.scoreboard.logEvent(`${eventDesc} — ${scorer.name} marca!`);
+
+      const spectatorEvent: import('../../draft/MultiplayerLobby').SpectatorEvent = {
+        type: 'goal',
+        text: scorer.name,
+        teamId,
+        scorerId: scorerPlayer?.id,
+        scorerName: scorerPlayer?.playerName,
+        assistId: assistPlayer?.id,
+        assistName: assistPlayer?.playerName,
+      };
+      this.spectatorSystem.emitLiveUpdate(`GOL! ${scorer.name} marca!`, spectatorEvent);
+
+      if (scorerPlayer) {
+        this.setup?.onGoalScored?.({
+          scorerId: scorerPlayer.id,
+          scorerName: scorerPlayer.playerName,
+          scorerTeamName: scorer.name,
+          assistId: assistPlayer?.id,
+          assistName: assistPlayer?.playerName,
+        });
+      }
       this.visuals.spawnGoalConfetti(teamId);
 
       const HAPPY  = ['🎉', '😄', '🔥', '😎', '🤩', '💪', '😜', '🙌', '👏'];
@@ -444,7 +513,6 @@ export default class MatchScene extends Phaser.Scene {
       this.scoreboard.logEvent(`45' — Intervalo`);
       this.spectatorSystem.emitLiveUpdate('Intervalo', { type: 'halftime' });
       this.ball.release();
-      this.ball.velocity = { x: 0, y: 0 };
       this.halftimeExitActive = true;
       this.halftimeExitSpeeds.clear();
       for (const p of this.allPlayers()) {
@@ -471,6 +539,9 @@ export default class MatchScene extends Phaser.Scene {
         const halftimeCb = this.setup?.onHalftime ?? showHalftimePanel;
 
         // Capture stamina snapshots for the halftime panel
+        const teamAData = this.setup?.teams[0];
+        const teamBData = this.setup?.teams[1];
+
         const starterSnapshots = this.teamA.players.map((p) => ({
           id: p.id,
           name: p.playerName,
@@ -478,7 +549,6 @@ export default class MatchScene extends Phaser.Scene {
           jerseyNumber: p.jerseyNumber,
           stamina: p.currentStamina,
         }));
-        const teamAData = this.setup?.teams[0];
         const benchSnapshots = (teamAData?.bench ?? []).map((pd) => ({
           id: pd.id,
           name: pd.name,
@@ -487,29 +557,7 @@ export default class MatchScene extends Phaser.Scene {
           stamina: 100,
         }));
         const usedBenchSet = new Set<number>();
-
-        halftimeCb({
-          scoreA: this.matchManager.scoreA,
-          scoreB: this.matchManager.scoreB,
-          teamAName: this.setup?.teams[0].name ?? '',
-          teamBName: this.setup?.teams[1].name ?? '',
-          currentProfile: this.currentTacticalProfileA,
-          currentProfileB: this.currentTacticalProfileB,
-          applyTactic: (profile) => {
-            this.currentTacticalProfileA = profile;
-            this.aiA.setTacticalProfile(profile);
-          },
-          applyTacticB: (profile) => {
-            this.currentTacticalProfileB = profile;
-            this.aiB.setTacticalProfile(profile);
-          },
-          resume: () => {
-            this.matchManager.isPaused = false;
-            startSecondHalf();
-          },
-          starters: starterSnapshots,
-          bench: benchSnapshots,
-          applySubstitution: (starterIndex: number, benchIndex: number) => {
+        const applySubstitutionA = (starterIndex: number, benchIndex: number) => {
             const pd = teamAData?.bench?.[benchIndex];
             if (!pd || usedBenchSet.has(benchIndex)) return;
             const oldPlayer = this.teamA.players[starterIndex];
@@ -542,13 +590,109 @@ export default class MatchScene extends Phaser.Scene {
             newPlayer.baseX = oldPlayer.baseX;
             newPlayer.baseY = oldPlayer.baseY;
             newPlayer.currentStamina = 100;
+            newPlayer.positionHeatMap = new PlayerHeatMap(
+              newPlayer.baseX, newPlayer.baseY,
+              calcPositionSpread(this.currentTacticalProfileA, newPlayer.role),
+            );
 
             this.tackleCooldowns.delete(oldPlayer.id);
             this.tackleCooldowns.set(newPlayer.id, 0);
             oldPlayer.destroy();
             this.teamA.players[starterIndex] = newPlayer;
             usedBenchSet.add(benchIndex);
+        };
+        this.guestSubHandlerA = applySubstitutionA;
+
+        const startersBSnapshots = this.teamB.players.map((p) => ({
+          id: p.id,
+          name: p.playerName,
+          role: p.role,
+          jerseyNumber: p.jerseyNumber,
+          stamina: p.currentStamina,
+        }));
+        const benchBSnapshots = (teamBData?.bench ?? []).map((pd) => ({
+          id: pd.id,
+          name: pd.name,
+          role: pd.role,
+          jerseyNumber: pd.jerseyNumber,
+          stamina: 100,
+        }));
+        const usedBenchBSet = new Set<number>();
+        const applySubstitutionB = (starterIndex: number, benchIndex: number) => {
+            const pd = teamBData?.bench?.[benchIndex];
+            if (!pd || usedBenchBSet.has(benchIndex)) return;
+            const oldPlayer = this.teamB.players[starterIndex];
+            if (!oldPlayer) return;
+
+            const color = teamBData!.color;
+            const isGK = pd.role === PlayerRole.Goalkeeper;
+            const pColor = isGK ? complementaryColor(color) : color;
+            const pSecondary = isGK ? color : (teamBData!.secondaryColor ?? 0x000000);
+
+            const newPlayer = new Player(
+              this,
+              oldPlayer.x, oldPlayer.y,
+              pd.id,
+              pd.name,
+              pd.jerseyNumber,
+              'teamB',
+              pd.role,
+              pd.stats,
+              pColor,
+              pd.heightCm ?? 180,
+              pd.weightKg ?? 78,
+              pd.playstyles ?? [],
+              pd.playstylesPlus ?? [],
+              teamBData!.numberColor ?? 0xffffff,
+              pSecondary,
+              teamBData!.kitPattern ?? 'solid',
+              false,
+            );
+            newPlayer.baseX = oldPlayer.baseX;
+            newPlayer.baseY = oldPlayer.baseY;
+            newPlayer.currentStamina = 100;
+            newPlayer.positionHeatMap = new PlayerHeatMap(
+              newPlayer.baseX, newPlayer.baseY,
+              calcPositionSpread(this.currentTacticalProfileB, newPlayer.role),
+            );
+
+            this.tackleCooldowns.delete(oldPlayer.id);
+            this.tackleCooldowns.set(newPlayer.id, 0);
+            oldPlayer.destroy();
+            this.teamB.players[starterIndex] = newPlayer;
+            usedBenchBSet.add(benchIndex);
+        };
+        this.guestSubHandlerB = applySubstitutionB;
+
+        halftimeCb({
+          scoreA: this.matchManager.scoreA,
+          scoreB: this.matchManager.scoreB,
+          teamAName: this.setup?.teams[0].name ?? '',
+          teamBName: this.setup?.teams[1].name ?? '',
+          currentProfile: this.currentTacticalProfileA,
+          currentProfileB: this.currentTacticalProfileB,
+          currentScheme: this.setup?.tacticalSchemeA,
+          currentSchemeB: this.setup?.tacticalSchemeB,
+          applyTactic: (profile) => {
+            this.currentTacticalProfileA = profile;
+            this.aiA.setTacticalProfile(profile);
+            this.updatePlayerHeatMaps(this.teamA, profile);
           },
+          applyTacticB: (profile) => {
+            this.currentTacticalProfileB = profile;
+            this.aiB.setTacticalProfile(profile);
+            this.updatePlayerHeatMaps(this.teamB, profile);
+          },
+          resume: () => {
+            this.matchManager.isPaused = false;
+            startSecondHalf();
+          },
+          starters: starterSnapshots,
+          bench: benchSnapshots,
+          applySubstitution: applySubstitutionA,
+          startersB: startersBSnapshots,
+          benchB: benchBSnapshots,
+          applySubstitutionB: applySubstitutionB,
         });
       } else {
         startSecondHalf();
@@ -556,16 +700,23 @@ export default class MatchScene extends Phaser.Scene {
     };
     this.matchManager.onTimeUp = () => {
       const ballHolder = this.allPlayers().find(p => p.hasBall);
-      // Ball in the air: fall back to last player who touched it
       const lastToucher = !ballHolder && this.ball.kickedById
         ? this.allPlayers().find(p => p.id === this.ball.kickedById) ?? null
         : null;
-      const referencePlayer = ballHolder ?? lastToucher;
-      if (!referencePlayer || !this.isInAttackingHalf(referencePlayer)) {
+
+      // No recent ball activity at all → end immediately
+      if (!ballHolder && !lastToucher) {
         this.matchManager.forceFinish();
         return;
       }
-      // Ball (or last toucher's team) is in the attacking half — keep playing until ball crosses center
+
+      // Determine attacking team by ball position (not by who last touched it —
+      // a defensive clearance shouldn't deny the attacking team their advantage).
+      const teamAInAttackHalf = this.teamA.attackDirection > 0
+        ? this.ball.x >= FIELD.centerX
+        : this.ball.x <= FIELD.centerX;
+      const advantageTeamId = teamAInAttackHalf ? 'teamA' : 'teamB';
+
       const baseMin = this.matchManager.half === 1 ? 45 : 90;
       const advText = this.add.text(GAME_WIDTH / 2, HUD_HEIGHT + 4, `⏱ ${baseMin}' — Vantagem de ataque`, {
         fontSize: '13px',
@@ -576,14 +727,16 @@ export default class MatchScene extends Phaser.Scene {
         strokeThickness: 2,
         resolution: 2,
       }).setOrigin(0.5, 0).setDepth(25);
-      this.flowSystem.beginAdvantage(referencePlayer.teamId, this.ball.x, advText);
+      this.flowSystem.beginAdvantage(advantageTeamId, this.ball.x, advText);
     };
   }
 
   private deliverMatchEnd(): void {
     if (this.matchEndDelivered) return;
     this.matchEndDelivered = true;
-    this.setup?.onMatchEnd?.(this.matchManager.scoreA, this.matchManager.scoreB);
+    const finalStaminas: Record<string, number> = {};
+    for (const p of this.teamA.players) finalStaminas[p.id] = p.currentStamina;
+    this.setup?.onMatchEnd?.(this.matchManager.scoreA, this.matchManager.scoreB, finalStaminas);
   }
 
   // ──────────────────────────────────────────────
@@ -782,7 +935,6 @@ export default class MatchScene extends Phaser.Scene {
       blocker.showStumble();
       this.scoreboard.logEvent(`${carrier.playerName} dribla ${blocker.playerName}!`);
     } else {
-      // Defender wins the ball
       const contactX = (carrier.x + blocker.x) / 2;
       const contactY = (carrier.y + blocker.y) / 2;
       carrier.hasBall = false;
@@ -791,12 +943,27 @@ export default class MatchScene extends Phaser.Scene {
       carrier.dribbleTarget = null;
       carrier.dribbleCommitMs = 0;
       carrier.dribbleContactRadius = 38;
-      blocker.hasBall = true;
-      blocker.state = PlayerState.CarryBall;
-      this.ball.attachToPlayer(blocker);
       this.tackleCooldowns.set(carrier.id, 650);
-      blocker.showTackleBurst(contactX, contactY);
-      this.scoreboard.logEvent(`${blocker.playerName} bloqueou o drible de ${carrier.playerName}!`);
+
+      // 25% of the time the challenge pops the ball loose — neither player gets clean possession.
+      // Chance drops against defenders with high physical/defending (they smother the ball).
+      const cleanWinChance = 0.62 + (blocker.stats.defending / 100) * 0.18 + (blocker.stats.physical / 100) * 0.10;
+      if (Math.random() > cleanWinChance) {
+        // Ball squirts behind or sideways — contested loose ball
+        const backDir = -carrier.attackDirection;
+        const side = Math.random() < 0.5 ? 1 : -1;
+        this.ball.velocity.x = backDir * (1.4 + Math.random() * 1.6);
+        this.ball.velocity.y = side * (1.2 + Math.random() * 2.2);
+        blocker.state = PlayerState.PressBall;
+        blocker.aiCooldown = 0;
+        this.scoreboard.logEvent(`Bola disputada!`);
+      } else {
+        blocker.hasBall = true;
+        blocker.state = PlayerState.CarryBall;
+        this.ball.attachToPlayer(blocker);
+        blocker.showTackleBurst(contactX, contactY);
+        this.scoreboard.logEvent(`${blocker.playerName} bloqueou o drible de ${carrier.playerName}!`);
+      }
     }
   }
 
@@ -836,13 +1003,6 @@ export default class MatchScene extends Phaser.Scene {
   // Kickoff & reset
   // ──────────────────────────────────────────────
 
-
-  private isInAttackingHalf(player: Player): boolean {
-    const team = player.teamId === 'teamA' ? this.teamA : this.teamB;
-    return team.attackDirection > 0
-      ? this.ball.x >= FIELD.centerX
-      : this.ball.x <= FIELD.centerX;
-  }
 
   // ──────────────────────────────────────────────
   // Keys
@@ -919,6 +1079,7 @@ export default class MatchScene extends Phaser.Scene {
   private phaseLabel(phase: TacticalPhase, manual: boolean): string {
     const labels: Record<TacticalPhase, string> = {
       'build-up':      'CONSTRUÇÃO',
+      'attacking':     'ATAQUE',
       'hold-shape':    'FORMA',
       'high-press':    'PRESSÃO ALTA',
       'counterattack': 'CONTRA-ATAQUE',

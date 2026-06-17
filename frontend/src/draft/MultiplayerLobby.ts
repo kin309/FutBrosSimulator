@@ -69,6 +69,10 @@ export interface SpectatorEvent {
   type: 'goal' | 'halftime' | 'halftime-end' | 'finished' | 'text';
   text?: string;
   teamId?: string;
+  scorerId?: string;
+  scorerName?: string;
+  assistId?: string;
+  assistName?: string;
 }
 
 export interface MultiplayerMatchLiveState {
@@ -103,10 +107,11 @@ export type LobbyMessage =
   | { type: 'match-state'; state: MultiplayerMatchState }
   | { type: 'prepare-match'; matchId: string }
   | { type: 'formation-ready'; playerId: string; matchId: string; team: TeamData }
+  | { type: 'formation-unready'; playerId: string; matchId: string }
   | { type: 'host-start-match'; matchId: string }
   | { type: 'match-live-state'; state: MultiplayerMatchLiveState }
   | { type: 'match-result'; matchId: string; scoreHome: number; scoreAway: number }
-  | { type: 'halftime-tactic'; playerId: string; side: 'home' | 'away'; tacticalProfile: TacticalProfile };
+  | { type: 'halftime-tactic'; playerId: string; side: 'home' | 'away'; tacticalProfile: TacticalProfile; substitutions?: Array<{ starterIndex: number; benchIndex: number }> };
 
 export const DEFAULT_LOBBY_SETTINGS: LobbySettings = {
   mode: 'champions-16',

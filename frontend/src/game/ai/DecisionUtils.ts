@@ -19,7 +19,8 @@ import {
   crossThresholdBonus,
   positioningPull,
 } from '../data/PlayerInstructions';
-import { projectBallWithBounce } from '../physics/BallProjection';
+import { projectBallWithBounce, projectBallAtFrames } from '../physics/BallProjection';
+import { BALL_PHYSICS } from '../physics/BallPhysics';
 
 export interface AIContext {
   ball: Ball;
@@ -58,7 +59,11 @@ export function canShoot(player: Player, ctx: AIContext): boolean {
   const maxRangeForSkill = 85 + player.stats.finishing * 2.5 + longShotRange;
   if (d > maxRangeForSkill) return false;
   const nearestOpp = ctx.oppTeam.getNearestPlayerTo(player.x, player.y);
-  if (nearestOpp && nearestOpp.distanceTo(player) < 35) return false;
+  const isAdvancedMid = player.role === PlayerRole.Midfielder && d < 280;
+  const pressureBlock = (player.role === PlayerRole.Striker || player.role === PlayerRole.Winger) ? 20
+    : isAdvancedMid ? 27
+    : 35;
+  if (nearestOpp && nearestOpp.distanceTo(player) < pressureBlock) return false;
   // Angle check: extreme byline shots are blocked; narrow angles need shooting skill
   // angle < 0.13 rad (~7°): never shoot regardless of skill
   // angle 0.13–0.26 rad: needs shooting 80 → 50 (scales linearly)
@@ -128,12 +133,21 @@ export function evaluatePassOption(
     : 0;
 
   // Backward ball: Strikers and Wingers should not route the ball back to the defensive line.
-  // A progressive penalty kicks in past 50 px backward so the option scores below the
-  // selection threshold, pushing the attacker toward ProtectBall instead of booting it back.
-  const backwardBallPenalty = progress < -50
-    && (passer.role === PlayerRole.Striker || passer.role === PlayerRole.Winger)
-    ? clamp((-progress - 50) / 120, 0, 1) * 55
+  // Penalty starts at -20px backward to push attackers toward forward options sooner.
+  // Midfielders in the attacking third (< 300px from goal) also get a scaled version.
+  const isAttackerRole = passer.role === PlayerRole.Striker || passer.role === PlayerRole.Winger;
+  const midAdvanceFactor = passer.role === PlayerRole.Midfielder
+    ? clamp((300 - Math.abs(passer.x - oppGoalX)) / 300, 0, 1)
     : 0;
+  const backwardBallPenalty = isAttackerRole && progress < 0
+    ? clamp(-progress / 75, 0, 1) * 72
+    : (midAdvanceFactor > 0 && progress < -20)
+      ? clamp((-progress - 20) / 100, 0, 1) * 42 * midAdvanceFactor
+      : 0;
+
+  // Passing to the GK: outfield players should use this only as a last resort under heavy pressure.
+  // Moderate flat penalty keeps the option open when genuinely needed but removes casual backpasses.
+  const gkPassPenalty = receiver.role === PlayerRole.Goalkeeper ? 34 : 0;
 
   // Free space bonus: a receiver with a lot of room (80px+) is a prime outlet — scale up
   // proportionally so very free options clearly stand out from barely-free ones.
@@ -158,6 +172,7 @@ export function evaluatePassOption(
     - immediateReturnPenalty
     - heatPenalty
     - backwardBallPenalty
+    - gkPassPenalty
     + staminaNoise
     + composureNoise;
 }
@@ -266,6 +281,20 @@ export function findBestPassTarget(player: Player, ctx: AIContext): Player | nul
       }
     }
 
+    // Forward combination bonus: attacker passer prefers another attacker in a lateral/forward
+    // position over recycling backward to midfield. Scales with receiver freedom and passer vision.
+    const passerIsAttacker = player.role === PlayerRole.Striker || player.role === PlayerRole.Winger;
+    const receiverIsAttacker = receiver.role === PlayerRole.Striker || receiver.role === PlayerRole.Winger;
+    if (passerIsAttacker && receiverIsAttacker) {
+      const attackDir = ctx.ownTeam.attackDirection;
+      const fwdProgress = (receiver.x - player.x) * attackDir;
+      if (fwdProgress > -30) {
+        const nearestToRec = ctx.oppTeam.getNearestPlayerTo(receiver.x, receiver.y);
+        const recFreedom = nearestToRec ? dist(nearestToRec.x, nearestToRec.y, receiver.x, receiver.y) : 999;
+        score += clamp((recFreedom - 30) / 120, 0, 1) * 22 * visionFactor;
+      }
+    }
+
     if (score > bestScore) { bestScore = score; best = receiver; }
   }
   return best;
@@ -305,7 +334,7 @@ function findBestThroughPassOption(player: Player, ctx: AIContext): ThroughPassO
     const receiverAhead = (receiver.x - player.x) * dir;
     // Vision extends how far ahead a passer can spot a runner: vision=60→360px, vision=91→392px
     const lookRange = 300 + (player.stats.vision / 100) * 90;
-    if (receiverAhead < 15 || receiverAhead > lookRange) continue;
+    if (receiverAhead < 60 || receiverAhead > lookRange) continue;
 
     // Offside: skip if receiver is already past the last outfield defender at kick moment
     if ((receiver.x - lastDefenderX) * dir > 5) continue;
@@ -376,6 +405,80 @@ function findBestThroughPassOption(player: Player, ctx: AIContext): ThroughPassO
   const throughW = ctx.tacticalProfile?.throughBallWeight ?? 0.25;
   const threshold = 86 - (player.stats.vision / 100) * 18 - traitBonus(player, TRAITS.INCISIVE_PASS, 8, 4) - (throughW - 0.25) * 60;
   return best && best.score > threshold ? best : null;
+}
+
+interface LoftedPassOption {
+  receiver: Player;
+  tx: number;
+  ty: number;
+  score: number;
+}
+
+// Returns the best lofted long ball when defenders are blocking the ground lane.
+// Only players with longPassing >= 55 consider this — it's a skilled technique.
+function findBestLoftedPassOption(player: Player, ctx: AIContext): LoftedPassOption | null {
+  const longBallStatMin = 55 - traitBonus(player, TRAITS.LONG_BALL_PASS, 10, 5);
+  if (player.stats.longPassing < longBallStatMin) return null;
+
+  const dir = ctx.ownTeam.attackDirection;
+  const AIR_FRAMES = (2.8 * 2) / BALL_PHYSICS.verticalGravityPerFrame; // lift=2.8 → ~28 frames
+
+  let best: LoftedPassOption | null = null;
+
+  for (const receiver of ctx.ownTeam.players) {
+    if (receiver === player || receiver.role === PlayerRole.Goalkeeper) continue;
+
+    const receiverAhead = (receiver.x - player.x) * dir;
+    const lookRange = 220 + (player.stats.vision / 100) * 130 + traitBonus(player, TRAITS.LONG_BALL_PASS, 40, 20);
+    if (receiverAhead < 60 || receiverAhead > lookRange) continue;
+
+    // Predict receiver position at landing
+    const toTargetX = receiver.targetX - receiver.x;
+    const toTargetY = receiver.targetY - receiver.y;
+    const toTargetLen = Math.sqrt(toTargetX * toTargetX + toTargetY * toTargetY);
+    const rxSpeed = (receiver.stats.sprintSpeed / 100) * 1.85 * receiver.getStaminaFactor();
+    const rxTravel = rxSpeed * AIR_FRAMES * 0.5;
+    const tx = toTargetLen > 8
+      ? clamp(receiver.x + (toTargetX / toTargetLen) * rxTravel, ctx.field.left + 24, ctx.field.right - 24)
+      : clamp(receiver.x + dir * 40, ctx.field.left + 24, ctx.field.right - 24);
+    const ty = clamp(receiver.y, ctx.field.top + 24, ctx.field.bottom - 24);
+
+    const passDistance = dist(player.x, player.y, tx, ty);
+    if (passDistance < 220 || passDistance > 640) continue;
+
+    // Count defenders blocking the ground lane — this is the main trigger for choosing loft
+    let laneBlockers = 0;
+    for (const opp of ctx.oppTeam.players) {
+      if (opp.role === PlayerRole.Goalkeeper) continue;
+      if (distancePointToSegment(opp.x, opp.y, player.x, player.y, tx, ty) < 32) laneBlockers++;
+    }
+    if (laneBlockers === 0) continue; // ground lane clear → no need to loft
+
+    // Space at landing zone
+    let nearestToTarget = Infinity;
+    for (const opp of ctx.oppTeam.players) {
+      if (opp.role === PlayerRole.Goalkeeper) continue;
+      const d = dist(opp.x, opp.y, tx, ty);
+      if (d < nearestToTarget) nearestToTarget = d;
+    }
+    if (nearestToTarget < 40) continue; // landing too crowded to be useful
+
+    const ability     = player.stats.longPassing * 0.38 + player.stats.vision * 0.28 + receiver.stats.sprintSpeed * 0.12;
+    const laneValue   = Math.min(laneBlockers * 20, 44);
+    const targetSpace = clamp((nearestToTarget - 40) / 100, 0, 1) * 26;
+    const roleBonus   = receiver.role === PlayerRole.Striker ? 14 : receiver.role === PlayerRole.Winger ? 6 : 0;
+    const distPenalty = clamp((passDistance - 380) / 260, 0, 1) * 16;
+    const goalBonus   = clamp((480 - Math.abs(tx - ctx.oppGoal.centerX)) / 480, 0, 1) * 10;
+
+    const score = ability + laneValue + targetSpace + roleBonus + goalBonus - distPenalty;
+    if (!best || score > best.score) best = { receiver, tx, ty, score };
+  }
+
+  if (!best) return null;
+  const longPassBonus = (player.stats.longPassing - 55) * 0.46;
+  const visionBonus   = Math.max(0, player.stats.vision - 60) * 0.18;
+  const threshold = 78 - longPassBonus - visionBonus - traitBonus(player, TRAITS.LONG_BALL_PASS, 10, 6);
+  return best.score > threshold ? best : null;
 }
 
 function findBestServicePassOption(player: Player, ctx: AIContext): ServicePassOption | null {
@@ -457,9 +560,18 @@ function findBestServicePassOption(player: Player, ctx: AIContext): ServicePassO
   // Crosser: more willing to attempt service passes (lower threshold)
   // crossWeight > 0.25 (neutral) abaixa o threshold → time cruza mais
   // crossThresholdBonus: instrução individual 'Cruzar mais' abaixa ainda mais (-16)
+  // statCrossBonus: inclinação contínua por crossing stat (crossing=80→+8, crossing=30→-4)
+  //   amortecida quando instrução ativa (0.25×) ou tática elevada (0.55×)
+  //   prioridade: instrução > tática > stat
   const crossW = ctx.tacticalProfile?.crossWeight ?? 0.25;
   const instrCrossBonus = crossThresholdBonus(ctx.playerInstructions?.get(player.id));
-  const crosserThreshold = 76 - traitBonus(player, TRAITS.CROSSER, 12, 8) - (crossW - 0.25) * 60 - instrCrossBonus;
+  const statCrossBonus = clamp((player.stats.crossing - 50) / 50, -0.5, 1) * 6;
+  const crossStatDampen = instrCrossBonus > 0 ? 0.25 : crossW > 0.30 ? 0.55 : 1.0;
+  const crosserThreshold = 76
+    - traitBonus(player, TRAITS.CROSSER, 12, 8)
+    - (crossW - 0.25) * 60
+    - instrCrossBonus
+    - statCrossBonus * crossStatDampen;
   return best && best.score > crosserThreshold ? best : null;
 }
 
@@ -579,14 +691,23 @@ export function decideWithBall(player: Player, ctx: AIContext): PlayerState {
   const riskTolBias = (riskTol - 0.5) * 8; // -4 = very safe, +4 = very risky
   if (canShoot(player, ctx) || shouldForceRiskyShot(player, ctx, risk)) return PlayerState.Shoot;
 
-  // Through pass first: a free runner in behind beats forcing a dribble.
+  // Through / lofted pass first: a free runner in behind beats forcing a dribble.
   const carry = scoreCarry(player, ctx);
   const throughPass = findBestThroughPassOption(player, ctx);
-  if (throughPass && throughPass.score > carry + 8 - risk * 16 - riskTolBias) {
-    player.passTarget = throughPass.receiver;
-    player.passTargetX = throughPass.tx;
-    player.passTargetY = throughPass.ty;
-    player.passKind = 'through';
+  const loftedPass  = findBestLoftedPassOption(player, ctx);
+
+  // Prefer lofted over through when it scores higher (ground lane is blocked)
+  const bestVertical = (loftedPass && (!throughPass || loftedPass.score > throughPass.score))
+    ? { option: loftedPass, kind: 'lofted' as const }
+    : throughPass
+      ? { option: throughPass, kind: 'through' as const }
+      : null;
+
+  if (bestVertical && bestVertical.option.score > carry + 8 - risk * 16 - riskTolBias) {
+    player.passTarget  = bestVertical.option.receiver;
+    player.passTargetX = bestVertical.option.tx;
+    player.passTargetY = bestVertical.option.ty;
+    player.passKind    = bestVertical.kind;
     return PlayerState.Pass;
   }
 
@@ -606,8 +727,21 @@ export function decideWithBall(player: Player, ctx: AIContext): PlayerState {
       const roleMult = (player.role === PlayerRole.Striker || player.role === PlayerRole.Winger) ? 1.2
         : player.role === PlayerRole.Midfielder ? 0.95
         : 0.55;
+      // Stat propensity: bom driblador reduz o threshold (mais propenso a tentar o 1×1)
+      //   amortecida quando instrução ativa (instrDribbleMult já assume o controle)
+      // Tática: runWeight alto → time quer carregar/driblar mais
+      // Instrução aditiva: 'Driblar mais' baixa threshold; 'Reter posse' eleva
+      //   prioridade: instrução > tática > stat
+      const runW = ctx.tacticalProfile?.runWeight ?? 0.25;
+      const tacticDribBonus = (runW - 0.25) * 28;
+      const dribInstrActive = inst?.withBall === 'dribble' || inst?.withBall === 'retain';
+      const statDribPropensity = clamp((player.stats.dribbling - 50) / 50, -0.4, 1) * 3;
+      const effectiveStatDrib = dribInstrActive ? statDribPropensity * 0.20 : statDribPropensity;
+      const instrDribAdditive = inst?.withBall === 'dribble' ? 10 : inst?.withBall === 'retain' ? -8 : 0;
+      const dribbleThreshold = 46 - risk * 9 - riskTolBias * 0.8
+        - effectiveStatDrib - tacticDribBonus - instrDribAdditive;
       // instrDribbleMult: 'Driblar mais' amplia habilidade efetiva; 'Reter posse' reduz
-      if (dribbleAbility * roleMult * instrDribbleMult > 46 - risk * 9 - riskTolBias * 0.8) {
+      if (dribbleAbility * roleMult * instrDribbleMult > dribbleThreshold) {
         player.dribbleTarget = blocker;
         return PlayerState.Dribble;
       }
@@ -641,6 +775,22 @@ export function decideWithBall(player: Player, ctx: AIContext): PlayerState {
 
   const carryThreshold = (player.role === PlayerRole.Defender ? 12 : 18) - riskTolBias;
   if (carry > carryThreshold + risk * 10) return PlayerState.CarryBall;
+
+  // Cornered attacker: no carry space, no dribble route, no good forward pass → take the shot.
+  // Applies even when canShoot is blocked by a nearby opponent — accepts worse outcome over
+  // routing the ball all the way back to the defensive line.
+  // Advanced midfielders (< 230px from goal) are also eligible with tighter requirements.
+  const isAttacker = player.role === PlayerRole.Striker || player.role === PlayerRole.Winger;
+  const dToGoal = dist(player.x, player.y, ctx.oppGoal.centerX, ctx.field.centerY);
+  const isAdvancedMidfielder = player.role === PlayerRole.Midfielder && dToGoal < 230;
+  if ((isAttacker || isAdvancedMidfielder) && carry < 8 && !blocker) {
+    const angle = computeGoalViewAngle(player.x, player.y, ctx);
+    const shootDist = isAdvancedMidfielder ? 200 : 255;
+    const minFinishing = isAdvancedMidfielder ? 55 : 42;
+    if (dToGoal < shootDist && angle > 0.14 && player.stats.finishing > minFinishing) {
+      return PlayerState.Shoot;
+    }
+  }
 
   // Modest pass beats protecting the ball
   if (passTarget) {
@@ -698,10 +848,14 @@ function shouldForceRiskyShot(player: Player, ctx: AIContext, risk: number): boo
 
   const nearestOpp = ctx.oppTeam.getNearestPlayerTo(player.x, player.y);
   const pressure = nearestOpp ? clamp((72 - nearestOpp.distanceTo(player)) / 72, 0, 1) : 0;
-  const attackerBonus = player.role === PlayerRole.Striker || player.role === PlayerRole.Winger ? 0.18 : 0;
+  const attackerBonus = player.role === PlayerRole.Striker || player.role === PlayerRole.Winger ? 0.22 : 0;
+  // Midfielder in advanced position: bonus scales with proximity to goal (0 at 280px → 0.12 at goal line)
+  const midPositionBonus = player.role === PlayerRole.Midfielder
+    ? clamp((280 - d) / 280, 0, 1) * 0.12
+    : 0;
   const riskTolBoost = ((ctx.tacticalProfile?.riskTolerance ?? 0.5) - 0.5) * 0.22;
   const composureBoost = (player.stats.composure / 100 - 0.5) * 0.12;
-  return risk + pressure * 0.35 + attackerBonus + riskTolBoost + composureBoost > 0.78;
+  return risk + pressure * 0.35 + attackerBonus + midPositionBonus + riskTolBoost + composureBoost > 0.78;
 }
 
 // Score the opportunity to carry the ball forward.
@@ -713,11 +867,16 @@ function scoreCarry(player: Player, ctx: AIContext): number {
   const boundary = dir > 0 ? ctx.field.right - 15 : ctx.field.left + 15;
   if (Math.abs(player.x - boundary) < 45) return 0;
 
-  // Nearest outfield opponent who is in front of the player
+  // Nearest outfield opponent who is in front of the player AND within the forward corridor.
+  // Defenders spread wide to the side (outside ~55° cone) don't block a run through the gap.
   let nearestThreat = Infinity;
   for (const opp of ctx.oppTeam.players) {
     if (opp.role === PlayerRole.Goalkeeper) continue;
-    if ((opp.x - player.x) * dir < 0) continue; // behind — not blocking carry
+    const ahead = (opp.x - player.x) * dir;
+    if (ahead < 0) continue; // behind — not blocking carry
+    // tan(55°) ≈ 1.43 — skip opponents outside the forward corridor unless very close
+    const lateral = Math.abs(opp.y - player.y);
+    if (ahead > 22 && lateral > ahead * 1.43 + 26) continue;
     const d = dist(opp.x, opp.y, player.x, player.y);
     if (d < nearestThreat) nearestThreat = d;
   }
@@ -807,21 +966,34 @@ function findOpenSpaceTarget(
   attackDir: number,
   rep: { rx: number; ry: number },
 ): { tx: number; ty: number } | null {
-  const carrier = ctx.ownTeam.getBallCarrier();
+  const currentCarrier = ctx.ownTeam.getBallCarrier();
+  const ballFlyingTarget = ctx.ball.targetPlayer as Player | null;
+  const anticipatedCarrier = !currentCarrier && ballFlyingTarget
+    && ballFlyingTarget.teamId === player.teamId
+    && ballFlyingTarget !== player
+    && ctx.ball.getSpeed() > 1.5
+    ? ballFlyingTarget
+    : null;
+  const carrier = currentCarrier ?? anticipatedCarrier;
   if (!carrier || carrier === player) return null;
 
   // Higher supportRunIntensity = players seek space further and more aggressively
   const intensity = ctx.tacticalProfile?.supportRunIntensity ?? 0.5;
   const intensityScale = 0.6 + intensity * 0.8; // 0.2→0.76  0.5→1.0  0.9→1.32
+  // offTransBias: reorganize(0)=1.0× vertical(0.3)≈1.14× counter(1)=1.45×
+  // fase attacking: +0.3 para corridas de apoio mais profundas quando dominando o campo
+  const offTransBias = ctx.tacticalProfile?.offensiveTransitionBias ?? 0.3;
+  const isAttackingPhase = ctx.directive?.phase === 'attacking';
+  const offTransScale = 1 + (offTransBias + (isAttackingPhase ? 0.3 : 0)) * 0.45;
   const roleDepth = (
     player.role === PlayerRole.Striker ? 150
     : player.role === PlayerRole.Winger ? 125
     : player.role === PlayerRole.Midfielder ? 95
     : 45
-  ) * intensityScale;
+  ) * intensityScale * offTransScale;
   // widthBias amplifica o quanto os jogadores buscam espaço lateral
   // 0=estreita(×0.72) 0.5=normal(×1.0) 1=aberta(×1.28)
-  const widthScale = 0.72 + (ctx.tacticalProfile?.widthBias ?? 0.5) * 0.56;
+  const widthScale = 0.60 + (ctx.tacticalProfile?.widthBias ?? 0.5) * 0.80;
   const lateralStep = (
     player.role === PlayerRole.Striker ? 82
     : player.role === PlayerRole.Midfielder ? 118
@@ -887,16 +1059,54 @@ function findOpenSpaceTarget(
       const midX = (a.x + b.x) / 2;
       const midY = (a.y + b.y) / 2;
       if ((midX - player.x) * attackDir < 25) continue;
-      candidates.push({ x: midX + attackDir * 40, y: midY });
+      // Push past the defender line so the target has open space behind them
+      candidates.push({ x: midX + attackDir * 75, y: midY });
     }
   }
 
-  // Coolest-cell candidate: least-covered zone in the attacking third
+  // Natural-flank anchor: when the carrier is clearly on one flank and this player
+  // is naturally based on the opposite flank, add a forward candidate along their
+  // own side so they don't collapse toward the ball.
+  const carrierFlankOffset = carrier.y - ctx.field.centerY;
+  const farSideY = clamp(
+    ctx.field.centerY - carrierFlankOffset * 0.65,
+    ctx.field.top + 40,
+    ctx.field.bottom - 40,
+  );
+  if (Math.abs(carrierFlankOffset) > 90) {
+    const playerFlankOffset = player.baseY - ctx.field.centerY;
+    if (Math.abs(playerFlankOffset) > 60 && carrierFlankOffset * playerFlankOffset < 0) {
+      // Player naturally lives on the opposite flank — keep them there
+      candidates.push({
+        x: clamp(player.baseX + attackDir * roleDepth * 0.70, ctx.field.left + 24, ctx.field.right - 24),
+        y: clamp(player.baseY, ctx.field.top + 28, ctx.field.bottom - 28),
+      });
+    }
+    // Far-side spread: only for players whose natural position is clearly lateral
+    // (|baseY offset| > 80px). Central midfielders are excluded so they don't get
+    // sent to the opposite flank and end up in tactically strange positions.
+    if (Math.abs(player.baseY - ctx.field.centerY) > 80) {
+      candidates.push({
+        x: clamp(player.baseX + attackDir * roleDepth * 0.60, ctx.field.left + 24, ctx.field.right - 24),
+        y: farSideY,
+      });
+    }
+  }
+
+  // Coolest-cell candidates: search at multiple Y anchors (center AND far flank)
+  // so open space on the opposite side from the carrier enters the candidate set.
   if (ctx.heatMap) {
     const oppTeamIdx = player.teamId === 'teamA' ? 1 : 0;
-    const searchX = ctx.oppGoal.centerX - attackDir * 185;
-    const cool = ctx.heatMap.findCoolestCell(searchX, ctx.field.centerY, oppTeamIdx, 4);
-    if (cool) candidates.push({ x: cool.x, y: cool.y });
+    const hmFarY = Math.abs(carrierFlankOffset) > 90 ? farSideY : ctx.field.centerY;
+    const coolSearches: Array<[number, number, number]> = [
+      [ctx.oppGoal.centerX - attackDir * 185, ctx.field.centerY, 4],
+      [ctx.oppGoal.centerX - attackDir * 320, hmFarY, 3],
+      [ctx.oppGoal.centerX - attackDir * 185, hmFarY, 3],
+    ];
+    for (const [sx, sy, sr] of coolSearches) {
+      const cool = ctx.heatMap.findCoolestCell(sx, sy, oppTeamIdx, sr);
+      if (cool) candidates.push({ x: cool.x, y: cool.y });
+    }
   }
 
   const roleMinGoalDist = player.role === PlayerRole.Striker ? 145
@@ -939,7 +1149,13 @@ function findOpenSpaceTarget(
     const progressScore = clamp(progress / 135, -0.4, 1) * 20;
     const receiveScore = clamp((390 - carrierDistance) / 300, 0, 1) * 18;
     const supportScore = aheadOfCarrier < -20 ? 10 : 0;
-    const wideBonus = Math.abs(ty - ctx.field.centerY) > 110 ? 8 : 0;
+    const attackFocusBiasOST = ctx.tacticalProfile?.attackFocusBias ?? 0;
+    // Foco pelas pontas: bônus de posição larga sobe (+20 max); foco central: bônus desce (mín 0)
+    const wideBonus = Math.abs(ty - ctx.field.centerY) > 110 ? clamp(8 + attackFocusBiasOST * 22, 0, 30) : 0;
+    // Foco central: bônus para posições centrais (tática Posse/Retrancado)
+    const centralPositionBonus = attackFocusBiasOST < 0 && Math.abs(ty - ctx.field.centerY) < 60
+      ? (-attackFocusBiasOST) * 16
+      : 0;
     // Intelligence scales the "smart positioning" metrics: pass-lane quality, danger, and unshadowing.
     // Danger: shooting angle to goal posts for central positions; crossing proximity for wide wingers.
     const gDx = Math.abs(tx - ctx.oppGoal.centerX) + 1;
@@ -982,6 +1198,7 @@ function findOpenSpaceTarget(
       + receiveScore
       + supportScore
       + wideBonus
+      + centralPositionBonus
       + dangerBonus
       + laneScore
       + unshadowScore
@@ -1085,8 +1302,13 @@ function attackingPosition(
     case PlayerRole.Midfielder: {
       const carrier = ctx.ownTeam.getBallCarrier();
       if (carrier && carrier !== player && ballInWideFinalThird(ball, ctx)) {
-        const tx = clamp(ctx.oppGoal.centerX - attackDir * 245 + rep.rx * 0.25, field.left + 20, field.right - 20);
-        const ty = clamp(field.centerY + (player.baseY - field.centerY) * 0.35 + rep.ry * 0.25, field.top + 24, field.bottom - 24);
+        // Spread midfielders across different X depths and Y positions around the box.
+        // Lateral midfielders (wide base) hold slightly back; central ones push deeper.
+        const fieldH = field.bottom - field.top;
+        const lateralFraction = Math.abs(player.baseY - field.centerY) / (fieldH * 0.5);
+        const xDepth = 220 + lateralFraction * 65; // central=220 (deeper), wide=285 (edge of box)
+        const tx = clamp(ctx.oppGoal.centerX - attackDir * xDepth + rep.rx * 0.5, field.left + 20, field.right - 20);
+        const ty = clamp(field.centerY + (player.baseY - field.centerY) * 0.65 + rep.ry * 0.5, field.top + 24, field.bottom - 24);
         return { state: PlayerState.FindSpace, tx, ty };
       }
 
@@ -1098,9 +1320,12 @@ function attackingPosition(
       // Midfielders push into the attacking third from their base
       // attackFocusBias > 0 (pontas): meia mantém largura; < 0 (centro): puxa para o miolo
       const attackFocusBiasMid = ctx.tacticalProfile?.attackFocusBias ?? 0;
-      const focusLateralMid = (field.centerY - player.baseY) * (-attackFocusBiasMid) * 0.20;
+      const focusLateralMid = (field.centerY - player.baseY) * (-attackFocusBiasMid) * 0.65;
       const instrAtkSupportMid = attackSupportMultiplier(ctx.playerInstructions?.get(player.id));
-      const midPush = 55 * instrAtkSupportMid;
+      // offTransBias faz meias subirem mais fundo no contra-ataque; fase attacking empurra ainda mais
+      const offTransBiasMid = ctx.tacticalProfile?.offensiveTransitionBias ?? 0.3;
+      const isAttackingPhaseMid = ctx.directive?.phase === 'attacking';
+      const midPush = (isAttackingPhaseMid ? 85 + offTransBiasMid * 50 : 55 + offTransBiasMid * 40) * instrAtkSupportMid;
       const tx = clamp(player.baseX + attackDir * midPush + rep.rx, field.left + 20, field.right - 20);
       const ty = clamp(player.baseY + focusLateralMid + (ball.y - player.baseY) * 0.06 + rep.ry, field.top + 20, field.bottom - 20);
       return { state: PlayerState.FindSpace, tx, ty };
@@ -1142,10 +1367,11 @@ function attackingPosition(
         const depthBias = player.role === PlayerRole.Winger
           ? (ctx.tacticalProfile?.wingerDepthBias ?? 0.5)
           : 0.5;
-        // Com alto depthBias, o ponta começa a correr antes (aheadOfCarrier > -35 → > -80)
-        // e pode ir até mais longe (215 → 260)
-        const runStartOffset = -35 - depthBias * 45;
-        const runEndOffset   = 215 + depthBias * 45;
+        // depthBias + offTransBias + attacking phase: atacantes correm mais cedo e mais fundo
+        const offTransBiasRun = ctx.tacticalProfile?.offensiveTransitionBias ?? 0.3;
+        const attackPhaseRunBonus = ctx.directive?.phase === 'attacking' ? 28 : 0;
+        const runStartOffset = -35 - depthBias * 45 - offTransBiasRun * 28 - attackPhaseRunBonus;
+        const runEndOffset   = 215 + depthBias * 45 + offTransBiasRun * 32 + attackPhaseRunBonus;
         const canRunBeyond = aheadOfCarrier > runStartOffset
           && aheadOfCarrier < runEndOffset
           && distToOppGoal > minGoalDist;
@@ -1209,7 +1435,7 @@ function attackingPosition(
         const winWidthBias = ctx.tacticalProfile?.wingerWidthBias ?? 0.5;
         const attackFocusBiasW = ctx.tacticalProfile?.attackFocusBias ?? 0;
         // Foco pelas pontas (> 0): ponta fica mais aberto; foco central (< 0): ponta corta mais
-        cutInsideDrift = clamp((1 - winWidthBias) * 0.45 - attackFocusBiasW * 0.15, 0, 0.65);
+        cutInsideDrift = clamp((1 - winWidthBias) * 0.55 - attackFocusBiasW * 0.40, 0, 0.75);
       }
       const anchorY = player.baseY + (field.centerY - player.baseY) * cutInsideDrift;
 
@@ -1230,6 +1456,18 @@ function attackingPosition(
 }
 
 // ─── Defending positioning ────────────────────────────────────────────────────
+
+// Returns how many px forward the defensive line should push from baseX.
+// Scales from 0 (ball near own goal) up to 65px (ball deep in opponent half).
+function computeDefensiveLineOffset(ballX: number, ctx: AIContext, field: FieldBounds): number {
+  const attackDir = ctx.ownTeam.attackDirection;
+  const distBallToOwnGoal = (ballX - ctx.ownGoal.centerX) * attackDir;
+  const fieldLength = field.right - field.left;
+  const stepStart = fieldLength * 0.35;
+  const stepRange = fieldLength * 0.35;
+  if (distBallToOwnGoal < stepStart) return 0;
+  return clamp((distBallToOwnGoal - stepStart) / stepRange, 0, 1) * 65;
+}
 
 function defendingPosition(
   player: Player,
@@ -1280,7 +1518,7 @@ function defendingPosition(
           p => p !== player && p.state === PlayerState.PressBall && !p.hasBall,
         ).length;
         const canReflex = pressCount === 0 || (pressCount === 1 && shouldDoublePress(player, carrier, ctx));
-        if (dClose < 105 && dClose >= 22 && pressCount < 2 && canReflex) {
+        if (dClose < 140 && dClose >= 22 && pressCount < 2 && canReflex) {
           player.markingTarget = carrier;
           return defensiveEngageTarget(player, carrier, ctx, rep, 32);
         }
@@ -1309,15 +1547,19 @@ function defendingPosition(
         return { state: PlayerState.MarkOpponent, tx, ty };
       }
       player.markingTarget = null;
-      return { state: PlayerState.ReturnToShape, tx: player.baseX + rep.rx, ty: player.baseY + rep.ry };
+      const lineOffset = computeDefensiveLineOffset(ball.x, ctx, field);
+      const lineTx = clamp(player.baseX + attackDir * lineOffset + rep.rx, field.left + 20, field.right - 20);
+      return { state: PlayerState.ReturnToShape, tx: lineTx, ty: player.baseY + rep.ry };
     }
 
     case PlayerRole.Midfielder: {
       // High-press: midfielders close from a wider range, but cap total pressers at 2
       // so they don't all pile onto the carrier and leave runners uncovered.
       // Aggressive players press from further away; base stays the same at aggression≈60
+      // defensiveTransitionBias: retreat(0)→120px  moderate(0.5)→205px  immediate(1)→290px
       const aggrBonus = (player.stats.aggression - 60) * 0.5;
-      const pressRange = (ctx.directive?.phase === 'high-press' ? 290 : 210) + aggrBonus;
+      const defTransBiasMid = ctx.tacticalProfile?.defensiveTransitionBias ?? 0.5;
+      const pressRange = (ctx.directive?.phase === 'high-press' ? 290 : 120 + defTransBiasMid * 170) + aggrBonus;
       const dToBall = dist(player.x, player.y, ball.x, ball.y);
       const pressCount = ctx.ownTeam.players.filter(
         p => p !== player && p.state === PlayerState.PressBall && !p.hasBall,
@@ -1332,8 +1574,15 @@ function defendingPosition(
         const ty = clamp(ball.y + rep.ry, field.top + 20, field.bottom - 20);
         return { state: PlayerState.PressBall, tx, ty };
       }
+      // Press quota full but carrier is close: shadow from goal-side to cut passing lanes
+      // rather than retreating entirely to base and leaving the carrier uncontested.
+      if (midCarrier && dToBall < 240) {
+        const tx = clamp(ball.x - attackDir * 58 + rep.rx, field.left + 15, field.right - 15);
+        const ty = clamp(ball.y + (player.baseY - ball.y) * 0.28 + rep.ry, field.top + 20, field.bottom - 20);
+        return { state: PlayerState.ReturnToShape, tx, ty };
+      }
       const tx = clamp(player.baseX + rep.rx, field.left + 15, field.right - 15);
-      const ty = clamp(player.baseY + (ball.y - player.baseY) * 0.07 + rep.ry, field.top + 20, field.bottom - 20);
+      const ty = clamp(player.baseY + (ball.y - player.baseY) * 0.16 + rep.ry, field.top + 20, field.bottom - 20);
       return { state: PlayerState.ReturnToShape, tx, ty };
     }
 
@@ -1346,8 +1595,12 @@ function defendingPosition(
         : 0; // pontas usam apenas a diretiva de high-press
       const isHighPress = ctx.directive?.phase === 'high-press';
       // pressRange: 0 (sem press) → 120px (sem bias); 1 (sempre) → 340px; high-press sempre 320px
+      // defensiveTransitionBias adiciona urgência de pressão para todos atacantes/pontas:
+      //   retreat(0)→+0px  moderate(0.5)→+35px  immediate(1)→+70px
       // Instrução individual sobrescreve via pressRangeMultiplier
-      const basePressRange = isHighPress ? 320 : 120 + strikerPressBias * 220;
+      const defTransBiasWS = ctx.tacticalProfile?.defensiveTransitionBias ?? 0.5;
+      const defTransBonus = defTransBiasWS * 70;
+      const basePressRange = isHighPress ? 320 : 120 + strikerPressBias * 220 + defTransBonus;
       const pressRange = basePressRange * pressRangeMultiplier(instrPressWS);
       const dToBall = dist(player.x, player.y, ball.x, ball.y);
       if (dToBall < pressRange) {
@@ -1478,13 +1731,17 @@ function findBallInterceptPoint(
   const totalPathLen = dist(ball.x, ball.y, destX, destY);
   if (totalPathLen < 40) return null;
 
-  // Project player onto ball path to find the nearest intercept candidate
+  // Project player onto ball path to find the nearest intercept candidate.
+  // Use the actual spin-curved trajectory: reactions determines how well the player reads the curve.
   const toPlayerX = player.x - ball.x;
   const toPlayerY = player.y - ball.y;
   const projScalar = toPlayerX * pathDirX + toPlayerY * pathDirY;
   const t = clamp(projScalar, totalPathLen * 0.05, totalPathLen * 0.90);
-  const ix = ball.x + pathDirX * t;
-  const iy = ball.y + pathDirY * t;
+  const estFrames = t / ballSpeed;
+  const spinAwareness = clamp((player.stats.reactions - 35) / 65, 0, 1);
+  const curvePt = projectBallAtFrames(ball, estFrames, spinAwareness);
+  const ix = curvePt.x;
+  const iy = curvePt.y;
 
   const ballDistToPoint   = t;
   const playerDistToPoint = dist(player.x, player.y, ix, iy);
@@ -1545,6 +1802,7 @@ function shouldStepOutForTackle(defender: Player, carrier: Player, ctx: AIContex
   if (!danger || (!closeToLane && !drivingAcrossLane)) return false;
 
   // Jockey: steps out more aggressively to engage carriers (+10 aggression, +6 for Plus)
+  // Enforcer: pressures with physical intensity, commits to tackles more readily
   const aggressionScore = defender.stats.defending * 0.30
     + defender.stats.physical * 0.18
     + defender.stats.reactions * 0.10
@@ -1552,7 +1810,8 @@ function shouldStepOutForTackle(defender: Player, carrier: Player, ctx: AIContex
     + clamp((270 - d) / 270, 0, 1) * 28
     + (drivingAtGoal ? 10 : 0)
     + (drivingAcrossLane ? 6 : 0)
-    + traitBonus(defender, TRAITS.JOCKEY, 10, 6);
+    + traitBonus(defender, TRAITS.JOCKEY, 10, 6)
+    + traitBonus(defender, TRAITS.ENFORCER, 10, 6);
 
   return aggressionScore > 44 && Math.random() < 0.88;
 }
@@ -1602,7 +1861,8 @@ function shouldDoublePress(presser: Player, carrier: Player, ctx: AIContext): bo
     ? 28 : 0;
 
   // Aggressive pressers join double-press more readily
-  const aggressionBonus = (presser.stats.aggression / 100) * 10;
+  const aggressionBonus = (presser.stats.aggression / 100) * 10
+    + traitBonus(presser, TRAITS.ENFORCER, 8, 5);
   // High pressCoordination teams are more willing to double-press as a unit
   const pressCoordination = ctx.tacticalProfile?.pressCoordination ?? 0.4;
   const coordinationBonus = (pressCoordination - 0.4) * 20; // -4 to +10
@@ -1657,6 +1917,15 @@ function decideGkWithoutBall(
   // Anchor all X-positioning to the actual goal line (field boundary), NOT to
   // ownGoal.centerX (which is off-field) or player.baseX (formation slot, ~85 px out).
   const goalLineX   = ownGoal.centerX < field.centerX ? field.left : field.right;
+
+  // Backpass: ball is explicitly targeted at this GK and in flight — run to intercept immediately.
+  // This bypasses both the ownHasBall short-circuit and the narrow claim-zone gate in getGkClaimTarget.
+  const ballTargetIsUs = (ball.targetPlayer as Player | null) === player && !ball.owner;
+  if (ballTargetIsUs) {
+    const projX = clamp(ball.x + ball.velocity.x * 6, field.left + 15, field.right - 15);
+    const projY = clamp(ball.y + ball.velocity.y * 6, field.top + 20, field.bottom - 20);
+    return { state: PlayerState.PressBall, tx: projX, ty: projY };
+  }
 
   if (ownHasBall) {
     const tx = clamp(goalLineX + dir * 22, field.left + 15, field.right - 15);
@@ -1756,16 +2025,18 @@ function getDefensiveLineX(ctx: AIContext): number {
 }
 
 export function gkShotStoppingQuality(gk: Player): number {
-  return (gk.stats.defending   / 100) * 55
-    + (gk.stats.sprintSpeed / 100) * 20
-    + (gk.stats.reactions   / 100) * 20
-    + (gk.stats.physical    / 100) * 5;
+  // defending domina: um jogador de linha com sprintSpeed alto não deve compensar falta de técnica de GK
+  return (gk.stats.defending   / 100) * 70
+    + (gk.stats.reactions   / 100) * 18
+    + (gk.stats.sprintSpeed / 100) * 8
+    + (gk.stats.physical    / 100) * 4;
 }
 
 function gkPositioningQuality(gk: Player): number {
-  return (gk.stats.defending   / 100) * 45
-    + (gk.stats.reactions   / 100) * 35
-    + (gk.stats.sprintSpeed / 100) * 20;
+  // defending domina o posicionamento; reactions e sprintSpeed contribuem pouco
+  return (gk.stats.defending   / 100) * 65
+    + (gk.stats.reactions   / 100) * 25
+    + (gk.stats.sprintSpeed / 100) * 10;
 }
 
 export function gkDistributionQuality(gk: Player): number {
@@ -1776,8 +2047,8 @@ export function gkDistributionQuality(gk: Player): number {
 
 function gkPositioningError(gk: Player, ball: Ball, maxError: number): number {
   const quality = gkPositioningQuality(gk);
-  // quality ranges ~55–95 in absolute terms (weighted /100). Map to error: 95→0, 55→1.
-  const errorScale = clamp(1 - (quality - 55) / 40, 0, 1);
+  // quality range agora ~30 (jogador de linha no gol) a ~90 (GK elite). Map to error: 90→0, 30→1.
+  const errorScale = clamp(1 - (quality - 30) / 60, 0, 1);
   const seed = gk.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
   return Math.sin(ball.x * 0.013 + ball.y * 0.017 + seed) * maxError * errorScale;
 }

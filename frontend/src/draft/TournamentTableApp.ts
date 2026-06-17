@@ -2,6 +2,7 @@ import {
   TournamentState,
   TournamentMatch,
   GroupStanding,
+  PlayerTournamentStats,
   computeGroupStandings,
   getNextUserMatch,
   getTournamentChampion,
@@ -76,6 +77,7 @@ function tableView(state: TournamentState, showBack: boolean, canPlayNext: boole
             : eliminated
               ? eliminatedPanel(state)
               : '<p class="draft-kicker" style="padding:16px">Aguardando outros jogos...</p>'}
+        ${topScorersPanel(state)}
       </aside>
     </main>
   `;
@@ -299,6 +301,64 @@ function nextMatchPanel(match: TournamentMatch): string {
           <small class="ovr-inline">${opponent.overall}</small>
         </span>
       </div>
+    </div>
+  `;
+}
+
+function topScorersPanel(state: TournamentState): string {
+  const stats = state.playerStats;
+  if (!stats) return '';
+
+  const entries = Object.entries(stats) as [string, PlayerTournamentStats][];
+  if (entries.length === 0) return '';
+
+  const scorers = entries
+    .filter(([, s]) => s.goals > 0)
+    .sort(([, a], [, b]) => b.goals - a.goals || b.assists - a.assists)
+    .slice(0, 7);
+
+  const assisters = entries
+    .filter(([, s]) => s.assists > 0)
+    .sort(([, a], [, b]) => b.assists - a.assists || b.goals - a.goals)
+    .slice(0, 5);
+
+  if (scorers.length === 0 && assisters.length === 0) return '';
+
+  const scorerRows = scorers.map(([, s], i) => `
+    <tr>
+      <td class="col-rank">${i + 1}</td>
+      <td class="col-name">${escapeHtml(s.playerName)}<small class="ovr-inline" style="display:block">${escapeHtml(s.teamName)}</small></td>
+      <td class="col-pts"><strong>${s.goals}</strong></td>
+      <td>${s.assists}</td>
+    </tr>
+  `).join('');
+
+  const assisterRows = assisters.map(([, s], i) => `
+    <tr>
+      <td class="col-rank">${i + 1}</td>
+      <td class="col-name">${escapeHtml(s.playerName)}<small class="ovr-inline" style="display:block">${escapeHtml(s.teamName)}</small></td>
+      <td class="col-pts"><strong>${s.assists}</strong></td>
+      <td>${s.goals}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <div class="next-match-panel" style="margin-top:16px">
+      <p class="draft-kicker">Estatisticas</p>
+      <h2>Artilheiros</h2>
+      ${scorers.length > 0 ? `
+        <table class="standings-table" style="margin-top:8px">
+          <thead><tr><th class="col-rank">#</th><th class="col-name">Jogador</th><th class="col-pts">Gols</th><th>Ast</th></tr></thead>
+          <tbody>${scorerRows}</tbody>
+        </table>
+      ` : '<p class="draft-kicker" style="margin-top:8px">Nenhum gol registrado ainda</p>'}
+      ${assisters.length > 0 ? `
+        <h2 style="margin-top:16px">Garçons</h2>
+        <table class="standings-table" style="margin-top:8px">
+          <thead><tr><th class="col-rank">#</th><th class="col-name">Jogador</th><th class="col-pts">Ast</th><th>Gols</th></tr></thead>
+          <tbody>${assisterRows}</tbody>
+        </table>
+      ` : ''}
     </div>
   `;
 }

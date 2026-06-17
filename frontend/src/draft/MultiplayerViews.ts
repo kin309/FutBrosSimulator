@@ -395,7 +395,7 @@ function mpTeamSection(team: MultiplayerDraftTeam, isLocal: boolean): string {
         </div>
         <span class="mp-pick-count">${team.picked.length}/15</span>
       </header>
-      ${positionNeedsView(team.picked, 'compact')}
+      ${isLocal ? positionNeedsView(team.picked, 'compact') : ''}
       <ol class="mp-picked-list">
         ${team.picked.length > 0
           ? team.picked.map(mpPickedItem).join('')
@@ -532,6 +532,7 @@ export function multiplayerSpectatorWaitingView(
               </li>
             `).join('')}
           </ul>
+          <button class="draft-btn draft-btn--secondary" data-action="view-table" style="margin-top:1.5rem">Ver tabela</button>
         </div>
       </section>
     </main>
