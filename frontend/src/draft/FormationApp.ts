@@ -19,6 +19,9 @@ import { DraftPlayer } from './DraftTypes';
 import { nationalityFlagCode } from './NationalityFlags';
 import { positionLabel } from './PositionLabels';
 import { applyOutOfPositionPenalty, isOutOfPosition } from '../game/data/OutOfPositionPenalty';
+import { Difficulty } from './MultiplayerLobby';
+import { BotTeam } from './DraftTypes';
+import { extraStatsContent, formatHeight, formatWeight, statBar, traitBadges } from './DraftViews';
 
 function buildEligibleTeamMap(allPlayers: DraftPlayer[]): Map<string, DraftPlayer[]> {
   const byTeam = new Map<string, DraftPlayer[]>();
@@ -31,35 +34,39 @@ function buildEligibleTeamMap(allPlayers: DraftPlayer[]): Map<string, DraftPlaye
   return byTeam;
 }
 
-export function pickBotTeamNamesFromPool(count: number, allPlayers: DraftPlayer[]): string[] {
-  const byTeam = buildEligibleTeamMap(allPlayers);
-  const eligible = [...byTeam.entries()]
-    .filter(([, players]) => players.length >= 11 && players.some((p) => p.role === PlayerRole.Goalkeeper))
-    .map(([name]) => name)
-    .sort(() => Math.random() - 0.5);
-
-  return Array.from({ length: count }, (_, i) => eligible[i % eligible.length] ?? `Bot ${i + 1}`);
+function computeTeamOverall(players: DraftPlayer[]): number {
+  const top11 = [...players].sort((a, b) => b.overall - a.overall).slice(0, 11);
+  return Math.round(top11.reduce((sum, p) => sum + p.overall, 0) / top11.length);
 }
 
-export function buildBotTeamFromPool(teamName: string, allPlayers: DraftPlayer[]): TeamData {
+export function buildBotPool(allPlayers: DraftPlayer[]): BotTeam[] {
   const byTeam = buildEligibleTeamMap(allPlayers);
+  return [...byTeam.entries()]
+    .filter(([, players]) => players.length >= 11 && players.some((p) => p.role === PlayerRole.Goalkeeper))
+    .map(([name, players]) => ({ name, overall: computeTeamOverall(players), players }));
+}
 
-  const eligible = [...byTeam.values()].filter(
-    (players) => players.length >= 11 && players.some((p) => p.role === PlayerRole.Goalkeeper),
-  );
+export function filterBotPoolByDifficulty(pool: BotTeam[], difficulty: Difficulty): BotTeam[] {
+  if (pool.length < 3) return pool;
+  const sorted = [...pool].sort((a, b) => a.overall - b.overall);
+  const n = sorted.length;
+  if (difficulty === 'easy') return sorted.slice(0, Math.ceil(n * 0.4));
+  if (difficulty === 'hard') return sorted.slice(Math.floor(n * 0.6));
+  return sorted;
+}
 
-  if (eligible.length === 0) return createOpponentTeam(teamName);
+export function pickBotTeams(count: number, pool: BotTeam[]): BotTeam[] {
+  if (pool.length === 0) return [];
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return Array.from({ length: count }, (_, i) => shuffled[i % shuffled.length]);
+}
 
-  const namedTeam = byTeam.get(teamName);
-  const teamPlayers = (namedTeam && namedTeam.length >= 11 && namedTeam.some((p) => p.role === PlayerRole.Goalkeeper))
-    ? namedTeam
-    : eligible[Math.floor(Math.random() * eligible.length)];
-
+export function buildTeamDataFromBotTeam(botTeam: BotTeam): TeamData {
   const formation = FORMATIONS[Math.floor(Math.random() * FORMATIONS.length)];
   const used = new Set<string>();
 
   const players = formation.slots.map((slot, index) => {
-    const player = pickBestPlayer(teamPlayers, used, slot.role);
+    const player = pickBestPlayer(botTeam.players, used, slot.role);
     used.add(player.id);
     return {
       id: `b${index}`,
@@ -78,7 +85,7 @@ export function buildBotTeamFromPool(teamName: string, allPlayers: DraftPlayer[]
 
   return {
     id: 'teamB',
-    name: teamName,
+    name: botTeam.name,
     color: 0xef4444,
     attackDirection: -1,
     formationName: formation.name,
@@ -104,6 +111,7 @@ interface FormationState {
   starters: FormationPlayer[];
   bench: DraftPlayer[];
   selectedId: string | null;
+  inspectedId: string | null;
   editMode: 'positions' | 'lineup' | 'instructions';
   kitColors: KitColors;
   customJerseyNumbers: Record<string, number>;
@@ -133,6 +141,7 @@ export interface SavedFormationState {
 
 export interface MatchContext {
   competitionName?: string;
+  teamName?: string;
   opponentName?: string;
   opponentTeam?: TeamData;
   matchId?: string;
@@ -163,6 +172,7 @@ export function renderFormationScreen(
     context.onFormationChange?.(serializeFormationState(state));
     root.innerHTML = formationView(state, context);
     wireFormationScreen(root, state, picked, onBack, render, context);
+    centerSelectedFormationPlayer(root, state);
   };
 
   render();
@@ -183,6 +193,7 @@ function wireFormationScreen(
     state.starters = reset.starters;
     state.bench = reset.bench;
     state.selectedId = null;
+    state.inspectedId = null;
     state.editMode = reset.editMode;
     render();
   });
@@ -194,7 +205,7 @@ function wireFormationScreen(
     }
     if (context.onReady) {
       context.onFormationChange?.(serializeFormationState(state));
-      context.onReady(toTeamData(state));
+      context.onReady(toTeamData(state, context.teamName));
       return;
     }
 
@@ -222,7 +233,7 @@ function wireFormationScreen(
     root.remove();
     document.body.classList.add('match-running');
     const game = createGame({
-      teams: [toTeamData(state), context.opponentTeam ?? createOpponentTeam(context.opponentName)],
+      teams: [toTeamData(state, context.teamName), context.opponentTeam ?? createOpponentTeam(context.opponentName)],
       tacticalProfileA: state.tacticalProfile,
       tacticalSchemeA: state.tacticalScheme,
       playerInstructionsA: mappedInstructions.size > 0 ? mappedInstructions : undefined,
@@ -255,6 +266,7 @@ function wireFormationScreen(
       state.starters = nextState.starters;
       state.bench = nextState.bench;
       state.selectedId = null;
+      state.inspectedId = null;
       render();
     });
   });
@@ -263,6 +275,7 @@ function wireFormationScreen(
     button.addEventListener('click', () => {
       state.editMode = button.dataset.editMode as FormationState['editMode'];
       state.selectedId = null;
+      state.inspectedId = null;
       if (state.editMode === 'instructions' || state.editMode === 'lineup') state.tacticViewMode = 'preset';
       render();
     });
@@ -345,7 +358,10 @@ function wireFormationScreen(
       if (!playerId) return;
 
       if (state.editMode === 'lineup') {
-        selectOrSwapLineupPlayer(state, playerId);
+        state.inspectedId = state.inspectedId === playerId ? null : playerId;
+        if (button.dataset.selectSource === 'bench') {
+          selectOrSwapLineupPlayer(state, playerId);
+        }
       }
 
       render();
@@ -369,6 +385,7 @@ function wireFormationScreen(
       }
 
       if (state.editMode === 'lineup') {
+        state.inspectedId = starter.player.id;
         selectOrSwapLineupPlayer(state, starter.player.id);
         render();
         return;
@@ -451,6 +468,7 @@ function changeFormationPreservingLineup(
     starters,
     bench: allPlayers.filter((p) => !used.has(p.id)),
     selectedId: null,
+    inspectedId: state.inspectedId,
     editMode: state.editMode,
     kitColors: state.kitColors,
     customJerseyNumbers: state.customJerseyNumbers,
@@ -484,6 +502,7 @@ function createFormationState(
     starters,
     bench: picked.filter((player) => !used.has(player.id)),
     selectedId: null,
+    inspectedId: null,
     editMode: 'lineup',
     kitColors: defaultKitColors,
     customJerseyNumbers: {},
@@ -551,6 +570,7 @@ function createFormationStateFromSaved(
       ...picked.filter((player) => !used.has(player.id)),
     ],
     selectedId: null,
+    inspectedId: null,
     editMode: 'lineup',
     kitColors: { ...defaultKitColors, ...(saved.kitColors ?? {}) } as KitColors,
     customJerseyNumbers: saved.customJerseyNumbers ?? {},
@@ -684,10 +704,10 @@ function fitScore(player: DraftPlayer, role: PlayerRole): number {
   return exact + close + player.overall + player.stats.intelligence * 0.2;
 }
 
-function toTeamData(state: FormationState): TeamData {
+function toTeamData(state: FormationState, teamName = 'Meu Time'): TeamData {
   return {
     id: 'teamA',
-    name: 'Seu Time',
+    name: teamName,
     color: state.kitColors.primary,
     secondaryColor: state.kitColors.secondary,
     numberColor: state.kitColors.numberColor,
@@ -862,6 +882,7 @@ function instructionPanelView(state: FormationState, ovr: number): string {
 }
 
 function squadPanelView(state: FormationState, ovr: number, staminas: Record<string, number> = {}): string {
+  const selectedBenchPlayer = state.bench.some((player) => player.id === state.inspectedId);
   return `
     <div class="squad-header">
       <h2>${state.editMode === 'lineup' ? 'Trocar jogadores' : 'Titulares'}</h2>
@@ -873,7 +894,7 @@ function squadPanelView(state: FormationState, ovr: number, staminas: Record<str
     <ol class="formation-list">
       ${state.starters.map((starter, index) => starterItem(
         starter,
-        state.editMode === 'lineup' && state.selectedId === starter.player.id,
+        state.editMode === 'lineup' && state.inspectedId === starter.player.id,
         state.editMode,
         state.customJerseyNumbers[starter.player.id] ?? (index + 1),
         staminas[starter.player.id] ?? 100,
@@ -883,8 +904,8 @@ function squadPanelView(state: FormationState, ovr: number, staminas: Record<str
       <h2>Banco</h2>
       <span>${state.bench.length}</span>
     </div>
-    <ol class="formation-list bench-list">
-      ${state.bench.map((player) => benchItem(player, state.selectedId === player.id, state.editMode, staminas[player.id] ?? 100)).join('')}
+    <ol class="formation-list bench-list ${selectedBenchPlayer ? 'has-open-details' : ''}">
+      ${state.bench.map((player) => benchItem(player, state.inspectedId === player.id, state.editMode, staminas[player.id] ?? 100)).join('')}
     </ol>
   `;
 }
@@ -1000,10 +1021,11 @@ function playerMarker(starter: FormationPlayer, state: FormationState, jerseyNum
 function starterItem(starter: FormationPlayer, selected: boolean, editMode: FormationState['editMode'], jerseyNum: number, stamina: number): string {
   const outOfPos = isOutOfPosition(starter.player.role, starter.role, starter.player.alternateRoles);
   return `
-    <li class="starter-list-item">
+    <li class="starter-list-item ${selected ? 'has-open-details' : ''}">
       <button
         class="${roleClass(starter.role)} ${selected ? 'is-selected' : ''} ${outOfPos ? 'is-out-of-pos' : ''}"
         data-select-player="${escapeHtml(starter.player.id)}"
+        data-select-source="starter"
         ${editMode === 'positions' || editMode === 'instructions' ? 'disabled' : ''}
       >
         <span>${starter.player.overall}</span>
@@ -1023,14 +1045,15 @@ function starterItem(starter: FormationPlayer, selected: boolean, editMode: Form
         </label>
         ${staminaBar(stamina)}
       </div>
+      ${selected ? formationPlayerDetails(starter.player) : ''}
     </li>
   `;
 }
 
 function benchItem(player: DraftPlayer, selected: boolean, editMode: FormationState['editMode'], stamina: number): string {
   return `
-    <li>
-      <button class="${selected ? 'is-selected' : ''}" data-select-player="${escapeHtml(player.id)}" ${editMode === 'positions' || editMode === 'instructions' ? 'disabled' : ''}>
+    <li class="${selected ? 'has-open-details' : ''}">
+      <button class="${selected ? 'is-selected' : ''}" data-select-player="${escapeHtml(player.id)}" data-select-source="bench" ${editMode === 'positions' || editMode === 'instructions' ? 'disabled' : ''}>
         <span>${player.overall}</span>
         <div>
           <div class="player-name-row"><strong>${escapeHtml(player.name)}</strong>${flagImg(player)}</div>
@@ -1042,8 +1065,42 @@ function benchItem(player: DraftPlayer, selected: boolean, editMode: FormationSt
           ${staminaBar(stamina)}
         </div>
       </button>
+      ${selected ? formationPlayerDetails(player) : ''}
     </li>
   `;
+}
+
+function formationPlayerDetails(player: DraftPlayer): string {
+  const { speed, shooting, passing, dribbling, defending, physical } = player.stats;
+  return `
+    <div class="formation-player-details">
+      <div class="body-row">
+        <span>${formatHeight(player)}</span>
+        <span>${formatWeight(player)}</span>
+      </div>
+      <div class="stat-bars">
+        ${statBar('PAC', speed)}
+        ${statBar('FIN', shooting)}
+        ${statBar('PAS', passing)}
+        ${statBar('DRI', dribbling)}
+        ${statBar('DEF', defending)}
+        ${statBar('FIS', physical)}
+      </div>
+      ${traitBadges(player) || '<div class="formation-no-traits">Sem playstyles</div>'}
+      <div class="extra-stats">
+        ${extraStatsContent(player)}
+      </div>
+    </div>
+  `;
+}
+
+function centerSelectedFormationPlayer(root: HTMLElement, state: FormationState): void {
+  if (state.editMode !== 'lineup' || !state.inspectedId) return;
+
+  requestAnimationFrame(() => {
+    root.querySelector<HTMLElement>('.formation-list li.has-open-details')
+      ?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+  });
 }
 
 function flagImg(player: DraftPlayer): string {

@@ -159,7 +159,12 @@ export interface PlayerForIntercept {
   getStaminaFactor(): number;
 }
 
-export function projectBallIntercept(ball: BallState, player: PlayerForIntercept, field: FieldBounds): { x: number; y: number } {
+export function projectBallIntercept(
+  ball: BallState,
+  player: PlayerForIntercept,
+  field: FieldBounds,
+  skipVisionOvershoot = false,
+): { x: number; y: number } {
   const speed = Math.sqrt(ball.velocity.x * ball.velocity.x + ball.velocity.y * ball.velocity.y);
   if (speed < 0.8) return { x: ball.x, y: ball.y };
 
@@ -196,10 +201,13 @@ export function projectBallIntercept(ball: BallState, player: PlayerForIntercept
     }
   }
 
-  // High vision → cuts to the true earliest intercept (closest reachable point on trajectory).
-  // Low vision → overshoots, aiming further along the trajectory than necessary.
+  // High vision → cuts to the true earliest intercept; low vision → overshoots.
+  // Designated receivers (skipVisionOvershoot=true) always aim for the true intercept —
+  // they know the ball is coming to them, so vision penalty would cause them to run past it.
   const visionFactor = clamp((player.stats.vision - 30) / 70, 0, 1);
-  const frames = clamp(interceptFrames + (1 - visionFactor) * 22, 0, 90);
+  const frames = skipVisionOvershoot
+    ? clamp(interceptFrames, 0, 90)
+    : clamp(interceptFrames + (1 - visionFactor) * 22, 0, 90);
 
   // reactions: how early they commit to the projected position vs current ball position
   const anticipation = 0.62 + (player.stats.reactions / 100) * 0.38;
@@ -226,7 +234,7 @@ export function planReceptionTarget(
   const bdx = player.x - ball.x;
   const bdy = player.y - ball.y;
   const ballDist = Math.sqrt(bdx * bdx + bdy * bdy);
-  const intercept = projectBallIntercept(ball, player, field);
+  const intercept = projectBallIntercept(ball, player, field, true);
 
   if (ballSpeed < 0.8) {
     return { x: ball.x, y: ball.y, urgency: clamp(ballDist / 90, 0, 1) };

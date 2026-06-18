@@ -1,7 +1,7 @@
 import { loadDraftPlayers } from './CsvPlayerLoader';
 import { DraftManager, generateRoundSequence } from './DraftManager';
-import { DraftPlayer, DraftRoundKind } from './DraftTypes';
-import { buildBotTeamFromPool, pickBotTeamNamesFromPool, renderFormationScreen, SavedFormationState } from './FormationApp';
+import { BotTeam, DraftPlayer, DraftRoundKind } from './DraftTypes';
+import { buildBotPool, buildTeamDataFromBotTeam, filterBotPoolByDifficulty, pickBotTeams, renderFormationScreen, SavedFormationState } from './FormationApp';
 import { showHalftimePanel } from './HalftimePanel';
 import { compileScheme, DEFAULT_TACTICAL_PROFILE, TACTICAL_SCHEMES, TacticalProfile } from '../game/data/TacticalProfile';
 import { createGame } from '../game/FootballGame';
@@ -11,6 +11,7 @@ import {
   createPlayerId,
   createRoomCode,
   DEFAULT_LOBBY_SETTINGS,
+  Difficulty,
   DraftVisibility,
   GroupPlacement,
   LobbyMessage,
@@ -39,7 +40,7 @@ import {
   TournamentState,
 } from './Tournament';
 import { renderTournamentTable } from './TournamentTableApp';
-import { loadingView, draftView, tournamentSetupView, penaltyScreenView } from './DraftViews';
+import { loadingView, draftView, tournamentSetupView, penaltyScreenView, escapeHtml } from './DraftViews';
 import {
   lobbyHomeView,
   lobbyWaitingView,
@@ -54,6 +55,9 @@ import {
   multiplayerLocalRenderKey,
 } from './MultiplayerViews';
 import { simulatePenalties, buildPenaltyKickers, simulateMultiplayerPenaltyScore } from './PenaltySimulator';
+
+// ── Module-level draft countdown (singleton — one draft screen at a time) ────
+let _draftCountdown: ReturnType<typeof setInterval> | null = null;
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
 
@@ -94,6 +98,7 @@ interface MultiplayerReturnInvite {
 export interface DraftPools {
   fullPool: DraftPlayer[];
   famousPool: DraftPlayer[];
+  botPool: BotTeam[];
 }
 
 // ── Persistence helpers ───────────────────────────────────────────────────────
@@ -218,8 +223,9 @@ export async function startDraftApp(): Promise<void> {
       loadDraftPlayers(FULL_POOL_URL),
       loadDraftPlayers(FAMOUS_POOL_URL),
     ]);
+    const botPool = buildBotPool(fullPool);
 
-    renderLobbyHome(root, { fullPool, famousPool });
+    renderLobbyHome(root, { fullPool, famousPool, botPool });
   } catch (error) {
     root.innerHTML = `
       <main class="draft-shell">
@@ -253,12 +259,11 @@ export async function startDebugMode(): Promise<void> {
     return;
   }
 
+  const debugBotPool = buildBotPool(allPlayers);
   const reroll = (): void => {
     const squad = buildDebugSquad(allPlayers, 18);
-    const opponent = buildBotTeamFromPool(
-      pickBotTeamNamesFromPool(1, allPlayers)[0] ?? 'Debug Bot',
-      allPlayers,
-    );
+    const botTeam = pickBotTeams(1, debugBotPool)[0];
+    const opponent = botTeam ? buildTeamDataFromBotTeam(botTeam) : { id: 'teamB', name: 'Debug Bot', color: 0xef4444, attackDirection: -1 as const, formationName: '4-4-2', players: [] };
     renderFormationScreen(root, squad, reroll, {
       competitionName: 'Modo Debug',
       opponentName: opponent.name,
@@ -285,7 +290,7 @@ function animatePickSelected(button: HTMLButtonElement, onDone: () => void): voi
 }
 
 function animateBoosterExit(root: Element, onDone: () => void): void {
-  root.querySelectorAll<HTMLElement>('.booster-grid .card-flip-wrapper').forEach((wrapper) => {
+  root.querySelectorAll<HTMLElement>('.booster-grid .card-slide-wrapper').forEach((wrapper) => {
     wrapper.classList.add('is-exiting');
   });
   // 6 cards × 30ms delay + 130ms duration
@@ -293,18 +298,55 @@ function animateBoosterExit(root: Element, onDone: () => void): void {
 }
 
 const FLIP_DURATION: Record<string, number> = {
-  'tier-gold': 1000,
-  'tier-silver': 220,
-  'tier-bronze': 220,
+  'tier-gold': 780,
+  'tier-silver': 170,
+  'tier-bronze': 170,
 };
-const DEFAULT_FLIP_DURATION = 240;
-const SPECIAL_BOOSTER_INTRO_MS = 1100;
+const DEFAULT_FLIP_DURATION = 180;
+const SLIDE_DURATION_MS = 320;
+const SLIDE_STAGGER_MS = 55;
+
+function setupCardRowSlide(root: Element, slideWrappers: NodeListOf<HTMLElement>, baseSlideDelay: number): void {
+  const grid = root.querySelector<HTMLElement>('.booster-grid');
+  if (!grid || slideWrappers.length === 0) return;
+
+  const gridRect = grid.getBoundingClientRect();
+  const rows = new Map<number, HTMLElement[]>();
+
+  slideWrappers.forEach((wrapper) => {
+    const rect = wrapper.getBoundingClientRect();
+    const rowKey = Math.round(rect.top - gridRect.top);
+    rows.set(rowKey, [...(rows.get(rowKey) ?? []), wrapper]);
+  });
+
+  [...rows.entries()]
+    .sort(([a], [b]) => a - b)
+    .forEach(([, row], rowIndex) => {
+      row.sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+      row.forEach((wrapper, columnIndex) => {
+        const rect = wrapper.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const startX = gridRect.left - rect.width * 0.65;
+        const delay = baseSlideDelay + columnIndex * SLIDE_STAGGER_MS + rowIndex * 30;
+
+        wrapper.style.setProperty('--stack-x', `${Math.round(startX - centerX)}px`);
+        wrapper.style.setProperty('--stack-y', '0px');
+        wrapper.style.setProperty('--stack-rotate', '-2deg');
+        wrapper.style.setProperty('--slide-delay', `${delay}ms`);
+      });
+    });
+}
 
 function setupSequentialFlip(root: Element): void {
-  const wrappers = root.querySelectorAll<HTMLElement>('.booster-grid .card-flip-wrapper');
-  const isSpecial = root.querySelector('.round-toolbar.is-special') !== null;
-  let cumulative = isSpecial ? SPECIAL_BOOSTER_INTRO_MS : 0;
-  wrappers.forEach((wrapper) => {
+  const flipWrappers = root.querySelectorAll<HTMLElement>('.booster-grid .card-flip-wrapper');
+  const slideWrappers = root.querySelectorAll<HTMLElement>('.booster-grid .card-slide-wrapper');
+  const baseSlideDelay = 0;
+
+  setupCardRowSlide(root, slideWrappers, baseSlideDelay);
+
+  let cumulative = baseSlideDelay + SLIDE_DURATION_MS;
+  flipWrappers.forEach((wrapper, index) => {
+    cumulative = Math.max(cumulative, baseSlideDelay + index * SLIDE_STAGGER_MS + SLIDE_DURATION_MS);
     wrapper.style.setProperty('--flip-delay', `${cumulative}ms`);
     const dur = Object.entries(FLIP_DURATION).find(([cls]) => wrapper.classList.contains(cls))?.[1]
       ?? DEFAULT_FLIP_DURATION;
@@ -361,7 +403,7 @@ function setupGoldParticles(root: Element): void {
   root.querySelectorAll<HTMLElement>('.booster-grid .card-flip-wrapper.tier-gold').forEach((wrapper) => {
     wrapper.addEventListener('animationstart', (ev) => {
       if ((ev as AnimationEvent).animationName !== 'cardFlipRevealGold') return;
-      setTimeout(() => spawnGoldParticles(wrapper), 518);
+      setTimeout(() => spawnGoldParticles(wrapper), 360);
     }, { once: true });
   });
 }
@@ -413,10 +455,11 @@ const KNOCKOUT_STAGES = new Set(['Oitavas', 'Quartas', 'Semi', 'Final']);
 function showPenaltyScreen(
   root: HTMLDivElement,
   picked: DraftPlayer[],
-  opponentTeam: ReturnType<typeof buildBotTeamFromPool>,
+  opponentTeam: TeamData,
   drawScore: number,
   userIsHome: boolean,
   opponentName: string,
+  userTeamName: string,
   onContinue: (penaltiesHome: number, penaltiesAway: number) => void,
 ): void {
   const userKickers = buildPenaltyKickers(picked);
@@ -426,7 +469,7 @@ function showPenaltyScreen(
   const penHome = userIsHome ? result.userScore : result.botScore;
   const penAway = userIsHome ? result.botScore  : result.userScore;
 
-  root.innerHTML = penaltyScreenView('Seu Time', opponentName, drawScore, result);
+  root.innerHTML = penaltyScreenView(userTeamName, opponentName, drawScore, result);
 
   root.querySelector<HTMLButtonElement>('[data-action="continue-penalty"]')?.addEventListener('click', () => {
     onContinue(penHome, penAway);
@@ -459,7 +502,9 @@ function startTournamentMatch(
 
   const userIsHome = match.home.kind === 'player';
   const opponentName = userIsHome ? match.away.name : match.home.name;
-  const opponentTeam = buildBotTeamFromPool(opponentName, pools.fullPool);
+  const userTeamName = userIsHome ? match.home.name : match.away.name;
+  const opponentBotTeam = pools.botPool.find((t) => t.name === opponentName);
+  const opponentTeam = opponentBotTeam ? buildTeamDataFromBotTeam(opponentBotTeam) : buildTeamDataFromBotTeam(pickBotTeams(1, pools.botPool)[0] ?? { name: opponentName, overall: 75, players: [] });
   const isKnockout = KNOCKOUT_STAGES.has(match.stage);
 
   const goToTable = (): void => {
@@ -489,6 +534,7 @@ function startTournamentMatch(
 
   renderFormationScreen(root, picked, goToTable, {
     competitionName: state.plan.title,
+    teamName: userTeamName,
     opponentName,
     opponentTeam,
     matchId: match.id,
@@ -514,7 +560,7 @@ function startTournamentMatch(
       const scoreAway = userIsHome ? scoreB : scoreA;
 
       if (isKnockout && scoreHome === scoreAway) {
-        showPenaltyScreen(root, picked, opponentTeam, scoreHome, userIsHome, opponentName, (penHome, penAway) => {
+        showPenaltyScreen(root, picked, opponentTeam, scoreHome, userIsHome, opponentName, userTeamName, (penHome, penAway) => {
           commitResult(scoreHome, scoreAway, penHome, penAway);
         });
       } else {
@@ -643,7 +689,8 @@ function teamForCompetitor(
   pools: DraftPools,
 ): TeamData {
   if (competitor.playerId && readyTeams[competitor.playerId]) return readyTeams[competitor.playerId];
-  return buildBotTeamFromPool(competitor.name, pools.fullPool);
+  const botTeam = pools.botPool.find((t) => t.name === competitor.name) ?? pickBotTeams(1, pools.botPool)[0];
+  return botTeam ? buildTeamDataFromBotTeam(botTeam) : { id: 'teamB', name: competitor.name, color: 0xef4444, attackDirection: -1 as const, formationName: '4-4-2', players: [] };
 }
 
 function orientTeam(team: TeamData, id: string, color: number, attackDirection: 1 | -1): TeamData {
@@ -691,9 +738,14 @@ function openLobby(
     applyGuestSubstitution: null as ((side: 'home' | 'away', subs: Array<{ starterIndex: number; benchIndex: number }>) => void) | null,
     lastHalftimeAt: 0,
     pendingHalftimeResume: null as { resume: () => void; remaining: Set<string>; timeoutId: ReturnType<typeof setTimeout> } | null,
+    receivedHalftimeTactics: new Set<string>(),
     baseFormationDone: (options.restore?.tournamentState != null) as boolean,
   };
   const managers = new Map<string, DraftManager>();
+  const globalPickedIds = new Set<string>();
+  const draftTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  const disconnectedPlayerIds = new Set<string>();
+  let forceStartBanner: HTMLDivElement | null = null;
 
   const post = (message: LobbyMessage): void => {
     if (options.isHost && isHostHandledMessage(message)) {
@@ -743,6 +795,7 @@ function openLobby(
       }
     } else {
       banner?.remove();
+      channel.postMessage({ type: 'player-identify', playerId: options.player.id });
       if (options.isHost) {
         if (draftState) {
           channel.postMessage({ type: 'draft-state', state: draftState });
@@ -766,7 +819,7 @@ function openLobby(
     draftState = createMultiplayerDraftState(options.roomCode, settings, players, managers);
     persistMultiplayerProgress();
     post({ type: 'draft-state', state: draftState });
-    renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, options.isHost, draftState, post, managers, session, matchState, liveState);
+    renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, options.isHost, draftState, post, managers, session, matchState, liveState, disconnectedPlayerIds);
   };
 
   const broadcastMatch = (): void => {
@@ -774,7 +827,7 @@ function openLobby(
     persistMultiplayerProgress();
     post({ type: 'match-state', state: matchState });
     if (draftState) {
-      renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, options.isHost, draftState, post, managers, session, matchState, liveState);
+      renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, options.isHost, draftState, post, managers, session, matchState, liveState, disconnectedPlayerIds);
     }
   };
 
@@ -783,12 +836,12 @@ function openLobby(
       const playerNames = players.map((player) => player.name);
       const playerIds = players.map((player) => player.id);
       const botCount = 16 - playerNames.length;
-      const botTeamNames = pickBotTeamNamesFromPool(botCount, pools.fullPool);
+      const botTeams = pickBotTeams(botCount, pools.botPool);
       const plan = createTournamentPlan({
         mode: settings.mode,
         playerNames,
         playerIds,
-        botTeamNames,
+        botTeams,
         groupPlacement: settings.groupPlacement,
       });
       session.tournamentState = createTournamentState(plan);
@@ -853,7 +906,10 @@ function openLobby(
       settings = message.settings;
       players = message.players;
       persistMultiplayerProgress();
-      renderLobbyRoom(root, options.roomCode, options.player.id, false, players, settings, post, () => undefined);
+      const active = document.activeElement;
+      if (!(active instanceof HTMLInputElement && active.type === 'color')) {
+        renderLobbyRoom(root, options.roomCode, options.player.id, false, players, settings, post, () => undefined);
+      }
     }
 
     if (message.type === 'draft-state') {
@@ -861,14 +917,14 @@ function openLobby(
       players = message.state.players;
       settings = message.state.settings;
       persistMultiplayerProgress();
-      renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, session, matchState, liveState);
+      renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, session, matchState, liveState, disconnectedPlayerIds);
     }
 
     if (message.type === 'tournament-state') {
       session.tournamentState = message.state;
       persistMultiplayerProgress();
       if (draftState) {
-        renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, session, matchState, liveState);
+        renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, session, matchState, liveState, disconnectedPlayerIds);
       }
     }
 
@@ -891,7 +947,7 @@ function openLobby(
         if (!root.isConnected) document.body.appendChild(root);
       }
       if (draftState) {
-        renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, session, matchState, liveState);
+        renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, session, matchState, liveState, disconnectedPlayerIds);
       }
     }
 
@@ -900,7 +956,7 @@ function openLobby(
       if (matchState.phase === 'running') {
         if (!options.isHost) {
           session.spectatorPush?.(liveState);
-          if (liveState.event?.type === 'halftime' && liveState.updatedAt !== session.lastHalftimeAt) {
+          if (liveState.event?.type === 'halftime' && session.lastHalftimeAt === 0) {
             const ts = session.tournamentState;
             if (ts && matchState.matchId) {
               const activeMatch = ts.plan.matches.find((m) => m.id === matchState.matchId);
@@ -952,7 +1008,7 @@ function openLobby(
             }
           }
         } else if (draftState) {
-          renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, session, matchState, liveState);
+          renderMultiplayerDraft(root, pools, options.roomCode, options.player.id, false, draftState, post, managers, session, matchState, liveState, disconnectedPlayerIds);
         }
       }
     }
@@ -963,11 +1019,16 @@ function openLobby(
     channel.close();
   });
 
+  channel.postMessage({ type: 'player-identify', playerId: options.player.id });
+
   if (options.isHost) {
     if (options.restore) persistMultiplayerProgress();
     if (draftState) {
       if (session.tournamentState) post({ type: 'tournament-state', state: session.tournamentState });
       if (savedRoundKinds) {
+        draftState.teams.forEach((team) => {
+          team.picked.forEach((p) => globalPickedIds.add(p.id));
+        });
         draftState.teams.forEach((team) => {
           managers.set(
             team.playerId,
@@ -975,7 +1036,7 @@ function openLobby(
               picked: team.picked,
               rerollsLeft: team.rerollsLeft,
               pickedThisRound: team.hasPickedThisRound,
-            }),
+            }, globalPickedIds),
           );
         });
       }
@@ -989,7 +1050,111 @@ function openLobby(
     root.innerHTML = lobbyWaitingView(options.roomCode);
   }
 
+  // ── Draft timer helpers ─────────────────────────────────────────────────────
+
+  function clearDraftTimer(playerId: string): void {
+    const t = draftTimers.get(playerId);
+    if (t !== undefined) { clearTimeout(t); draftTimers.delete(playerId); }
+  }
+
+  function clearAllDraftTimers(): void {
+    draftTimers.forEach((t) => clearTimeout(t));
+    draftTimers.clear();
+  }
+
+  function startDraftAutoPickTimer(playerId: string): void {
+    if (draftTimers.has(playerId)) return;
+    const t = setTimeout(() => {
+      draftTimers.delete(playerId);
+      const mgr = managers.get(playerId);
+      if (!mgr || mgr.isComplete() || mgr.hasPickedThisRound()) return;
+      const round = mgr.getRound();
+      const best = round.players.reduce(
+        (a, b) => (b.overall > a.overall ? b : a),
+        round.players[0],
+      );
+      if (!best) return;
+      mgr.pick(best.id);
+      const allPicked = [...managers.values()].every((m) => m.isComplete() || m.hasPickedThisRound());
+      if (allPicked) {
+        clearAllDraftTimers();
+        managers.forEach((m) => m.advanceRound());
+        managers.forEach((_, pid) => {
+          const m = managers.get(pid)!;
+          if (!m.isComplete()) startDraftAutoPickTimer(pid);
+        });
+      }
+      broadcastDraft();
+    }, 30_000);
+    draftTimers.set(playerId, t);
+  }
+
+  function startDraftTimersForAll(): void {
+    managers.forEach((mgr, playerId) => {
+      if (!mgr.isComplete() && !mgr.hasPickedThisRound()) {
+        startDraftAutoPickTimer(playerId);
+      }
+    });
+  }
+
+  // ── Force-start banner (floating, host-only) ─────────────────────────────────
+
+  function removeForceStartBanner(): void {
+    forceStartBanner?.remove();
+    forceStartBanner = null;
+  }
+
+  function showForceStartBanner(matchId: string, pendingNames: string[]): void {
+    removeForceStartBanner();
+    const banner = document.createElement('div');
+    banner.id = 'force-start-banner';
+    banner.style.cssText = [
+      'position:fixed', 'bottom:80px', 'left:50%', 'transform:translateX(-50%)',
+      'background:#1e293b', 'border:1px solid #ef4444', 'border-radius:12px',
+      'padding:16px 24px', 'z-index:9000', 'max-width:480px', 'width:90%',
+      'box-shadow:0 8px 32px rgba(0,0,0,.6)',
+    ].join(';');
+    banner.innerHTML = `
+      <p style="margin:0 0 12px;font-size:14px;color:#fca5a5">
+        <strong>${pendingNames.map(escapeHtml).join(', ')}</strong>
+        desconectou${pendingNames.length > 1 ? 'ram' : ''} e ainda não enviou${pendingNames.length > 1 ? 'ram' : ''} a formação.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="draft-btn draft-btn--secondary" data-action="force-wait">Aguardar retorno</button>
+        <button class="draft-btn" style="background:#ef4444" data-action="force-start">
+          Iniciar sem ele${pendingNames.length > 1 ? 's' : ''} (bot)
+        </button>
+      </div>
+    `;
+    banner.querySelector('[data-action="force-wait"]')?.addEventListener('click', removeForceStartBanner);
+    banner.querySelector('[data-action="force-start"]')?.addEventListener('click', () => {
+      post({ type: 'force-start-with-bots', matchId });
+      removeForceStartBanner();
+    });
+    document.body.appendChild(banner);
+    forceStartBanner = banner as HTMLDivElement;
+  }
+
+  function updateForceStartBanner(): void {
+    if (!options.isHost || matchState.phase !== 'formation' || !matchState.matchId) {
+      removeForceStartBanner();
+      return;
+    }
+    const ts = session.tournamentState;
+    const match = ts?.plan.matches.find((m) => m.id === matchState.matchId);
+    if (!match) { removeForceStartBanner(); return; }
+
+    const pendingNames = [match.home, match.away]
+      .filter((c) => c.playerId && !matchState.readyPlayerIds.includes(c.playerId) && disconnectedPlayerIds.has(c.playerId))
+      .map((c) => players.find((p) => p.id === c.playerId)?.name ?? c.name);
+
+    if (pendingNames.length > 0) showForceStartBanner(matchState.matchId, pendingNames);
+    else removeForceStartBanner();
+  }
+
   function drawHostLobby(): void {
+    const active = document.activeElement;
+    if (active instanceof HTMLInputElement && active.type === 'color') return;
     renderLobbyRoom(root, options.roomCode, options.player.id, true, players, settings, post, (nextSettings) => {
       settings = nextSettings;
       broadcastLobby();
@@ -998,7 +1163,10 @@ function openLobby(
 
   function handleHostMessage(message: LobbyMessage): void {
     if (message.type === 'join') {
+      clearDraftTimer(message.player.id);
+      disconnectedPlayerIds.delete(message.player.id);
       players = upsertPlayer(players, { ...message.player, isHost: false, isConnected: true });
+      updateForceStartBanner();
       if (draftState) {
         broadcastDraft();
       } else {
@@ -1008,10 +1176,62 @@ function openLobby(
       post({ type: 'match-state', state: matchState });
     }
 
+    if (message.type === 'player-disconnected') {
+      disconnectedPlayerIds.add(message.playerId);
+      players = players.map((p) => (
+        p.id === message.playerId && !p.isHost ? { ...p, isConnected: false } : p
+      ));
+
+      // Draft phase: start auto-pick timer if player hasn't picked yet
+      if (draftState) {
+        const mgr = managers.get(message.playerId);
+        if (mgr && !mgr.isComplete() && !mgr.hasPickedThisRound()) {
+          startDraftAutoPickTimer(message.playerId);
+        }
+      }
+
+      // Formation phase: if guest missed halftime response, release resume
+      if (session.pendingHalftimeResume?.remaining.has(message.playerId)) {
+        session.pendingHalftimeResume.remaining.delete(message.playerId);
+        if (session.pendingHalftimeResume.remaining.size === 0) {
+          clearTimeout(session.pendingHalftimeResume.timeoutId);
+          session.pendingHalftimeResume.resume();
+          session.pendingHalftimeResume = null;
+        }
+      }
+
+      updateForceStartBanner();
+      if (matchState.phase === 'formation') broadcastMatch();
+      else if (!draftState) broadcastLobby();
+    }
+
+    if (message.type === 'force-start-with-bots') {
+      if (matchState.phase !== 'formation' || matchState.matchId !== message.matchId) return;
+      const ts = getOrCreateMultiplayerTs();
+      const match = ts.plan.matches.find((m) => m.id === message.matchId);
+      if (!match) return;
+
+      const required = playerIdsForMatch(match);
+      const missing = required.filter((pid) => !matchState.readyPlayerIds.includes(pid));
+      const additionalTeams: Record<string, import('../game/data/TeamFactory').TeamData> = {};
+      for (const pid of missing) {
+        const competitor = match.home.playerId === pid ? match.home : match.away;
+        additionalTeams[pid] = teamForCompetitor(competitor, {}, pools);
+      }
+      matchState = {
+        ...matchState,
+        readyPlayerIds: [...matchState.readyPlayerIds, ...missing],
+        teams: { ...matchState.teams, ...additionalTeams },
+      };
+      if (autoStartMatchIfReady()) broadcastMatch();
+    }
+
     if (message.type === 'leave') {
+      disconnectedPlayerIds.add(message.playerId);
       players = players.map((player) => (
         player.id === message.playerId && !player.isHost ? { ...player, isConnected: false } : player
       ));
+      updateForceStartBanner();
       broadcastLobby();
     }
 
@@ -1031,8 +1251,13 @@ function openLobby(
 
     if (message.type === 'pick') {
       managers.get(message.playerId)?.pick(message.pickId);
+      clearDraftTimer(message.playerId);
       const allPicked = [...managers.values()].every((m) => m.isComplete() || m.hasPickedThisRound());
-      if (allPicked) managers.forEach((m) => m.advanceRound());
+      if (allPicked) {
+        clearAllDraftTimers();
+        managers.forEach((m) => m.advanceRound());
+        startDraftTimersForAll();
+      }
       broadcastDraft();
     }
 
@@ -1084,6 +1309,7 @@ function openLobby(
       if (message.substitutions?.length) {
         session.applyGuestSubstitution?.(message.side, message.substitutions);
       }
+      session.receivedHalftimeTactics.add(message.playerId);
       if (session.pendingHalftimeResume) {
         session.pendingHalftimeResume.remaining.delete(message.playerId);
         if (session.pendingHalftimeResume.remaining.size === 0) {
@@ -1096,15 +1322,20 @@ function openLobby(
   }
 
   function startHostDraft(): void {
+    clearAllDraftTimers();
+    disconnectedPlayerIds.clear();
+    removeForceStartBanner();
     managers.clear();
     session.tournamentState = null;
     matchState = cloneEmptyMatchState();
     savedRoundKinds = generateRoundSequence(pools.famousPool, pools.fullPool);
+    globalPickedIds.clear();
     players.forEach((player) => {
-      managers.set(player.id, new DraftManager(pools.fullPool, pools.famousPool, {}, savedRoundKinds!));
+      managers.set(player.id, new DraftManager(pools.fullPool, pools.famousPool, {}, savedRoundKinds!, undefined, globalPickedIds));
     });
     post({ type: 'start-draft' });
     broadcastDraft();
+    startDraftTimersForAll();
   }
 
   function autoStartMatchIfReady(): boolean {
@@ -1185,6 +1416,10 @@ function renderLobbyRoom(
       const key = input.dataset.kitColor as keyof Omit<KitColors, 'pattern'>;
       localKitColors = { ...localKitColors, [key]: parseInt(input.value.replace('#', ''), 16) };
       updatePreview();
+    });
+    input.addEventListener('change', () => {
+      const key = input.dataset.kitColor as keyof Omit<KitColors, 'pattern'>;
+      localKitColors = { ...localKitColors, [key]: parseInt(input.value.replace('#', ''), 16) };
       postKit();
     });
   });
@@ -1258,10 +1493,12 @@ function renderMultiplayerDraft(
     guestTeamData: TeamData | null;
     lastHalftimeAt: number;
     pendingHalftimeResume: { resume: () => void; remaining: Set<string>; timeoutId: ReturnType<typeof setTimeout> } | null;
+    receivedHalftimeTactics: Set<string>;
     baseFormationDone: boolean;
   },
   matchState: MultiplayerMatchState,
   liveState: MultiplayerMatchLiveState | null,
+  disconnectedPlayerIds: ReadonlySet<string> = new Set(),
 ): void {
   const localTeam = state.teams.find((team) => team.playerId === localPlayerId) ?? state.teams[0];
   const localIndex = Math.max(0, state.players.findIndex((player) => player.id === localPlayerId));
@@ -1271,15 +1508,15 @@ function renderMultiplayerDraft(
       const playerNames = state.players.map((player) => player.name);
       const playerIds = state.players.map((player) => player.id);
       const botCount = 16 - playerNames.length;
-      const botTeamNames = pickBotTeamNamesFromPool(botCount, pools.fullPool);
-      const plan = createTournamentPlan({ mode: state.settings.mode, playerNames, playerIds, botTeamNames, groupPlacement: state.settings.groupPlacement });
+      const botTeams = pickBotTeams(botCount, pools.botPool);
+      const plan = createTournamentPlan({ mode: state.settings.mode, playerNames, playerIds, botTeams, groupPlacement: state.settings.groupPlacement });
       session.tournamentState = createTournamentState(plan);
     }
     return session.tournamentState;
   };
 
   const backToDraft = (): void => {
-    renderMultiplayerDraft(root, pools, roomCode, localPlayerId, isHost, state, post, managers, session, matchState, liveState);
+    renderMultiplayerDraft(root, pools, roomCode, localPlayerId, isHost, state, post, managers, session, matchState, liveState, disconnectedPlayerIds);
   };
 
   const tournament = session.tournamentState?.plan ?? createTournamentPlan({
@@ -1306,13 +1543,14 @@ function renderMultiplayerDraft(
       const localPlayerData = state.players.find((p) => p.id === localPlayerId);
       renderFormationScreen(root, localTeam.picked, backToDraft, {
         competitionName: ts.plan.title,
+        teamName: localTeam.playerName,
         startButtonLabel: 'Confirmar formação',
         savedFormation: loadMultiplayerFormation(roomCode, localPlayerId),
         onFormationChange: (formation) => saveMultiplayerFormation(roomCode, localPlayerId, formation),
         initialKitColors: localPlayerData?.kitColors,
         onReady: (_team) => {
           session.baseFormationDone = true;
-          renderMultiplayerDraft(root, pools, roomCode, localPlayerId, isHost, state, post, managers, session, matchState, liveState);
+          renderMultiplayerDraft(root, pools, roomCode, localPlayerId, isHost, state, post, managers, session, matchState, liveState, disconnectedPlayerIds);
         },
       });
       return;
@@ -1350,8 +1588,9 @@ function renderMultiplayerDraft(
         const localPlayerData = state.players.find((p) => p.id === localPlayerId);
         renderFormationScreen(root, localTeam.picked, backToDraft, {
           competitionName: `${session.tournamentState.plan.title} / ${match.stage}`,
+          teamName: localTeam.playerName,
           opponentName: opponent.name,
-          opponentTeam: opponent.kind === 'bot' ? buildBotTeamFromPool(opponent.name, pools.fullPool) : undefined,
+          opponentTeam: opponent.kind === 'bot' ? (() => { const bt = pools.botPool.find((t) => t.name === opponent.name) ?? pickBotTeams(1, pools.botPool)[0]; return bt ? buildTeamDataFromBotTeam(bt) : undefined; })() : undefined,
           savedFormation: loadMultiplayerFormation(roomCode, localPlayerId),
           onFormationChange: (formation) => {
             saveMultiplayerFormation(roomCode, localPlayerId, formation);
@@ -1368,9 +1607,16 @@ function renderMultiplayerDraft(
           } : undefined,
         });
       } else {
-        root.innerHTML = multiplayerSpectatorWaitingView(match, state, matchState);
+        root.innerHTML = multiplayerSpectatorWaitingView(match, state, matchState, {
+          isHost,
+          disconnectedPlayerIds: [...disconnectedPlayerIds],
+        });
         root.querySelector<HTMLButtonElement>('[data-action="view-table"]')?.addEventListener('click', () => {
           renderTournamentTable(root, session.tournamentState!, () => {}, backToDraft, { canPlayNext: false });
+        });
+        root.querySelector<HTMLButtonElement>('[data-action="force-start-with-bots"]')?.addEventListener('click', (e) => {
+          const matchId = (e.currentTarget as HTMLButtonElement).dataset.matchId ?? '';
+          post({ type: 'force-start-with-bots', matchId });
         });
       }
       return;
@@ -1411,6 +1657,7 @@ function renderMultiplayerDraft(
       if (session.runningMatchId !== match.id) {
         session.runningMatchId = match.id;
         session.runningMatchStartedAt = matchState.startedAt;
+        session.receivedHalftimeTactics.clear();
         const homeTeamHost = teamForCompetitor(match.home, matchState.teams, pools);
         const awayTeamHost = teamForCompetitor(match.away, matchState.teams, pools);
         const home = orientTeam(homeTeamHost, 'teamA', match.home.playerId ? homeTeamHost.color : 0x38bdf8, 1);
@@ -1468,6 +1715,24 @@ function renderMultiplayerDraft(
             }
           } : ({ scoreA, scoreB, teamAName, teamBName, currentProfile, currentProfileB, currentScheme, currentSchemeB, applyTactic, applyTacticB, resume, starters, bench, applySubstitution, startersB, benchB, applySubstitutionB }) => {
             const isHome = hostSide === 'home';
+            const otherSide = hostSide === 'home' ? match.away : match.home;
+            const wrappedResume = (): void => {
+              if (otherSide.playerId) {
+                if (session.receivedHalftimeTactics.has(otherSide.playerId)) {
+                  resume();
+                } else {
+                  const timeoutId = setTimeout(() => {
+                    if (session.pendingHalftimeResume) {
+                      session.pendingHalftimeResume.resume();
+                      session.pendingHalftimeResume = null;
+                    }
+                  }, 5 * 60 * 1000);
+                  session.pendingHalftimeResume = { resume, remaining: new Set([otherSide.playerId]), timeoutId };
+                }
+              } else {
+                resume();
+              }
+            };
             showHalftimePanel({
               scoreA: isHome ? scoreA : scoreB,
               scoreB: isHome ? scoreB : scoreA,
@@ -1476,7 +1741,7 @@ function renderMultiplayerDraft(
               currentProfile: isHome ? currentProfile : (currentProfileB ?? currentProfile),
               currentScheme: isHome ? currentScheme : currentSchemeB,
               applyTactic: isHome ? applyTactic : applyTacticB,
-              resume,
+              resume: wrappedResume,
               starters: isHome ? starters : startersB,
               bench: isHome ? bench : benchB,
               applySubstitution: isHome ? applySubstitution : applySubstitutionB,
@@ -1525,6 +1790,24 @@ function renderMultiplayerDraft(
   root.dataset.multiplayerDraftLocalKey = localRenderKey;
   root.dataset.multiplayerBoosterKey = boosterKey;
   if (isNewBooster) setupSequentialFlip(root);
+
+  // Countdown timer: clear any previous interval, then start one if player still needs to pick
+  if (_draftCountdown) { clearInterval(_draftCountdown); _draftCountdown = null; }
+  if (!localTeam.hasPickedThisRound && !localTeam.isComplete) {
+    if (isNewBooster) root.dataset.draftCountdownStart = String(Date.now());
+    const startAt = Number(root.dataset.draftCountdownStart || Date.now());
+    _draftCountdown = setInterval(() => {
+      const el = root.querySelector<HTMLElement>('[data-draft-countdown]');
+      if (!el) { clearInterval(_draftCountdown!); _draftCountdown = null; return; }
+      const remaining = Math.max(0, 30 - (Date.now() - startAt) / 1000);
+      el.textContent = remaining > 0 ? `${Math.ceil(remaining)}s` : '⌛';
+      const urgent = remaining <= 10;
+      el.style.background = urgent ? '#7f1d1d' : '#78350f';
+      el.style.borderColor = urgent ? '#ef4444' : '#f59e0b';
+      el.style.color = urgent ? '#fca5a5' : '#fde68a';
+      if (remaining <= 0) { clearInterval(_draftCountdown!); _draftCountdown = null; }
+    }, 200);
+  }
   setupGoldParticles(root);
   setupCardToggles(root);
 
@@ -1605,10 +1888,13 @@ function renderTournamentSetup(root: HTMLDivElement, pools: DraftPools, onStart:
   let playerCount = 1;
   let names = ['Jogador 1'];
   let groupPlacement: GroupPlacement = 'separated';
+  let difficulty: Difficulty = 'normal';
 
   const renderSetup = (): void => {
-    const plan = createTournamentPlan({ mode, playerNames: names.slice(0, playerCount), groupPlacement });
-    root.innerHTML = tournamentSetupView(mode, playerCount, names, plan, groupPlacement);
+    const filteredPool = filterBotPoolByDifficulty(pools.botPool, difficulty);
+    const botTeams = pickBotTeams(16 - playerCount, filteredPool);
+    const plan = createTournamentPlan({ mode, playerNames: names.slice(0, playerCount), botTeams, groupPlacement, difficulty });
+    root.innerHTML = tournamentSetupView(mode, playerCount, names, plan, groupPlacement, difficulty);
 
     root.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -1620,6 +1906,13 @@ function renderTournamentSetup(root: HTMLDivElement, pools: DraftPools, onStart:
     root.querySelectorAll<HTMLButtonElement>('[data-placement]').forEach((button) => {
       button.addEventListener('click', () => {
         groupPlacement = button.dataset.placement as GroupPlacement;
+        renderSetup();
+      });
+    });
+
+    root.querySelectorAll<HTMLButtonElement>('[data-difficulty]').forEach((button) => {
+      button.addEventListener('click', () => {
+        difficulty = button.dataset.difficulty as Difficulty;
         renderSetup();
       });
     });
@@ -1640,8 +1933,9 @@ function renderTournamentSetup(root: HTMLDivElement, pools: DraftPools, onStart:
 
     root.querySelector<HTMLButtonElement>('[data-action="create-tournament"]')?.addEventListener('click', () => {
       const playerNames = names.slice(0, playerCount).map((name, index) => name.trim() || `Jogador ${index + 1}`);
-      const botTeamNames = pickBotTeamNamesFromPool(16 - playerNames.length, pools.fullPool);
-      onStart(createTournamentPlan({ mode, playerNames, botTeamNames, groupPlacement }));
+      const filteredPool = filterBotPoolByDifficulty(pools.botPool, difficulty);
+      const botTeams = pickBotTeams(16 - playerNames.length, filteredPool);
+      onStart(createTournamentPlan({ mode, playerNames, botTeams, groupPlacement, difficulty }));
     });
   };
 
@@ -1665,6 +1959,7 @@ function isHostHandledMessage(message: LobbyMessage): boolean {
   return (
     message.type === 'join'
     || message.type === 'leave'
+    || message.type === 'player-disconnected'
     || message.type === 'update-name'
     || message.type === 'update-kit'
     || message.type === 'pick'
@@ -1673,6 +1968,7 @@ function isHostHandledMessage(message: LobbyMessage): boolean {
     || message.type === 'formation-ready'
     || message.type === 'formation-unready'
     || message.type === 'host-start-match'
+    || message.type === 'force-start-with-bots'
     || message.type === 'match-result'
   );
 }

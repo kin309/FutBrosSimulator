@@ -137,15 +137,16 @@ export class Scoreboard {
     this.scene.time.delayedCall(2200, () => this.goalBanner.setVisible(false));
   }
 
-  showFinished(isTournament = false): void {
+  showFinished(isTournament: boolean | null = false): void {
     const { scoreA, scoreB } = this.manager;
     const winner = scoreA > scoreB ? this.teamA.name : scoreB > scoreA ? this.teamB.name : 'Empate!';
     const text = scoreA === scoreB
       ? `Fim de jogo — Empate ${scoreA} - ${scoreB}`
       : `Fim de jogo — ${winner} vence ${scoreA} - ${scoreB}`;
 
-    this.scene.add.rectangle(CENTER_X, GAME_HEIGHT / 2, 560, 90, 0x000000, 0.92).setDepth(30);
-    this.scene.add.text(CENTER_X, GAME_HEIGHT / 2 - 10, text, {
+    const bgHeight = isTournament !== null ? 90 : 60;
+    this.scene.add.rectangle(CENTER_X, GAME_HEIGHT / 2, 560, bgHeight, 0x000000, 0.92).setDepth(30);
+    this.scene.add.text(CENTER_X, GAME_HEIGHT / 2 - (isTournament !== null ? 10 : 0), text, {
       fontSize: '24px',
       fontStyle: 'bold',
       fontFamily: FONT,
@@ -155,15 +156,17 @@ export class Scoreboard {
       resolution: 2,
     }).setOrigin(0.5).setDepth(31);
 
-    const hint = isTournament ? 'Pressione T para voltar ao campeonato' : 'Pressione R para jogar novamente';
-    this.scene.add.text(CENTER_X, GAME_HEIGHT / 2 + 26, hint, {
-      fontSize: '15px',
-      fontStyle: 'bold',
-      fontFamily: FONT,
-      color: '#fbbf24',
-      stroke: '#000000',
-      strokeThickness: 2,
-      resolution: 2,
-    }).setOrigin(0.5).setDepth(31);
+    if (isTournament !== null) {
+      const hint = isTournament ? 'Pressione T para voltar ao campeonato' : 'Pressione R para jogar novamente';
+      this.scene.add.text(CENTER_X, GAME_HEIGHT / 2 + 26, hint, {
+        fontSize: '15px',
+        fontStyle: 'bold',
+        fontFamily: FONT,
+        color: '#fbbf24',
+        stroke: '#000000',
+        strokeThickness: 2,
+        resolution: 2,
+      }).setOrigin(0.5).setDepth(31);
+    }
   }
 }

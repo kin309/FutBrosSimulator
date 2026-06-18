@@ -29,6 +29,7 @@ import { BallContactSystem } from '../systems/BallContactSystem';
 import { PlayerMovementSystem } from '../systems/PlayerMovementSystem';
 import { MatchFlowSystem } from '../systems/MatchFlowSystem';
 import { SpectatorSystem } from '../systems/SpectatorSystem';
+import { AudioManager } from '../systems/AudioManager';
 import type { MatchContext } from '../systems/MatchContext';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -93,6 +94,7 @@ export default class MatchScene extends Phaser.Scene {
   private movementSystem!: PlayerMovementSystem;
   private flowSystem!: MatchFlowSystem;
   private spectatorSystem!: SpectatorSystem;
+  private audio!: AudioManager;
   private gkDiveDebugTtlMs = 0;
   private matchEndDelivered = false;
   private halftimeExitActive = false;
@@ -120,6 +122,7 @@ export default class MatchScene extends Phaser.Scene {
   // ──────────────────────────────────────────────
 
   create(): void {
+    this.audio = new AudioManager();
     drawField(this);
     this.resolver = new EventResolver();
     this.stats = new StatsTracker();
@@ -150,6 +153,7 @@ export default class MatchScene extends Phaser.Scene {
       scoreboard: this.scoreboard,
       stats: this.stats,
       resolver: this.resolver,
+      audio: this.audio,
       tackleCooldowns: this.tackleCooldowns,
       field: FIELD,
       goalLeft: GOAL_LEFT,
@@ -201,6 +205,7 @@ export default class MatchScene extends Phaser.Scene {
 
     if (this.setup?.spectatorMode) {
       this.spectatorSystem.init();
+      this.audio.startCrowdAmbient();
       return;
     }
 
@@ -234,6 +239,8 @@ export default class MatchScene extends Phaser.Scene {
     this.setupKeys();
     this.flowSystem.resetPlayersToKickoffShape();
     this.flowSystem.giveKickoff('teamA');
+    this.audio.startCrowdAmbient();
+    this.time.delayedCall(600, () => this.audio.playWhistle());
   }
 
   update(_time: number, delta: number): void {
@@ -470,6 +477,7 @@ export default class MatchScene extends Phaser.Scene {
           assistName: assistPlayer?.playerName,
         });
       }
+      this.audio.playGoal();
       this.visuals.spawnGoalConfetti(teamId);
 
       const HAPPY  = ['🎉', '😄', '🔥', '😎', '🤩', '💪', '😜', '🙌', '👏'];
@@ -502,6 +510,7 @@ export default class MatchScene extends Phaser.Scene {
       }
     };
     this.matchManager.onFinished = () => {
+      this.audio.playFinalWhistle();
       this.scoreboard.showFinished(!!this.setup?.onMatchEnd);
       this.spectatorSystem.emitLiveUpdate('Fim de jogo', { type: 'finished' });
       this.visuals.showStatsOverlay();
@@ -510,6 +519,8 @@ export default class MatchScene extends Phaser.Scene {
       }
     };
     this.matchManager.onHalftime = () => {
+      this.audio.stopCrowdAmbient();
+      this.audio.playWhistle();
       this.scoreboard.logEvent(`45' — Intervalo`);
       this.spectatorSystem.emitLiveUpdate('Intervalo', { type: 'halftime' });
       this.ball.release();
@@ -532,6 +543,8 @@ export default class MatchScene extends Phaser.Scene {
         this.ball.velocity = { x: 0, y: 0 };
         this.ball.resetFlight();
         this.flowSystem.giveKickoff('teamB');
+        this.audio.startCrowdAmbient();
+        this.time.delayedCall(600, () => this.audio.playWhistle());
       };
 
       if (!this.setup?.spectatorMode) {

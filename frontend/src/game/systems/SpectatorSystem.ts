@@ -20,6 +20,7 @@ export class SpectatorSystem {
   private targetBall: { x: number; y: number; vx: number; vy: number } | null = null;
   private prevPlayerPos = new Map<string, { x: number; y: number }>();
   private targetPlayers: SpectatorPlayerState[] = [];
+  private prevBallSpeed = 0;
 
   constructor(private readonly ctx: MatchContext) {}
 
@@ -34,6 +35,14 @@ export class SpectatorSystem {
           // Clamp to reasonable range; pad by 20% so we reach target before next frame
           this.interpDurationMs = Math.max(20, Math.min(measured * 1.2, 250));
         }
+
+        // Detecção de chute: spike de velocidade da bola indica um chute do host
+        const nb = state.replay.ball;
+        const newSpeed = Math.sqrt(nb.vx * nb.vx + nb.vy * nb.vy);
+        if (newSpeed > 7 && newSpeed > this.prevBallSpeed * 1.8) {
+          this.ctx.audio.playKick(newSpeed);
+        }
+        this.prevBallSpeed = newSpeed;
 
         // Capture current rendered positions as interpolation origin
         this.prevBall = {
@@ -83,6 +92,7 @@ export class SpectatorSystem {
       this.lastEventAt = s.updatedAt;
       const ev = s.event;
       if (ev.type === 'goal' && ev.teamId) {
+        this.ctx.audio.playGoal();
         scoreboard.showGoalBanner(ev.text ?? '');
         this.ctx.spawnGoalConfetti(ev.teamId);
         const teamPlayers = ev.teamId === 'teamA' ? this.ctx.teamA.players : this.ctx.teamB.players;
@@ -90,9 +100,16 @@ export class SpectatorSystem {
         for (const p of teamPlayers) p.showCelebration();
         for (const p of otherPlayers) p.showDisappointment();
       } else if (ev.type === 'halftime') {
+        this.ctx.audio.stopCrowdAmbient();
+        this.ctx.audio.playWhistle();
         this.ctx.showHalftimeBanner();
+      } else if (ev.type === 'halftime-end') {
+        this.ctx.audio.startCrowdAmbient();
+        this.ctx.matchManager.onHalftimeEnd?.();
+        this.ctx.matchManager.onHalftimeEnd = undefined;
       } else if (ev.type === 'finished') {
-        scoreboard.showFinished(false);
+        this.ctx.audio.playFinalWhistle();
+        scoreboard.showFinished(null);
       }
     }
 

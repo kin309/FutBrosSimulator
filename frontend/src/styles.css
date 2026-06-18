@@ -931,6 +931,28 @@ button {
   cursor: not-allowed;
 }
 
+/* ── Card Slide: entrada da esquerda ────────────────────── */
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform:
+      translate3d(var(--stack-x, -320px), var(--stack-y, 0px), 0)
+      rotate(var(--stack-rotate, -7deg))
+      scale(0.96);
+  }
+  72% {
+    opacity: 1;
+    transform:
+      translate3d(calc(var(--stack-x, -320px) * -0.025), calc(var(--stack-y, 0px) * -0.025), 0)
+      rotate(0deg)
+      scale(1.015);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+}
+
 /* ── Card Flip: face traseira → face frontal ─────────────── */
 
 /* Gray e Bronze — flip direto, sem tremor */
@@ -1030,7 +1052,24 @@ button {
 .booster-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1fr;
+  align-items: stretch;
   gap: 14px;
+}
+
+/* ── Wrapper de slide: move o card da esquerda (sem preserve-3d) ── */
+.card-slide-wrapper {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  animation: cardSlideIn 320ms cubic-bezier(0.18, 0.9, 0.22, 1) var(--slide-delay, 0ms) backwards;
+  will-change: transform, opacity;
+}
+
+.card-slide-wrapper.is-exiting {
+  animation: cardExit 130ms ease forwards;
+  animation-delay: calc(var(--i, 0) * 30ms);
+  pointer-events: none;
 }
 
 /* ── Wrapper 3D: executa o flip; face traseira como ::before ── */
@@ -1040,10 +1079,13 @@ button {
   position: relative;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
-  animation: cardFlipReveal 340ms ease both;
-  animation-delay: var(--flip-delay, 0ms);
+  animation: cardFlipReveal 260ms ease both;
+  animation-delay: var(--flip-delay, 320ms);
 }
 
 /* Face traseira: igual para todos os tiers */
@@ -1072,14 +1114,14 @@ button {
 .card-flip-wrapper.tier-bronze {
   --tier-color: #c4844a;
   --tier-back:  #1e1006;
-  animation-duration: 320ms;
+  animation-duration: 240ms;
   animation-timing-function: ease-out;
 }
 
 .card-flip-wrapper.tier-silver {
   --tier-color: #a8c0d4;
   --tier-back:  #0a1828;
-  animation-duration: 320ms;
+  animation-duration: 240ms;
   animation-timing-function: ease-out;
 }
 
@@ -1087,16 +1129,11 @@ button {
   --tier-color: #d4a020;
   --tier-back:  #1e1000;
   animation-name: cardFlipRevealGold;
-  animation-duration: 1400ms;
+  animation-duration: 980ms;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* ── Estado de saída no wrapper ── */
-.card-flip-wrapper.is-exiting {
-  animation: cardExit 130ms ease forwards;
-  animation-delay: calc(var(--i, 0) * 30ms);
-  pointer-events: none;
-}
+/* ── Estado de saída (movido para .card-slide-wrapper.is-exiting) ── */
 
 /* ── Player card: face frontal ── */
 .player-card {
@@ -1104,6 +1141,7 @@ button {
   --tier-glow: rgba(78, 104, 128, 0);
   flex: 1;
   width: 100%;
+  min-height: 430px;
   display: flex;
   flex-direction: column;
   padding: 14px;
@@ -1583,20 +1621,6 @@ button {
   font-weight: 800;
   color: #f1f5f9;
   line-height: 1.2;
-}
-
-.proficiency-row {
-  margin-top: 4px;
-}
-
-.proficiency-row .substat {
-  background: rgba(99, 102, 241, 0.12);
-}
-
-.proficiency-row .substat b {
-  font-size: 11px;
-  color: #c7d2fe;
-  letter-spacing: 1px;
 }
 
 .squad-panel {
@@ -2635,6 +2659,51 @@ button {
 
 .bench-list {
   max-height: 210px;
+}
+
+.bench-list.has-open-details {
+  max-height: 430px;
+}
+
+.formation-player-details {
+  display: grid;
+  gap: 9px;
+  margin-top: -2px;
+  margin-bottom: 4px;
+  padding: 10px;
+  border: 1px solid rgba(250, 204, 21, 0.18);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  background: rgba(15, 23, 42, 0.56);
+}
+
+.formation-player-details .body-row {
+  margin-top: 0;
+}
+
+.formation-player-details .stat-bars {
+  flex: none;
+  margin-top: 0;
+}
+
+.formation-player-details .trait-row {
+  margin-top: 0;
+}
+
+.formation-player-details .trait {
+  font-size: 9px;
+  padding: 2px 5px;
+}
+
+.formation-player-details .extra-stats {
+  margin-top: 0;
+  padding-top: 9px;
+}
+
+.formation-no-traits {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 /* ── Tactical presets ────────────────────────────────── */

@@ -1,3 +1,6 @@
+import { Difficulty } from './MultiplayerLobby';
+import { BotTeam } from './DraftTypes';
+
 export type TournamentMode = 'champions-16' | 'knockout-express';
 
 export interface TournamentCompetitor {
@@ -22,8 +25,9 @@ export interface TournamentSetup {
   mode: TournamentMode;
   playerNames: string[];
   playerIds?: string[];
-  botTeamNames?: string[];
+  botTeams?: BotTeam[];
   groupPlacement?: 'separated' | 'random';
+  difficulty?: Difficulty;
 }
 
 export interface TournamentPlan {
@@ -33,6 +37,7 @@ export interface TournamentPlan {
   competitors: TournamentCompetitor[];
   openingMatch: TournamentMatch;
   matches: TournamentMatch[];
+  difficulty?: Difficulty;
 }
 
 export interface GoalEvent {
@@ -196,14 +201,15 @@ export function createTournamentPlan(setup: TournamentSetup): TournamentPlan {
 
   let botIndex = 0;
   const competitors: TournamentCompetitor[] = slots.map((player, index) => {
-    const botName = setup.botTeamNames?.[botIndex] ?? BOT_NAMES[botIndex % BOT_NAMES.length];
+    const botTeam = setup.botTeams?.[botIndex];
+    const botName = botTeam?.name ?? BOT_NAMES[botIndex % BOT_NAMES.length];
     if (!player) botIndex++;
     return {
       id: player ? `player-${index + 1}` : `bot-${index + 1}`,
       name: player?.name ?? botName,
       kind: player ? 'player' : 'bot',
       seed: index + 1,
-      overall: player ? 78 : randomBotOverall(),
+      overall: player ? 78 : (botTeam?.overall ?? 75),
       playerId: player?.playerId,
     };
   });
@@ -220,6 +226,7 @@ export function createTournamentPlan(setup: TournamentSetup): TournamentPlan {
     competitors,
     openingMatch,
     matches,
+    difficulty: setup.difficulty ?? 'normal',
   };
 }
 
@@ -276,10 +283,6 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function randomBotOverall(): number {
-  // Bots range from ~73 (weak) to ~87 (elite), centred around 79
-  return 73 + Math.floor(Math.random() * 15);
-}
 
 export function getNextUserMatch(state: TournamentState): TournamentMatch | null {
   const userMatches = state.plan.matches.filter(

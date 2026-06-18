@@ -15,6 +15,8 @@ export interface LobbyPlayer {
 
 export type GroupPlacement = 'separated' | 'random';
 
+export type Difficulty = 'easy' | 'normal' | 'hard';
+
 export interface LobbySettings {
   mode: TournamentMode;
   visibility: DraftVisibility;
@@ -95,6 +97,8 @@ export interface MultiplayerMatchLiveState {
 export type LobbyMessage =
   | { type: 'join'; player: LobbyPlayer }
   | { type: 'leave'; playerId: string }
+  | { type: 'player-identify'; playerId: string }
+  | { type: 'player-disconnected'; playerId: string }
   | { type: 'lobby-state'; hostId: string; players: LobbyPlayer[]; settings: LobbySettings }
   | { type: 'update-name'; playerId: string; name: string }
   | { type: 'update-kit'; playerId: string; kitColors: KitColors }
@@ -109,6 +113,7 @@ export type LobbyMessage =
   | { type: 'formation-ready'; playerId: string; matchId: string; team: TeamData }
   | { type: 'formation-unready'; playerId: string; matchId: string }
   | { type: 'host-start-match'; matchId: string }
+  | { type: 'force-start-with-bots'; matchId: string }
   | { type: 'match-live-state'; state: MultiplayerMatchLiveState }
   | { type: 'match-result'; matchId: string; scoreHome: number; scoreAway: number }
   | { type: 'halftime-tactic'; playerId: string; side: 'home' | 'away'; tacticalProfile: TacticalProfile; substitutions?: Array<{ starterIndex: number; benchIndex: number }> };

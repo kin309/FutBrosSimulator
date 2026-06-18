@@ -41,3 +41,9 @@ export interface DraftConfig {
   famousRoundChance: number;
   maxFamousRounds: number;
 }
+
+export interface BotTeam {
+  name: string;
+  overall: number;
+  players: DraftPlayer[];
+}

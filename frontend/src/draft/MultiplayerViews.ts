@@ -330,9 +330,18 @@ export function multiplayerBoosterView(team: MultiplayerDraftTeam): string {
           }).join('')}
         </div>
       </div>
-      <button class="reroll-button" data-action="reroll" ${team.rerollsLeft <= 0 ? 'disabled' : ''}>
-        Reroll (${team.rerollsLeft})
-      </button>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div data-draft-countdown style="
+          display:flex;align-items:center;justify-content:center;
+          min-width:52px;height:36px;padding:0 10px;
+          background:#78350f;border:2px solid #f59e0b;border-radius:8px;
+          font-size:18px;font-weight:800;color:#fde68a;letter-spacing:1px;
+          font-variant-numeric:tabular-nums;
+        ">30s</div>
+        <button class="reroll-button" data-action="reroll" ${team.rerollsLeft <= 0 ? 'disabled' : ''}>
+          Reroll (${team.rerollsLeft})
+        </button>
+      </div>
     </div>
 
     <div class="booster-grid">
@@ -504,11 +513,17 @@ export function multiplayerSpectatorWaitingView(
   match: TournamentMatch,
   state: MultiplayerDraftState,
   matchState: MultiplayerMatchState,
+  opts: { isHost?: boolean; disconnectedPlayerIds?: string[] } = {},
 ): string {
   const required = playerIdsForMatch(match);
   const playerName = (playerId: string): string => (
     state.players.find((player) => player.id === playerId)?.name ?? 'Jogador'
   );
+
+  const pendingDisconnected = required.filter(
+    (pid) => !matchState.readyPlayerIds.includes(pid) && opts.disconnectedPlayerIds?.includes(pid),
+  );
+  const showForceStart = opts.isHost && pendingDisconnected.length > 0;
 
   return `
     <main class="draft-shell">
@@ -524,15 +539,36 @@ export function multiplayerSpectatorWaitingView(
           <h2>Modo espectador</h2>
           <p>Voce vai assistir essa partida assim que todos estiverem prontos.</p>
           <ul class="waiting-list">
-            ${required.map((playerId) => `
-              <li class="${matchState.readyPlayerIds.includes(playerId) ? 'is-ready' : 'is-pending'}">
-                <span class="waiting-dot"></span>
-                ${escapeHtml(playerName(playerId))}
-                <small>${matchState.readyPlayerIds.includes(playerId) ? 'pronto' : 'montando formacao'}</small>
-              </li>
-            `).join('')}
+            ${required.map((playerId) => {
+              const ready = matchState.readyPlayerIds.includes(playerId);
+              const disconnected = opts.disconnectedPlayerIds?.includes(playerId);
+              const statusText = ready ? 'pronto' : disconnected ? 'desconectado' : 'montando formacao';
+              const cls = ready ? 'is-ready' : disconnected ? 'is-disconnected' : 'is-pending';
+              return `
+                <li class="${cls}">
+                  <span class="waiting-dot"></span>
+                  ${escapeHtml(playerName(playerId))}
+                  <small>${statusText}</small>
+                </li>
+              `;
+            }).join('')}
           </ul>
-          <button class="draft-btn draft-btn--secondary" data-action="view-table" style="margin-top:1.5rem">Ver tabela</button>
+          ${showForceStart ? `
+            <div style="margin-top:1.5rem;padding:12px 16px;background:#1e293b;border:1px solid #ef4444;border-radius:8px">
+              <p style="margin:0 0 10px;font-size:13px;color:#fca5a5">
+                <strong>${pendingDisconnected.map((pid) => escapeHtml(playerName(pid))).join(', ')}</strong>
+                desconectou e ainda não enviou a formação.
+              </p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="draft-btn draft-btn--secondary" data-action="view-table">Ver tabela</button>
+                <button class="draft-btn" style="background:#ef4444" data-action="force-start-with-bots" data-match-id="${escapeHtml(match.id)}">
+                  Iniciar sem ele${pendingDisconnected.length > 1 ? 's' : ''} (bot)
+                </button>
+              </div>
+            </div>
+          ` : `
+            <button class="draft-btn draft-btn--secondary" data-action="view-table" style="margin-top:1.5rem">Ver tabela</button>
+          `}
         </div>
       </section>
     </main>

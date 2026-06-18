@@ -101,6 +101,7 @@ export class DraftManager {
   private readonly fullPool: DraftPlayer[];
   private readonly famousPool: DraftPlayer[];
   private readonly roundKinds: DraftRoundKind[] | null;
+  private readonly globalPickedIds: Set<string> | null;
   private picked: DraftPlayer[] = [];
   private shownIds: Set<string> = new Set();
   private currentPlayers: DraftPlayer[] = [];
@@ -116,6 +117,7 @@ export class DraftManager {
    * @param roundKinds Sequência pré-gerada pelo host (multiplayer).
    *   Quando ausente, cada instância sorteia de forma independente (solo).
    * @param restore Estado salvo para retomar um draft em andamento.
+   * @param globalPickedIds Set compartilhado com picks de todos os jogadores (multiplayer).
    */
   constructor(
     fullPool: DraftPlayer[],
@@ -123,11 +125,13 @@ export class DraftManager {
     config: Partial<DraftConfig> = {},
     roundKinds?: DraftRoundKind[],
     restore?: { picked: DraftPlayer[]; rerollsLeft: number; pickedThisRound?: boolean },
+    globalPickedIds?: Set<string>,
   ) {
     this.fullPool = fullPool;
     this.famousPool = famousPool;
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.roundKinds = roundKinds ?? null;
+    this.globalPickedIds = globalPickedIds ?? null;
 
     if (restore) {
       this.picked = [...restore.picked];
@@ -173,6 +177,7 @@ export class DraftManager {
     if (!player) return this.getRound();
 
     this.picked = [...this.picked, player];
+    this.globalPickedIds?.add(player.id);
     this.pickedThisRound = true;
 
     return this.getRound();
@@ -245,7 +250,7 @@ export class DraftManager {
 
   private createBooster(kind: DraftRoundKind): DraftPlayer[] {
     const pickedIds = new Set(this.picked.map((player) => player.id));
-    const excludedIds = new Set([...pickedIds, ...this.shownIds]);
+    const excludedIds = new Set([...pickedIds, ...this.shownIds, ...(this.globalPickedIds ?? [])]);
     const currentIds = new Set<string>();
     const booster: DraftPlayer[] = [];
 

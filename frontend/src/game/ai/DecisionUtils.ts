@@ -110,8 +110,8 @@ export function evaluatePassOption(
   const progress = (receiver.x - passer.x) * attackDir;
   const progressBonus = clamp(progress / 10, -5, 10);
   const shortPenaltyScale = 1 - possessionBias * 0.7;
-  const shortPassPenalty = d < 95 && progress < 35
-    ? (clamp((95 - d) / 65, 0, 1) * 28 + clamp((35 - progress) / 55, 0, 1) * 18) * shortPenaltyScale
+  const shortPassPenalty = d < 130 && progress < 65
+    ? (clamp((130 - d) / 100, 0, 1) * 52 + clamp((65 - progress) / 95, 0, 1) * 34) * shortPenaltyScale
     : 0;
   // Wall pass (parede): when the receiver just passed to the passer and the passer has
   // run forward into open space, turn the return penalty into a bonus — this rewards
@@ -752,9 +752,10 @@ export function decideWithBall(player: Player, ctx: AIContext): PlayerState {
   const bias = ctx.tacticalProfile?.possessionBias ?? 0;
   const spref = ctx.tacticalProfile?.shortPassPreference ?? 0.4;
 
+  let passScore = -Infinity;
   if (passTarget) {
     const teamIdx = player.teamId === 'teamA' ? 0 : 1;
-    const passScore = evaluatePassOption(
+    passScore = evaluatePassOption(
       player, passTarget, ctx.oppTeam.players, ctx.oppGoal.centerX,
       ctx.heatMap?.getHeat(passTarget.x, passTarget.y, teamIdx) ?? 0,
       bias,
@@ -792,8 +793,8 @@ export function decideWithBall(player: Player, ctx: AIContext): PlayerState {
     }
   }
 
-  // Modest pass beats protecting the ball
-  if (passTarget) {
+  // Modest pass beats protecting the ball — only if the pass meets a minimum quality bar
+  if (passTarget && passScore > carryThreshold - 8) {
     player.passTarget = passTarget;
     const proj = findSpaceProjection(player, passTarget, ctx);
     player.passTargetX = proj?.tx ?? null;

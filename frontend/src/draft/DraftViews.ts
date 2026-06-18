@@ -2,7 +2,7 @@ import { DraftPlayer, DraftRound } from './DraftTypes';
 import { FORMATIONS, FormationDefinition } from '../game/data/TeamFactory';
 import { PlayerRole } from '../game/data/PlayerRole';
 import { TournamentPlan, TournamentMode, TOURNAMENT_MODES } from './Tournament';
-import { GroupPlacement } from './MultiplayerLobby';
+import { Difficulty, GroupPlacement } from './MultiplayerLobby';
 import { nationalityFlagCode } from './NationalityFlags';
 import { positionLabel } from './PositionLabels';
 import { PenaltyResult } from './PenaltySimulator';
@@ -169,7 +169,7 @@ function statColor(v: number): string {
   return '#f87171';
 }
 
-function statBar(label: string, value: number): string {
+export function statBar(label: string, value: number): string {
   return `
     <div class="stat-bar">
       <span>${label}</span>
@@ -178,18 +178,12 @@ function statBar(label: string, value: number): string {
     </div>`;
 }
 
-function starRating(value: number, max = 5): string {
-  const clamped = Math.max(0, Math.min(max, value));
-  return '★'.repeat(clamped) + '☆'.repeat(max - clamped);
-}
-
 function substatItem(label: string, value: number | string): string {
   return `<div class="substat"><em>${escapeHtml(label)}</em><b>${typeof value === 'number' ? value : escapeHtml(String(value))}</b></div>`;
 }
 
-function extraStatsContent(player: DraftPlayer): string {
+export function extraStatsContent(player: DraftPlayer): string {
   const s = player.stats;
-  const foot = s.preferredFoot === 2 ? 'Esq' : 'Dir';
   return `
     <div class="substat-grid">
       ${substatItem('Acel', s.acceleration)}
@@ -205,15 +199,10 @@ function extraStatsContent(player: DraftPlayer): string {
       ${substatItem('Força', s.strength)}
       ${substatItem('Stamina', s.stamina)}
     </div>
-    <div class="substat-grid proficiency-row">
-      ${substatItem('Habilidades', starRating(s.skillMoves))}
-      ${substatItem('Pé Fraco', starRating(s.weakFootAbility))}
-      ${substatItem('Pé', foot)}
-    </div>
   `;
 }
 
-function traitBadges(player: DraftPlayer): string {
+export function traitBadges(player: DraftPlayer): string {
   const badges = [
     ...player.playstylesPlus.map(t => ({ name: t, plus: true })),
     ...player.playstyles.map(t => ({ name: t, plus: false })),
@@ -250,11 +239,11 @@ function playerMeta(player: DraftPlayer, includeTeam = false): string {
   return `${team}${nationality} · ${escapeHtml(player.leagueName)}`;
 }
 
-function formatHeight(player: DraftPlayer): string {
+export function formatHeight(player: DraftPlayer): string {
   return player.heightCm > 0 ? `${Math.round(player.heightCm)}cm` : '--';
 }
 
-function formatWeight(player: DraftPlayer): string {
+export function formatWeight(player: DraftPlayer): string {
   return player.weightKg > 0 ? `${Math.round(player.weightKg)}kg` : '--';
 }
 
@@ -278,7 +267,8 @@ export function playerCard(player: DraftPlayer, picked: DraftPlayer[] = [], inde
   const { speed, shooting, passing, dribbling, defending, physical } = player.stats;
 
   return `
-    <div class="card-flip-wrapper ${tier}" style="--i:${index}">
+    <div class="card-slide-wrapper" style="--i:${index}">
+    <div class="card-flip-wrapper ${tier}">
     <button class="player-card ${tier}" data-pick-id="${escapeHtml(player.id)}">
       <div class="card-header-row">
         <div class="card-rating">
@@ -311,6 +301,7 @@ export function playerCard(player: DraftPlayer, picked: DraftPlayer[] = [], inde
       </div>
       <span class="card-details-toggle" data-toggle-details aria-expanded="false">▸ Ver detalhes</span>
     </button>
+    </div>
     </div>
   `;
 }
@@ -559,12 +550,19 @@ export function draftView(round: DraftRound, tournament: TournamentPlan): string
   `;
 }
 
+const DIFFICULTY_LABELS: Record<Difficulty, { label: string; desc: string }> = {
+  easy:   { label: 'Facil',   desc: 'Bots com overall medio ~69 — ideal para conhecer o jogo.' },
+  normal: { label: 'Normal',  desc: 'Bots com overall medio ~76 — dificuldade equilibrada.' },
+  hard:   { label: 'Dificil', desc: 'Bots com overall medio ~85 — clubes de elite.' },
+};
+
 export function tournamentSetupView(
   mode: TournamentMode,
   playerCount: number,
   names: string[],
   plan: TournamentPlan,
   groupPlacement: GroupPlacement = 'separated',
+  difficulty: Difficulty = 'normal',
 ): string {
   return `
     <main class="tournament-shell">
@@ -606,6 +604,19 @@ export function tournamentSetupView(
           </div>
         </div>
 
+        <div class="option-group">
+          <p class="option-group-label">Dificuldade dos bots</p>
+          <div class="mode-grid">
+            ${(Object.entries(DIFFICULTY_LABELS) as [Difficulty, { label: string; desc: string }][]).map(([key, opt]) => `
+              <button class="mode-card ${key === difficulty ? 'is-active' : ''}" data-difficulty="${key}">
+                <span class="mode-card-radio"></span>
+                <strong>${opt.label}</strong>
+                <span>${opt.desc}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
         <section class="player-count-panel">
           <label>
             Jogadores humanos
@@ -635,7 +646,7 @@ export function tournamentSetupView(
               <span>${team.seed}</span>
               <div>
                 <strong>${escapeHtml(team.name)}</strong>
-                <small>${team.kind === 'player' ? 'Jogador' : 'Bot'}</small>
+                <small>${team.kind === 'player' ? 'Jogador' : `Bot · ${team.overall} OVR`}</small>
               </div>
             </li>
           `).join('')}

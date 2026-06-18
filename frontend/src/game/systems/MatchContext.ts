@@ -7,6 +7,7 @@ import type { StatsTracker } from './StatsTracker';
 import type { EventResolver } from './EventResolver';
 import type { GoalkeeperSystem } from './GoalkeeperSystem';
 import type { PlayerKickSystem } from './PlayerKickSystem';
+import type { AudioManager } from './AudioManager';
 import type { FieldBounds, GoalBounds } from '../types';
 import type { MatchSetup } from '../FootballGame';
 
@@ -18,6 +19,7 @@ export interface MatchContext {
   scoreboard: Scoreboard;
   stats: StatsTracker;
   resolver: EventResolver;
+  audio: AudioManager;
   // Assigned after construction (dependency order: gk → kick → contact)
   gkSystem: GoalkeeperSystem | null;
   kickSystem: PlayerKickSystem | null;

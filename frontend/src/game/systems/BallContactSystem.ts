@@ -71,8 +71,17 @@ export class BallContactSystem {
     // Abandon pass if ball stopped far from target (deflected / friction killed it)
     if (this.ball.getSpeed() < 1.5 && ballDist > 80) {
       this.ball.targetPlayer = null;
-      target.state = PlayerState.FindSpace;
-      this.recalculateRoutes(target);
+      // Ball stopped nearby: receiver overshot or ball slowed short — guide them back to fetch it
+      // rather than abandoning and leaving an easy free ball.
+      if (ballDist < 200 && target.role !== PlayerRole.Goalkeeper) {
+        const intercept = projectBallIntercept(this.ball, target, this.field);
+        target.setTarget(intercept.x, intercept.y);
+        target.state = PlayerState.PressBall;
+        this.recalculateRoutes(); // don't pass target — avoids resetting receiver's state
+      } else {
+        target.state = PlayerState.FindSpace;
+        this.recalculateRoutes(target);
+      }
       return;
     }
 

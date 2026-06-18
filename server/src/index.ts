@@ -10,6 +10,7 @@ interface Room {
   clients: Set<WebSocket>;
   cleanupTimer: ReturnType<typeof setTimeout> | null;
   stateCache: Map<string, string>;
+  playerIds: Map<WebSocket, string>;
 }
 
 const rooms = new Map<string, Room>();
@@ -17,7 +18,7 @@ const rooms = new Map<string, Room>();
 function getOrCreateRoom(code: string): Room {
   let room = rooms.get(code);
   if (!room) {
-    room = { clients: new Set(), cleanupTimer: null, stateCache: new Map() };
+    room = { clients: new Set(), cleanupTimer: null, stateCache: new Map(), playerIds: new Map() };
     rooms.set(code, room);
   }
   return room;
@@ -103,6 +104,17 @@ wss.on('connection', (ws, req) => {
     const text = typeof data === 'string' ? data : data.toString();
     const msgType = extractType(text);
 
+    if (msgType === 'player-identify') {
+      try {
+        const msg = JSON.parse(text) as { playerId?: unknown };
+        if (typeof msg.playerId === 'string') {
+          room.playerIds.set(ws, msg.playerId);
+          log(roomCode, `  → identificado: ${msg.playerId} (${ip})`);
+        }
+      } catch { /* ignore malformed */ }
+      return;
+    }
+
     const recipients = [...room.clients].filter(
       (c) => c !== ws && c.readyState === WebSocket.OPEN,
     );
@@ -122,8 +134,17 @@ wss.on('connection', (ws, req) => {
   });
 
   ws.on('close', (code, reason) => {
+    const disconnectedPlayerId = room.playerIds.get(ws);
+    room.playerIds.delete(ws);
     room.clients.delete(ws);
     log(roomCode, `✗ cliente ${ip} desconectou (código ${code}${reason.length ? `, motivo: ${reason}` : ''}) | restam: ${room.clients.size}`);
+
+    if (disconnectedPlayerId) {
+      const notice = JSON.stringify({ type: 'player-disconnected', playerId: disconnectedPlayerId });
+      [...room.clients].filter((c) => c.readyState === WebSocket.OPEN).forEach((c) => c.send(notice));
+      log(roomCode, `  → broadcast player-disconnected: ${disconnectedPlayerId}`);
+    }
+
     if (room.clients.size === 0) {
       log(roomCode, '  sala vazia — agendando limpeza');
       scheduleRoomCleanup(roomCode, room);

@@ -15,6 +15,7 @@ import { BALL_PHYSICS } from '../physics/BallPhysics';
 import { planReceptionTarget } from '../physics/BallProjection';
 import { GOAL_HEIGHT } from '../constants';
 import type { MatchContext } from './MatchContext';
+import type { AudioManager } from './AudioManager';
 
 const CONTACT_RADIUS: number = BALL_PHYSICS.contactRadius;
 const BALL_FRICTION: number = BALL_PHYSICS.groundFrictionPerFrame;
@@ -50,6 +51,7 @@ export class PlayerKickSystem {
   private goalRight: GoalBounds;
   private getAllPlayers: () => Player[];
   private recalculateRoutes: (previousTarget?: Player | null) => void;
+  private audio: AudioManager;
 
   constructor(ctx: MatchContext) {
     this.ball = ctx.ball;
@@ -63,6 +65,7 @@ export class PlayerKickSystem {
     this.goalRight = ctx.goalRight;
     this.getAllPlayers = ctx.allPlayers;
     this.recalculateRoutes = ctx.recalculateRoutesAfterBallTrajectoryChange;
+    this.audio = ctx.audio;
   }
 
   doPass(passer: Player, receiver: Player): void {
@@ -172,7 +175,7 @@ export class PlayerKickSystem {
       passer.stats.vision, passer.stats.reactions,
     );
     const distFraction = clamp((passDist - 80) / 300, 0, 1); // 0 at ≤80px, 1 at ≥380px
-    const normalLift = clamp(0.30 + distFraction * 0.60 + interceptionThreat * 1.50, 0.25, 1.80);
+    const normalLift = clamp(0.30 + distFraction * (0.60 + interceptionThreat * 1.50), 0.25, 1.80);
     const lift = isCross ? crossLift : isLofted ? loftedLift : isThroughPass ? 2.0 : isCutback ? 0.35 : normalLift;
     // Crosses use inswinger spin; regular passes curve around lane blockers when skilled.
     const crossingSkill = passer.stats.crossing / 100;
@@ -205,6 +208,7 @@ export class PlayerKickSystem {
     }
     const spin = isCross ? crossSpin : curveSpin;
     this.ball.kickTo(destX, destY, power, passer.id, { lift, spin });
+    this.audio.playKick(power);
     passer.showShotPulse(this.ball.x, this.ball.y, power);
     this.ball.targetPlayer = receiver;
     receiver.state = PlayerState.ReceivePass;
@@ -480,6 +484,7 @@ export class PlayerKickSystem {
       lift: shotLift,
       spin: shotSpin,
     });
+    this.audio.playKick(power);
     this.gkSystem.gkDiveHoldoffMs = 18;
     this.applyKickFollowThrough(shooter, Math.atan2(safeY - shooter.y, targetGoal.centerX - shooter.x), 1.05);
     shooter.showShotPulse(this.ball.x, this.ball.y, power);
@@ -532,6 +537,7 @@ export class PlayerKickSystem {
         lift: blocker ? 2.8 : 1.2,
         spin: 0,
       });
+      this.audio.playKick(power);
       target.state = PlayerState.ReceivePass;
       const reception = planReceptionTarget(this.ball, target, oppTeam.getNearestPlayerTo(target.x, target.y), this.field);
       target.setTarget(reception.x, reception.y);
@@ -617,6 +623,7 @@ export class PlayerKickSystem {
       lift: clearTargetBlocker ? 4.2 : 3.4,
       spin: 0,
     });
+    this.audio.playKick(power);
     if (clearTarget) {
       const reception = planReceptionTarget(this.ball, clearTarget, oppTeam.getNearestPlayerTo(clearTarget.x, clearTarget.y), this.field);
       clearTarget.setTarget(reception.x, reception.y);
