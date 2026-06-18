@@ -19,6 +19,7 @@ import {
 } from './TacticalAI';
 import { TacticalProfile, DEFAULT_TACTICAL_PROFILE } from '../data/TacticalProfile';
 import { PlayerInstructions } from '../data/PlayerInstructions';
+import type { DebugCollector } from '../debug/DebugCollector';
 
 // Minimum gap between two consecutive set plays (ms)
 const SET_PLAY_COOLDOWN_MS = 7000;
@@ -105,6 +106,7 @@ export class TeamAI {
     field: FieldBounds,
     gameCtx?: GameContext,
     heatMap?: FieldHeatMap,
+    debugCollector?: DebugCollector,
   ): void {
     // ── Tick active set play ──────────────────────────────────────────────────
     if (this.directive.setPlay) {
@@ -152,6 +154,7 @@ export class TeamAI {
       directive: this.directive,
       heatMap,
       tacticalProfile: this.profile,
+      debugCollector,
       playerInstructions: this.playerInstructions.size > 0 ? this.playerInstructions : undefined,
     };
 

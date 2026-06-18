@@ -10,6 +10,7 @@ import type { PlayerKickSystem } from './PlayerKickSystem';
 import type { AudioManager } from './AudioManager';
 import type { FieldBounds, GoalBounds } from '../types';
 import type { MatchSetup } from '../FootballGame';
+import type { DebugCollector } from '../debug/DebugCollector';
 
 export interface MatchContext {
   ball: Ball;
@@ -28,6 +29,7 @@ export interface MatchContext {
   goalLeft: GoalBounds;
   goalRight: GoalBounds;
   setup: MatchSetup | undefined;
+  debugCollector?: DebugCollector;
   allPlayers: () => Player[];
   recalculateRoutesAfterBallTrajectoryChange: (previousTarget?: Player | null) => void;
   shouldSprintForRace: (player: Player, opponent: Player, targetX: number, targetY: number) => boolean;

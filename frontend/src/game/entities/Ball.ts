@@ -17,6 +17,35 @@ export interface BallKickOptions {
   spin?: number;
 }
 
+export interface PassAttempt {
+  id: string;
+  passerId: string;
+  receiverId: string;
+  kind: 'normal' | 'through' | 'cross' | 'cutback' | 'lofted';
+  intendedTarget: { x: number; y: number };
+  actualTarget: { x: number; y: number };
+  startedAt: { x: number; y: number };
+  distance: number;
+  executionError: number;
+  pressure: number;
+  laneRisk: number;
+  power: number;
+}
+
+export interface ShotAttempt {
+  id: string;
+  shooterId: string;
+  teamId: string;
+  targetGoalX: number;
+  intendedTarget: { x: number; y: number };
+  actualTarget: { x: number; y: number };
+  startedAt: { x: number; y: number };
+  distance: number;
+  onTarget: boolean;
+  power: number;
+  result: ShotResult | null;
+}
+
 export class Ball extends Phaser.GameObjects.Arc {
   private static readonly textureKeys = ['ball-art-classic', 'ball-art-strike', 'ball-art-orbit'];
 
@@ -31,6 +60,8 @@ export class Ball extends Phaser.GameObjects.Arc {
   previousY: number;
   lastKickX: number;
   lastKickY: number;
+  passAttempt: PassAttempt | null = null;
+  shotAttempt: ShotAttempt | null = null;
 
   // Id of the player who last kicked the ball; they cannot pick it up again
   // for kickCooldown ms, preventing instant self-interception.
@@ -365,6 +396,8 @@ export class Ball extends Phaser.GameObjects.Arc {
   release(): void {
     this.owner = null;
     this.targetPlayer = null;
+    this.passAttempt = null;
+    this.shotAttempt = null;
   }
 
   attachToPlayer(player: IBallCarrier): void {
@@ -379,6 +412,8 @@ export class Ball extends Phaser.GameObjects.Arc {
 
     this.owner = player;
     this.targetPlayer = null;
+    this.passAttempt = null;
+    this.shotAttempt = null;
     this.velocity.x = 0;
     this.velocity.y = 0;
     this.flightHeight = 0;

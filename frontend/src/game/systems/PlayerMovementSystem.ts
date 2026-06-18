@@ -10,8 +10,9 @@ import { FieldBounds, GoalBounds } from '../types';
 import { dist, clamp, distancePointToSegment } from '../utils/MathUtils';
 import { traitBonus, TRAITS } from '../data/PlayerTraits';
 import type { MatchContext } from './MatchContext';
+import type { DebugCollector } from '../debug/DebugCollector';
 
-const TACKLE_RANGE = 28;
+const TACKLE_RANGE = 20;
 const TACKLE_COOLDOWN_MS = 1400;
 const PENALTY_AREA_H = 396;
 const PENALTY_AREA_W = 182;
@@ -28,6 +29,7 @@ export class PlayerMovementSystem {
   private goalLeft: GoalBounds;
   private goalRight: GoalBounds;
   private getAllPlayers: () => Player[];
+  private debugCollector?: DebugCollector;
 
   constructor(ctx: MatchContext) {
     this.ball = ctx.ball;
@@ -41,6 +43,7 @@ export class PlayerMovementSystem {
     this.goalLeft = ctx.goalLeft;
     this.goalRight = ctx.goalRight;
     this.getAllPlayers = ctx.allPlayers;
+    this.debugCollector = ctx.debugCollector;
   }
 
   separateTeamTargets(team: Team): void {
@@ -124,6 +127,12 @@ export class PlayerMovementSystem {
             this.ball.velocity.x = (approachX / approachLen) * 2.5 + scatter;
             this.ball.velocity.y = (approachY / approachLen) * 2.5 + scatter;
           }
+          this.debugCollector?.recordAction({
+            player: defender,
+            kind: 'tackle-won',
+            reason: `won tackle on ${carrier.playerName}`,
+            targetPlayer: carrier,
+          });
           this.scoreboard.logEvent(`${defender.playerName} roubou de ${carrier.playerName}!`);
         } else {
           const dx = carrier.x - defender.x;
@@ -141,6 +150,12 @@ export class PlayerMovementSystem {
             clamp(carrier.targetY + perpY * side * disruption, this.field.top + 15, this.field.bottom - 15),
           );
           if (carrier.aiCooldown < 180) carrier.aiCooldown = 180;
+          this.debugCollector?.recordAction({
+            player: defender,
+            kind: 'tackle-missed',
+            reason: `missed tackle on ${carrier.playerName}`,
+            targetPlayer: carrier,
+          });
         }
         break;
       }
@@ -176,11 +191,23 @@ export class PlayerMovementSystem {
         gk.hasBall = true;
         gk.state = PlayerState.Clearance;
         gk.aiCooldown = 650;
+        this.debugCollector?.recordAction({
+          player: gk,
+          kind: 'tackle-won',
+          reason: `GK won tackle on ${carrier.playerName}`,
+          targetPlayer: carrier,
+        });
         this.scoreboard.logEvent(`${gk.playerName} roubou de ${carrier.playerName}!`);
       } else {
         const dx = carrier.x - gk.x;
         const dy = carrier.y - gk.y;
         gk.setTarget(gk.x - dx * 0.4, gk.y - dy * 0.4);
+        this.debugCollector?.recordAction({
+          player: gk,
+          kind: 'tackle-missed',
+          reason: `GK missed tackle on ${carrier.playerName}`,
+          targetPlayer: carrier,
+        });
       }
     }
   }

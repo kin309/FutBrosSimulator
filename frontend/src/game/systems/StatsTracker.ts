@@ -1,3 +1,9 @@
+export interface GoalRecord {
+  scorerTeamId: string;
+  scorerName: string;
+  assistName: string | null;
+}
+
 export interface TeamStats {
   shots: number;
   shotsOnTarget: number;
@@ -12,6 +18,7 @@ export interface TeamStats {
 export class StatsTracker {
   private a: TeamStats = this.blank();
   private b: TeamStats = this.blank();
+  private goalList: GoalRecord[] = [];
 
   private blank(): TeamStats {
     return {
@@ -47,6 +54,12 @@ export class StatsTracker {
 
   recordInterception(teamId: string): void { this.team(teamId).interceptions++; }
 
+  recordGoal(scorerTeamId: string, scorerName: string, assistName?: string): void {
+    this.goalList.push({ scorerTeamId, scorerName, assistName: assistName ?? null });
+  }
+
+  getGoals(): readonly GoalRecord[] { return this.goalList; }
+
   tickPossession(teamId: string | null, delta: number): void {
     if (teamId) this.team(teamId).possessionMs += delta;
   }
@@ -62,5 +75,6 @@ export class StatsTracker {
   reset(): void {
     this.a = this.blank();
     this.b = this.blank();
+    this.goalList = [];
   }
 }

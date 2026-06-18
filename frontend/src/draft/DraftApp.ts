@@ -5,7 +5,7 @@ import { buildBotPool, buildTeamDataFromBotTeam, filterBotPoolByDifficulty, pick
 import { showHalftimePanel } from './HalftimePanel';
 import { compileScheme, DEFAULT_TACTICAL_PROFILE, TACTICAL_SCHEMES, TacticalProfile } from '../game/data/TacticalProfile';
 import { createGame } from '../game/FootballGame';
-import { KitColors, KitPattern, TeamData } from '../game/data/TeamFactory';
+import { createOpponentTeam, KitColors, KitPattern, TeamData } from '../game/data/TeamFactory';
 import { PlayerRole } from '../game/data/PlayerRole';
 import {
   createPlayerId,
@@ -263,11 +263,12 @@ export async function startDebugMode(): Promise<void> {
   const reroll = (): void => {
     const squad = buildDebugSquad(allPlayers, 18);
     const botTeam = pickBotTeams(1, debugBotPool)[0];
-    const opponent = botTeam ? buildTeamDataFromBotTeam(botTeam) : { id: 'teamB', name: 'Debug Bot', color: 0xef4444, attackDirection: -1 as const, formationName: '4-4-2', players: [] };
+    const opponent = botTeam ? buildTeamDataFromBotTeam(botTeam) : createOpponentTeam('Debug Bot');
     renderFormationScreen(root, squad, reroll, {
       competitionName: 'Modo Debug',
       opponentName: opponent.name,
       opponentTeam: opponent,
+      debugMode: true,
       startButtonLabel: 'Iniciar partida',
     });
   };
@@ -277,9 +278,29 @@ export async function startDebugMode(): Promise<void> {
 
 function buildDebugSquad(allPlayers: DraftPlayer[], size: number): DraftPlayer[] {
   const shuffle = <T>(arr: T[]) => [...arr].sort(() => Math.random() - 0.5);
-  const gks = shuffle(allPlayers.filter((p) => p.role === PlayerRole.Goalkeeper));
-  const outfield = shuffle(allPlayers.filter((p) => p.role !== PlayerRole.Goalkeeper));
-  return [...gks.slice(0, 2), ...outfield.slice(0, size - 2)];
+  const used = new Set<string>();
+  const squad: DraftPlayer[] = [];
+
+  const take = (pool: DraftPlayer[], count: number): void => {
+    for (const player of shuffle(pool)) {
+      if (squad.length >= size || count <= 0) return;
+      if (used.has(player.id)) continue;
+      used.add(player.id);
+      squad.push(player);
+      count--;
+    }
+  };
+
+  take(allPlayers.filter((p) => p.role === PlayerRole.Goalkeeper), 2);
+  take(allPlayers.filter((p) => p.role === PlayerRole.Defender), 6);
+  take(allPlayers.filter((p) => p.role === PlayerRole.Midfielder || p.role === PlayerRole.Winger), 7);
+  take(allPlayers.filter((p) => p.role === PlayerRole.Striker), 3);
+
+  if (squad.length < size) {
+    take(allPlayers, size - squad.length);
+  }
+
+  return squad;
 }
 
 // ── Draft animations ──────────────────────────────────────────────────────────

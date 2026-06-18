@@ -1,8 +1,8 @@
 export const BALL_PHYSICS = {
   radius: 7,
   artTextureSize: 32,
-  contactRadius: 17,
-  pickupRadius: 22,
+  contactRadius: 13,
+  pickupRadius: 15,
   groundFrictionPerFrame: 0.984,
   wallRestitution: 0.74,
   maxWallReboundSpeed: 9.8,

@@ -16,7 +16,7 @@ import { showHalftimePanel } from '../../draft/HalftimePanel';
 import { StatsTracker } from '../systems/StatsTracker';
 import { PlayerRole } from '../data/PlayerRole';
 import { PlayerState } from '../data/PlayerState';
-import { dist, clamp } from '../utils/MathUtils';
+import { dist, clamp, distancePointToSegment } from '../utils/MathUtils';
 import { planReceptionTarget } from '../physics/BallProjection';
 import { GAME_WIDTH, HUD_HEIGHT, FIELD, GOAL_LEFT, GOAL_RIGHT, GOAL_LINE_LEFT, GOAL_LINE_RIGHT } from '../constants';
 import { BALL_PHYSICS } from '../physics/BallPhysics';
@@ -31,6 +31,8 @@ import { MatchFlowSystem } from '../systems/MatchFlowSystem';
 import { SpectatorSystem } from '../systems/SpectatorSystem';
 import { AudioManager } from '../systems/AudioManager';
 import type { MatchContext } from '../systems/MatchContext';
+import { DebugCollector } from '../debug/DebugCollector';
+import type { DebugDecisionEvent } from '../debug/DebugTypes';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -106,6 +108,13 @@ export default class MatchScene extends Phaser.Scene {
   private guestSubHandlerA: ((starterIndex: number, benchIndex: number) => void) | null = null;
   private guestSubHandlerB: ((starterIndex: number, benchIndex: number) => void) | null = null;
   private speedIndicator!: Phaser.GameObjects.Text;
+  private debugCollector: DebugCollector | null = null;
+  private selectedDebugPlayer: Player | null = null;
+  private debugOverlayGfx: Phaser.GameObjects.Graphics | null = null;
+  private debugPanel: Phaser.GameObjects.Container | null = null;
+  private debugPanelText: Phaser.GameObjects.Text | null = null;
+  private debugPanelVisible = true;
+  private debugBallPossession = false;
 
   private keys!: {
     space: Phaser.Input.Keyboard.Key;
@@ -113,6 +122,7 @@ export default class MatchScene extends Phaser.Scene {
     t: Phaser.Input.Keyboard.Key;
     one: Phaser.Input.Keyboard.Key;
     two: Phaser.Input.Keyboard.Key;
+    three: Phaser.Input.Keyboard.Key;
   };
 
   constructor(private readonly setup?: MatchSetup) { super({ key: 'MatchScene' }); }
@@ -126,6 +136,7 @@ export default class MatchScene extends Phaser.Scene {
     drawField(this);
     this.resolver = new EventResolver();
     this.stats = new StatsTracker();
+    this.debugCollector = this.setup?.debugMode ? new DebugCollector() : null;
     this.buildTeams();
     this.ball = new Ball(this, FIELD.centerX, FIELD.centerY);
     this.heatMapGfx = this.add.graphics().setDepth(3);
@@ -159,6 +170,7 @@ export default class MatchScene extends Phaser.Scene {
       goalLeft: GOAL_LEFT,
       goalRight: GOAL_RIGHT,
       setup: this.setup,
+      debugCollector: this.debugCollector ?? undefined,
       gkSystem: null,
       kickSystem: null,
       allPlayers: () => this.allPlayers(),
@@ -179,7 +191,7 @@ export default class MatchScene extends Phaser.Scene {
     this.movementSystem = new PlayerMovementSystem(ctx);
     this.flowSystem = new MatchFlowSystem(ctx);
 
-    this.speedIndicator = this.add.text(GAME_WIDTH - 8, 8, '⚡ 2x', {
+    this.speedIndicator = this.add.text(GAME_WIDTH - 8, 8, 'Speed 1x', {
       fontSize: '13px',
       fontStyle: 'bold',
       fontFamily: 'Nunito',
@@ -202,6 +214,7 @@ export default class MatchScene extends Phaser.Scene {
     });
 
     this.spectatorSystem = new SpectatorSystem(ctx);
+    this.initDebugUi();
 
     if (this.setup?.spectatorMode) {
       this.spectatorSystem.init();
@@ -253,6 +266,8 @@ export default class MatchScene extends Phaser.Scene {
 
     this.matchManager.update(simDelta);
     this.spectatorSystem.tickLiveUpdate(simDelta);
+    this.updateDebugOverlay();
+    this.updateBallPossessionDebug();
     if (this.matchManager.isPaused) return;
     if (this.matchManager.state === 'halftime') {
       this.ball.updateBall(simDelta);
@@ -308,13 +323,14 @@ export default class MatchScene extends Phaser.Scene {
     // Refresh shared occupancy grid before any AI reads it this frame
     this.heatMap.update(this.teamA.players, this.teamB.players);
     this.visuals.drawHeatMapDebug();
+    this.debugCollector?.setClock(this.matchManager.getTimeString());
     // Own/opp goals derive from attackDirection so they stay correct after halftime side swap
     const ownGoalA = this.teamA.attackDirection > 0 ? GOAL_LEFT  : GOAL_RIGHT;
     const oppGoalA = this.teamA.attackDirection > 0 ? GOAL_RIGHT : GOAL_LEFT;
     const ownGoalB = this.teamB.attackDirection > 0 ? GOAL_LEFT  : GOAL_RIGHT;
     const oppGoalB = this.teamB.attackDirection > 0 ? GOAL_RIGHT : GOAL_LEFT;
-    this.aiA.update(simDelta, this.ball, this.teamB, ownGoalA, oppGoalA, FIELD, gameCtxA, this.heatMap);
-    this.aiB.update(simDelta, this.ball, this.teamA, ownGoalB, oppGoalB, FIELD, gameCtxB, this.heatMap);
+    this.aiA.update(simDelta, this.ball, this.teamB, ownGoalA, oppGoalA, FIELD, gameCtxA, this.heatMap, this.debugCollector ?? undefined);
+    this.aiB.update(simDelta, this.ball, this.teamA, ownGoalB, oppGoalB, FIELD, gameCtxB, this.heatMap, this.debugCollector ?? undefined);
 
     // Mark players that are free in dangerous positions (used for the visual glow indicator)
     const aHasBall = this.teamA.hasPossession();
@@ -382,6 +398,8 @@ export default class MatchScene extends Phaser.Scene {
     if (this.matchManager.state === 'advantage') {
       this.flowSystem.updateAdvantage(simDelta);
     }
+    this.updateDebugOverlay();
+    this.updateBallPossessionDebug();
   }
 
   // ──────────────────────────────────────────────
@@ -442,9 +460,12 @@ export default class MatchScene extends Phaser.Scene {
 
       // Resolve scorer and assist from ball touch history
       const allPlayers = this.allPlayers();
-      const scorerPlayer = this.ball.lastToucherId
-        ? allPlayers.find(p => p.id === this.ball.lastToucherId) ?? null
+      const shotScorer = this.ball.shotAttempt?.teamId === teamId
+        ? allPlayers.find(p => p.id === this.ball.shotAttempt?.shooterId) ?? null
         : null;
+      const scorerPlayer = shotScorer ?? (this.ball.lastToucherId
+        ? allPlayers.find(p => p.id === this.ball.lastToucherId) ?? null
+        : null);
       const assistCandidate = this.ball.previousToucherId && this.ball.previousToucherId !== this.ball.lastToucherId
         ? allPlayers.find(p => p.id === this.ball.previousToucherId) ?? null
         : null;
@@ -454,7 +475,8 @@ export default class MatchScene extends Phaser.Scene {
       const eventDesc = assistPlayer
         ? `⚽ ${scorerLabel} (assist: ${assistPlayer.playerName})`
         : `⚽ ${scorerLabel}`;
-      this.scoreboard.showGoalBanner(scorer.name);
+      this.stats.recordGoal(teamId, scorerLabel, assistPlayer?.playerName);
+      this.scoreboard.showGoalBanner(scorer.name, scorerLabel);
       this.scoreboard.logEvent(`${eventDesc} — ${scorer.name} marca!`);
 
       const spectatorEvent: import('../../draft/MultiplayerLobby').SpectatorEvent = {
@@ -511,7 +533,6 @@ export default class MatchScene extends Phaser.Scene {
     };
     this.matchManager.onFinished = () => {
       this.audio.playFinalWhistle();
-      this.scoreboard.showFinished(!!this.setup?.onMatchEnd);
       this.spectatorSystem.emitLiveUpdate('Fim de jogo', { type: 'finished' });
       this.visuals.showStatsOverlay();
       if (this.setup?.autoFinishDelayMs !== undefined) {
@@ -761,18 +782,22 @@ export default class MatchScene extends Phaser.Scene {
     const gt = GOAL_LEFT.top, gb = GOAL_LEFT.bottom;
 
     if (b.y < FIELD.top && b.velocity.y < 0) {
+      this.recordShotMissedOutcome('shot rebounded outside the goal frame');
       b.y = FIELD.top;
       this.reboundBallFromWall('horizontal');
     }
     if (b.y > FIELD.bottom && b.velocity.y > 0) {
+      this.recordShotMissedOutcome('shot rebounded outside the goal frame');
       b.y = FIELD.bottom;
       this.reboundBallFromWall('horizontal');
     }
     if (b.x < FIELD.left && !(b.y > gt && b.y < gb) && b.velocity.x < 0) {
+      this.recordShotMissedOutcome('shot hit the boundary outside the goal');
       b.x = FIELD.left;
       this.reboundBallFromWall('vertical');
     }
     if (b.x > FIELD.right && !(b.y > gt && b.y < gb) && b.velocity.x > 0) {
+      this.recordShotMissedOutcome('shot hit the boundary outside the goal');
       b.x = FIELD.right;
       this.reboundBallFromWall('vertical');
     }
@@ -804,16 +829,50 @@ export default class MatchScene extends Phaser.Scene {
     if (x < GOAL_LINE_LEFT && y > GOAL_LEFT.top && y < GOAL_LEFT.bottom) {
       // Who attacks GOAL_LEFT (attackDirection < 0)?
       const scorer = this.teamA.attackDirection < 0 ? 'teamA' : 'teamB';
+      this.recordShotGoalOutcome(scorer);
       this.matchManager.goalScored(scorer);
       return true;
     }
     if (x > GOAL_LINE_RIGHT && y > GOAL_RIGHT.top && y < GOAL_RIGHT.bottom) {
       // Who attacks GOAL_RIGHT (attackDirection > 0)?
       const scorer = this.teamA.attackDirection > 0 ? 'teamA' : 'teamB';
+      this.recordShotGoalOutcome(scorer);
       this.matchManager.goalScored(scorer);
       return true;
     }
     return false;
+  }
+
+  private recordShotGoalOutcome(teamId: string): void {
+    const attempt = this.ball.shotAttempt;
+    if (!attempt || attempt.teamId !== teamId || attempt.result !== null) return;
+
+    const shooter = this.allPlayers().find(p => p.id === attempt.shooterId) ?? null;
+    attempt.result = 'Goal';
+    if (!shooter) return;
+
+    this.debugCollector?.recordAction({
+      player: shooter,
+      kind: 'shot-goal',
+      reason: `shot crossed the goal line, power ${attempt.power.toFixed(1)}`,
+      target: { x: this.ball.x, y: this.ball.y },
+    });
+  }
+
+  private recordShotMissedOutcome(reason: string): void {
+    const attempt = this.ball.shotAttempt;
+    if (!attempt || attempt.result !== null) return;
+
+    const shooter = this.allPlayers().find(p => p.id === attempt.shooterId) ?? null;
+    attempt.result = 'Missed';
+    if (!shooter) return;
+
+    this.debugCollector?.recordAction({
+      player: shooter,
+      kind: 'shot-missed',
+      reason,
+      target: { x: this.ball.x, y: this.ball.y },
+    });
   }
 
   // ──────────────────────────────────────────────
@@ -946,6 +1005,12 @@ export default class MatchScene extends Phaser.Scene {
       carrier.state = PlayerState.CarryBall;
       carrier.aiCooldown = 350;
       blocker.showStumble();
+      this.debugCollector?.recordAction({
+        player: carrier,
+        kind: 'dribble-won',
+        reason: `beat ${blocker.playerName}`,
+        targetPlayer: blocker,
+      });
       this.scoreboard.logEvent(`${carrier.playerName} dribla ${blocker.playerName}!`);
     } else {
       const contactX = (carrier.x + blocker.x) / 2;
@@ -977,6 +1042,12 @@ export default class MatchScene extends Phaser.Scene {
         blocker.showTackleBurst(contactX, contactY);
         this.scoreboard.logEvent(`${blocker.playerName} bloqueou o drible de ${carrier.playerName}!`);
       }
+      this.debugCollector?.recordAction({
+        player: carrier,
+        kind: 'dribble-lost',
+        reason: `lost dribble against ${blocker.playerName}`,
+        targetPlayer: blocker,
+      });
     }
   }
 
@@ -1011,6 +1082,244 @@ export default class MatchScene extends Phaser.Scene {
     this.contactSystem.chaseFreeeBall();
   }
 
+  private initDebugUi(): void {
+    if (!this.debugCollector) return;
+
+    this.debugOverlayGfx = this.add.graphics().setDepth(28);
+    this.debugPanel = this.add.container(GAME_WIDTH - 288, HUD_HEIGHT + 12).setDepth(35);
+
+    const bg = this.add.rectangle(0, 0, 276, 336, 0x020617, 0.88)
+      .setOrigin(0, 0)
+      .setStrokeStyle(1, 0x38bdf8, 0.8);
+    this.debugPanelText = this.add.text(12, 10, 'DEBUG\nClique em um jogador', {
+      fontSize: '11px',
+      fontFamily: 'Consolas, monospace',
+      color: '#e2e8f0',
+      lineSpacing: 2,
+      resolution: 2,
+    });
+    this.debugPanel.add([bg, this.debugPanelText]);
+
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!this.debugCollector || pointer.y < HUD_HEIGHT) return;
+      this.selectDebugPlayer(pointer.worldX, pointer.worldY);
+    });
+  }
+
+  private selectDebugPlayer(x: number, y: number): void {
+    let nearest: Player | null = null;
+    let nearestDist = 30;
+    for (const player of this.allPlayers()) {
+      const d = dist(x, y, player.x, player.y);
+      if (d < nearestDist) {
+        nearest = player;
+        nearestDist = d;
+      }
+    }
+    this.selectedDebugPlayer = nearest;
+    this.updateDebugOverlay();
+  }
+
+  private updateDebugOverlay(): void {
+    if (!this.debugCollector || !this.debugOverlayGfx || !this.debugPanel || !this.debugPanelText) return;
+
+    const player = this.selectedDebugPlayer;
+    this.debugOverlayGfx.clear();
+    this.debugPanel.setVisible(this.debugPanelVisible);
+
+    if (!player) {
+      this.debugPanelText.setText(this.buildDebugPanelText(null));
+      return;
+    }
+
+    this.drawSelectedPlayerDebug(player);
+    this.debugPanelText.setText(this.buildDebugPanelText(player));
+  }
+
+  private updateBallPossessionDebug(): void {
+    if (!this.debugCollector || !this.debugBallPossession) return;
+    const carrier = this.allPlayers().find(p => p.hasBall) ?? null;
+    if (carrier && carrier !== this.selectedDebugPlayer) {
+      this.selectedDebugPlayer = carrier;
+    }
+  }
+
+  private drawSelectedPlayerDebug(player: Player): void {
+    const g = this.debugOverlayGfx;
+    if (!g) return;
+
+    g.lineStyle(2, 0xfbbf24, 0.82);
+    g.strokeCircle(player.x, player.y, 24);
+
+    g.lineStyle(2, 0x38bdf8, 0.78);
+    g.beginPath();
+    g.moveTo(player.x, player.y);
+    g.lineTo(player.targetX, player.targetY);
+    g.strokePath();
+    g.fillStyle(0x38bdf8, 0.9);
+    g.fillCircle(player.targetX, player.targetY, 4);
+
+    g.lineStyle(1, 0xffffff, 0.45);
+    g.strokeCircle(player.baseX, player.baseY, 18);
+
+    if (player.passTarget) {
+      g.lineStyle(3, 0x22c55e, 0.9);
+      g.beginPath();
+      g.moveTo(player.x, player.y);
+      g.lineTo(player.passTarget.x, player.passTarget.y);
+      g.strokePath();
+    }
+
+    if (player.markingTarget) {
+      g.lineStyle(2, 0xef4444, 0.85);
+      g.beginPath();
+      g.moveTo(player.x, player.y);
+      g.lineTo(player.markingTarget.x, player.markingTarget.y);
+      g.strokePath();
+    }
+
+    if (player.dribbleTarget) {
+      g.lineStyle(2, 0xa855f7, 0.85);
+      g.beginPath();
+      g.moveTo(player.x, player.y);
+      g.lineTo(player.dribbleTarget.x, player.dribbleTarget.y);
+      g.strokePath();
+    }
+
+    if (player.hasBall) {
+      const dir = player.getCarryDir();
+      const ax = player.x + dir.x * 36;
+      const ay = player.y + dir.y * 36;
+      g.lineStyle(3, 0xf97316, 0.9);
+      g.beginPath();
+      g.moveTo(player.x, player.y);
+      g.lineTo(ax, ay);
+      g.strokePath();
+      g.fillStyle(0xf97316, 0.9);
+      g.fillTriangle(ax, ay, ax - dir.x * 8 - dir.y * 5, ay - dir.y * 8 + dir.x * 5, ax - dir.x * 8 + dir.y * 5, ay - dir.y * 8 - dir.x * 5);
+
+      if (player.passTarget) {
+        const toX = player.passTargetX ?? player.passTarget.x;
+        const toY = player.passTargetY ?? player.passTarget.y;
+        const dx = toX - player.x;
+        const dy = toY - player.y;
+        const lenSq = dx * dx + dy * dy;
+        if (lenSq > 0.001) {
+          g.fillStyle(0x22c55e, 0.9);
+          g.fillCircle(toX, toY, 5);
+          g.lineStyle(2, 0x22c55e, 0.7);
+          g.strokeCircle(toX, toY, 11);
+
+          const opponents = player.teamId === 'teamA' ? this.teamB.players : this.teamA.players;
+          const warningRadius = CONTACT_RADIUS + 23; // same threshold as analyzeBallLane (dangerRadius+18)
+          for (const opp of opponents) {
+            const relX = opp.x - player.x;
+            const relY = opp.y - player.y;
+            const t = (relX * dx + relY * dy) / lenSq;
+            if (t < 0.07 || t > 0.98) continue;
+            const laneDist = distancePointToSegment(opp.x, opp.y, player.x, player.y, toX, toY);
+            if (laneDist > warningRadius) continue;
+            g.fillStyle(0xef4444, 0.22);
+            g.fillCircle(opp.x, opp.y, 22);
+            g.lineStyle(3, 0xef4444, 1.0);
+            g.strokeCircle(opp.x, opp.y, 22);
+          }
+        }
+      }
+    }
+  }
+
+  private buildDebugPanelText(player: Player | null): string {
+    const globalActions = this.debugCollector?.recentActions(6) ?? [];
+    const globalActionLines = globalActions.length > 0
+      ? globalActions.map((event) => this.formatDebugEvent(event, true)).join('\n')
+      : 'sem acoes registradas';
+
+    if (!player) {
+      return [
+        'DEBUG',
+        'Clique em um jogador',
+        '',
+        'Recent actions',
+        globalActionLines,
+        '',
+        '1=2x  2=1x  3=0.5x',
+        'I painel  Esc limpar',
+      ].join('\n');
+    }
+
+    const latestAction = this.debugCollector?.latestActionForPlayer(player.id) ?? null;
+    const latest = latestAction ?? this.debugCollector?.latestForPlayer(player.id) ?? null;
+    const recent = this.debugCollector?.recentForPlayer(player.id, 4) ?? [];
+    const team = player.teamId === 'teamA' ? this.teamA : this.teamB;
+    const phase = player.teamId === 'teamA'
+      ? this.phaseLabel(this.aiA.getPhase(), !!this.aiA.getManualPhase())
+      : this.phaseLabel(this.aiB.getPhase(), false);
+    const instruction = this.formatDebugInstruction(player);
+    const targetPlayer = player.passTarget ?? player.markingTarget ?? player.dribbleTarget;
+    const targetName = targetPlayer ? targetPlayer.playerName : '-';
+    const eventLines = recent.length > 0
+      ? recent.map((event) => this.formatDebugEvent(event, true)).join('\n')
+      : 'sem eventos registrados';
+
+    return [
+      'DEBUG PLAYER',
+      `${player.playerName} #${player.jerseyNumber}`,
+      `Time: ${team.name}`,
+      `Role: ${player.role}`,
+      `State: ${player.state}`,
+      `Stamina: ${Math.round(player.currentStamina)}  Ball: ${player.hasBall ? 'yes' : 'no'}`,
+      `AI cd: ${Math.round(player.aiCooldown)}ms`,
+      `Phase: ${phase}`,
+      `Pos: ${Math.round(player.x)},${Math.round(player.y)}`,
+      `Target: ${Math.round(player.targetX)},${Math.round(player.targetY)}`,
+      `Intent: ${targetName}`,
+      `Instr: ${instruction}`,
+      '',
+      `Last: ${latest ? `${latest.kind} @ ${latest.clock}` : '-'}`,
+      `Why: ${latest ? latest.reason : '-'}`,
+      eventLines,
+      '',
+      'Recent actions',
+      globalActionLines,
+      '',
+      '1=2x  2=1x  3=0.5x',
+      'I painel  Esc limpar',
+    ].join('\n');
+  }
+
+  private formatDebugInstruction(player: Player): string {
+    if (player.teamId !== 'teamA') return '-';
+    const inst = this.aiA.getPlayerInstructions().get(player.id);
+    if (!inst) return '-';
+
+    const parts = [
+      inst.positioning ? `pos=${inst.positioning}` : '',
+      inst.attackSupport ? `atk=${inst.attackSupport}` : '',
+      inst.movement ? `mov=${inst.movement}` : '',
+      inst.withBall ? `ball=${inst.withBall}` : '',
+      inst.press ? `press=${inst.press}` : '',
+      inst.marking ? `mark=${inst.marking}` : '',
+      inst.defensiveParticipation ? `def=${inst.defensiveParticipation}` : '',
+    ].filter(Boolean);
+
+    return parts.length > 0 ? parts.join(' ') : '-';
+  }
+
+  private formatDebugEvent(event: DebugDecisionEvent, includePlayer = false): string {
+    const tag = event.category === 'decision' ? 'D' : 'A';
+    const player = includePlayer ? ` ${event.playerName}:` : '';
+    const target = event.targetPlayerName
+      ? ` -> ${event.targetPlayerName}`
+      : event.target
+        ? ` -> ${Math.round(event.target.x)},${Math.round(event.target.y)}`
+        : '';
+    const stateChange = event.category === 'decision'
+      ? ` ${event.previousState}>${event.nextState}`
+      : '';
+    return `${event.clock} [${tag}]${player} ${event.kind}${stateChange}${target}`;
+  }
+
 
   // ──────────────────────────────────────────────
   // Kickoff & reset
@@ -1029,6 +1338,7 @@ export default class MatchScene extends Phaser.Scene {
       t: kb.addKey(Phaser.Input.Keyboard.KeyCodes.T),
       one: kb.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
       two: kb.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
+      three: kb.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
     };
     this.keys.space.on('down', () => this.matchManager.togglePause());
     this.keys.r.on('down', () => {
@@ -1044,14 +1354,9 @@ export default class MatchScene extends Phaser.Scene {
       if (this.matchManager.state !== 'finished') return;
       this.deliverMatchEnd();
     });
-    this.keys.one.on('down', () => {
-      this.simulationSpeed = 2.0;
-      this.speedIndicator.setVisible(true);
-    });
-    this.keys.two.on('down', () => {
-      this.simulationSpeed = 1.0;
-      this.speedIndicator.setVisible(false);
-    });
+    this.keys.one.on('down', () => this.setSimulationSpeed(2.0));
+    this.keys.two.on('down', () => this.setSimulationSpeed(1.0));
+    this.keys.three.on('down', () => this.setSimulationSpeed(0.5));
 
     // Tactical phase control for Team A (repeat key = cancel override → auto)
     // Q = Pressão Alta  W = Forma  E = Construção
@@ -1063,6 +1368,21 @@ export default class MatchScene extends Phaser.Scene {
     });
     kb.addKey(Phaser.Input.Keyboard.KeyCodes.D).on('down', () => {
       Player.debugRings = !Player.debugRings;
+    });
+    kb.addKey(Phaser.Input.Keyboard.KeyCodes.B).on('down', () => {
+      if (!this.debugCollector) return;
+      this.debugBallPossession = !this.debugBallPossession;
+      if (!this.debugBallPossession) this.selectedDebugPlayer = null;
+    });
+    kb.addKey(Phaser.Input.Keyboard.KeyCodes.I).on('down', () => {
+      if (!this.debugCollector) return;
+      this.debugPanelVisible = !this.debugPanelVisible;
+      this.updateDebugOverlay();
+    });
+    kb.addKey(Phaser.Input.Keyboard.KeyCodes.ESC).on('down', () => {
+      if (!this.debugCollector) return;
+      this.selectedDebugPlayer = null;
+      this.updateDebugOverlay();
     });
 
     kb.addKey(Phaser.Input.Keyboard.KeyCodes.Q).on('down', () => {
@@ -1083,6 +1403,13 @@ export default class MatchScene extends Phaser.Scene {
   // ──────────────────────────────────────────────
   // Helpers
   // ──────────────────────────────────────────────
+
+  private setSimulationSpeed(speed: number): void {
+    this.simulationSpeed = speed;
+    const label = Number.isInteger(speed) ? `${speed}x` : `${speed.toFixed(1)}x`;
+    this.speedIndicator.setText(`Speed ${label}`);
+    this.speedIndicator.setVisible(speed !== 1.0);
+  }
 
   private allPlayers(): Player[] {
     return [...this.teamA.players, ...this.teamB.players];

@@ -23,6 +23,7 @@ export class Scoreboard {
 
   private goalBanner!: Phaser.GameObjects.Container;
   private goalText!: Phaser.GameObjects.Text;
+  private goalScorerText!: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, manager: MatchManager, teamA: Team, teamB: Team) {
     this.scene = scene;
@@ -93,8 +94,8 @@ export class Scoreboard {
     }
 
     // Goal banner (hidden by default)
-    const bannerBg = this.scene.add.rectangle(0, 0, 380, 80, 0x000000, 0.88);
-    this.goalText = this.scene.add.text(0, 0, '', {
+    const bannerBg = this.scene.add.rectangle(0, 0, 400, 100, 0x000000, 0.88);
+    this.goalText = this.scene.add.text(0, -22, '', {
       fontSize: '32px',
       fontStyle: 'bold',
       fontFamily: FONT,
@@ -103,7 +104,15 @@ export class Scoreboard {
       strokeThickness: 4,
       resolution: 2,
     }).setOrigin(0.5);
-    this.goalBanner = this.scene.add.container(CENTER_X, GAME_HEIGHT / 2, [bannerBg, this.goalText]);
+    this.goalScorerText = this.scene.add.text(0, 22, '', {
+      fontSize: '16px',
+      fontFamily: FONT,
+      color: '#e2e8f0',
+      stroke: '#000000',
+      strokeThickness: 3,
+      resolution: 2,
+    }).setOrigin(0.5);
+    this.goalBanner = this.scene.add.container(CENTER_X, GAME_HEIGHT / 2, [bannerBg, this.goalText, this.goalScorerText]);
     this.goalBanner.setDepth(30).setVisible(false);
   }
 
@@ -131,8 +140,9 @@ export class Scoreboard {
     }
   }
 
-  showGoalBanner(teamName: string): void {
-    this.goalText.setText(`⚽  GOL!\n${teamName}`);
+  showGoalBanner(teamName: string, scorerName?: string): void {
+    this.goalText.setText(`⚽  GOL!  —  ${teamName}`);
+    this.goalScorerText.setText(scorerName ? scorerName : '');
     this.goalBanner.setVisible(true);
     this.scene.time.delayedCall(2200, () => this.goalBanner.setVisible(false));
   }

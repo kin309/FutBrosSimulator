@@ -16,6 +16,7 @@ import { planReceptionTarget } from '../physics/BallProjection';
 import { GOAL_HEIGHT } from '../constants';
 import type { MatchContext } from './MatchContext';
 import type { AudioManager } from './AudioManager';
+import type { DebugCollector } from '../debug/DebugCollector';
 
 const CONTACT_RADIUS: number = BALL_PHYSICS.contactRadius;
 const BALL_FRICTION: number = BALL_PHYSICS.groundFrictionPerFrame;
@@ -52,6 +53,7 @@ export class PlayerKickSystem {
   private getAllPlayers: () => Player[];
   private recalculateRoutes: (previousTarget?: Player | null) => void;
   private audio: AudioManager;
+  private debugCollector?: DebugCollector;
 
   constructor(ctx: MatchContext) {
     this.ball = ctx.ball;
@@ -66,6 +68,7 @@ export class PlayerKickSystem {
     this.getAllPlayers = ctx.allPlayers;
     this.recalculateRoutes = ctx.recalculateRoutesAfterBallTrajectoryChange;
     this.audio = ctx.audio;
+    this.debugCollector = ctx.debugCollector;
   }
 
   doPass(passer: Player, receiver: Player): void {
@@ -123,8 +126,10 @@ export class PlayerKickSystem {
           : passDist > 280
             ? passer.stats.longPassing
             : Math.round(passer.stats.shortPassing * (280 - passDist) / 120 + passer.stats.longPassing * (passDist - 160) / 120);
-    // statMult range 0.62–0.86: poor passers noticeably underpowered; elite passers crisp
-    const statMult = 0.62 + (passSkill / 100) * 0.24;
+    // Power accuracy: poor passers still underhit, but competent passers should send
+    // the ball close enough to the planned reception point for the pass outcome logic
+    // to judge the delivery, not an accidental underpowered roll.
+    const statMult = 0.78 + (passSkill / 100) * 0.20;
     // Whipped Pass: harder, faster crosses and cutbacks (+0.14 power regular, +0.10 extra for Plus)
     const whippedBoost = (isCross || isCutback) ? traitBonus(passer, TRAITS.WHIPPED_PASS, 0.14, 0.10) : 0;
     const servicePower = (isCutback ? 0.96 : isThroughPass ? 1.14 : 1.0) + whippedBoost;
@@ -174,8 +179,8 @@ export class PlayerKickSystem {
       passer.x, passer.y, intendedX, intendedY, liftOpponents, estimatedFrames,
       passer.stats.vision, passer.stats.reactions,
     );
-    const distFraction = clamp((passDist - 80) / 300, 0, 1); // 0 at ≤80px, 1 at ≥380px
-    const normalLift = clamp(0.30 + distFraction * (0.60 + interceptionThreat * 1.50), 0.25, 1.80);
+    const distFraction = clamp((passDist - 120) / 290, 0, 1); // 0 at ≤120px, 1 at ≥410px
+    const normalLift = clamp(0.25 + distFraction * (0.32 + interceptionThreat * 1.10), 0.22, 1.45);
     const lift = isCross ? crossLift : isLofted ? loftedLift : isThroughPass ? 2.0 : isCutback ? 0.35 : normalLift;
     // Crosses use inswinger spin; regular passes curve around lane blockers when skilled.
     const crossingSkill = passer.stats.crossing / 100;
@@ -208,6 +213,28 @@ export class PlayerKickSystem {
     }
     const spin = isCross ? crossSpin : curveSpin;
     this.ball.kickTo(destX, destY, power, passer.id, { lift, spin });
+    const executionError = dist(intendedX, intendedY, destX, destY);
+    this.ball.passAttempt = {
+      id: `${passer.id}:${receiver.id}:${Math.round(this.ball.lastKickX)}:${Math.round(this.ball.lastKickY)}`,
+      passerId: passer.id,
+      receiverId: receiver.id,
+      kind: passKind,
+      intendedTarget: { x: intendedX, y: intendedY },
+      actualTarget: { x: destX, y: destY },
+      startedAt: { x: this.ball.lastKickX, y: this.ball.lastKickY },
+      distance: passDist,
+      executionError,
+      pressure,
+      laneRisk: passLane.risk,
+      power,
+    };
+    this.debugCollector?.recordAction({
+      player: passer,
+      kind: 'pass-executed',
+      reason: `${passKind} pass executed, error ${Math.round(executionError)}px, power ${power.toFixed(1)}`,
+      target: { x: destX, y: destY },
+      targetPlayer: receiver,
+    });
     this.audio.playKick(power);
     passer.showShotPulse(this.ball.x, this.ball.y, power);
     this.ball.targetPlayer = receiver;
@@ -484,6 +511,35 @@ export class PlayerKickSystem {
       lift: shotLift,
       spin: shotSpin,
     });
+    this.ball.shotAttempt = {
+      id: `${shooter.id}:${Math.round(this.ball.lastKickX)}:${Math.round(this.ball.lastKickY)}`,
+      shooterId: shooter.id,
+      teamId: shooter.teamId,
+      targetGoalX: targetGoal.centerX,
+      intendedTarget: { x: targetGoal.centerX, y: aimY },
+      actualTarget: { x: targetGoal.centerX, y: actualY },
+      startedAt: { x: this.ball.lastKickX, y: this.ball.lastKickY },
+      distance: actualShotDist,
+      onTarget: inGoal,
+      power,
+      result: inGoal ? null : 'Missed',
+    };
+    this.debugCollector?.recordAction({
+      player: shooter,
+      kind: 'shot-executed',
+      reason: `shot ${inGoal ? 'on target' : 'off target'}, power ${power.toFixed(1)}`,
+      target: { x: targetGoal.centerX, y: safeY },
+      targetPlayer: goalkeeper,
+    });
+    if (!inGoal) {
+      this.debugCollector?.recordAction({
+        player: shooter,
+        kind: 'shot-missed',
+        reason: `shot missed the goal at y=${Math.round(actualY)}`,
+        target: { x: targetGoal.centerX, y: safeY },
+        targetPlayer: goalkeeper,
+      });
+    }
     this.audio.playKick(power);
     this.gkSystem.gkDiveHoldoffMs = 18;
     this.applyKickFollowThrough(shooter, Math.atan2(safeY - shooter.y, targetGoal.centerX - shooter.x), 1.05);
@@ -536,6 +592,13 @@ export class PlayerKickSystem {
       this.ball.kickTo(destX, destY, power, gk.id, {
         lift: blocker ? 2.8 : 1.2,
         spin: 0,
+      });
+      this.debugCollector?.recordAction({
+        player: gk,
+        kind: 'clearance-executed',
+        reason: `controlled GK outlet, power ${power.toFixed(1)}`,
+        target: { x: destX, y: destY },
+        targetPlayer: target,
       });
       this.audio.playKick(power);
       target.state = PlayerState.ReceivePass;
@@ -622,6 +685,13 @@ export class PlayerKickSystem {
     this.ball.kickTo(destX, destY, power, gk.id, {
       lift: clearTargetBlocker ? 4.2 : 3.4,
       spin: 0,
+    });
+    this.debugCollector?.recordAction({
+      player: gk,
+      kind: 'clearance-executed',
+      reason: clearTarget ? `long distribution, power ${power.toFixed(1)}` : `clearance to space, power ${power.toFixed(1)}`,
+      target: { x: destX, y: destY },
+      targetPlayer: clearTarget,
     });
     this.audio.playKick(power);
     if (clearTarget) {
@@ -781,10 +851,12 @@ export class PlayerKickSystem {
       const perceivedReactionFrames = 4 + (1 - perception) * 4; // 4–8 frames
       const reachable = perceivedSpeed * Math.max(0, framesUntil - perceivedReactionFrames);
 
-      // Threat only if the opponent can close the gap to contact radius
-      const margin = reachable + CONTACT_RADIUS - lateralDist;
+      // Threat only if the opponent can physically close the lateral gap.
+      // Use half the contact radius as clearance — avoids flagging opponents who are
+      // barely reachable in theory but would never actually get there in time.
+      const margin = reachable + CONTACT_RADIUS * 0.5 - lateralDist;
       if (margin > 0) {
-        const threat = clamp(margin / (CONTACT_RADIUS * 3), 0, 1);
+        const threat = clamp(margin / (CONTACT_RADIUS * 2.5), 0, 1);
         if (threat > maxThreat) maxThreat = threat;
       }
     }

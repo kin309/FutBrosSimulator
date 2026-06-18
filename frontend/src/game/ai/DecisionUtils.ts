@@ -21,6 +21,7 @@ import {
 } from '../data/PlayerInstructions';
 import { projectBallWithBounce, projectBallAtFrames } from '../physics/BallProjection';
 import { BALL_PHYSICS } from '../physics/BallPhysics';
+import type { DebugCollector } from '../debug/DebugCollector';
 
 export interface AIContext {
   ball: Ball;
@@ -32,6 +33,7 @@ export interface AIContext {
   directive?: TacticalDirective;
   heatMap?: FieldHeatMap;
   tacticalProfile?: TacticalProfile;
+  debugCollector?: DebugCollector;
   /** Instruções individuais por jogador (chave: player.id) */
   playerInstructions?: Map<string, PlayerInstructions>;
 }
@@ -1115,8 +1117,13 @@ function findOpenSpaceTarget(
 
   let best: { tx: number; ty: number; score: number } | null = null;
   for (const c of candidates) {
-    const tx = clamp(c.x + rep.rx * 0.35, ctx.field.left + 24, ctx.field.right - 24);
-    const ty = clamp(c.y + rep.ry * 0.35, ctx.field.top + 28, ctx.field.bottom - 28);
+    const rawX = c.x + rep.rx * 0.35;
+    const rawY = c.y + rep.ry * 0.35;
+    const tx = clamp(rawX, ctx.field.left + 24, ctx.field.right - 24);
+    const ty = clamp(rawY, ctx.field.top + 28, ctx.field.bottom - 28);
+    // Discard candidates whose raw position overshoots the field boundary by more than 45px —
+    // they were aimed at empty space beyond the pitch and produce wall-hugging targets.
+    if (Math.abs(rawX - tx) > 45 || Math.abs(rawY - ty) > 45) continue;
     // Hard cap: skip candidates within the minimum safe distance from the opponent goal.
     // Prevents attackers from seeking space right on the goal line.
     if (Math.abs(tx - ctx.oppGoal.centerX) < roleMinGoalDist) continue;
@@ -1256,6 +1263,7 @@ function attackingPosition(
   // Loose ball during attack: closest outfield player claims it immediately.
   // Mirrors the same check in defendingPosition so a deflection or bad touch is
   // contested by the nearest attacker rather than ignored until their cooldown expires.
+  // Displacement penalty applies here too — range shrinks as player moves out of position.
   const looseBallAtk = !ball.owner && !ball.targetPlayer;
   if (looseBallAtk && player.role !== PlayerRole.Goalkeeper) {
     const dToBall = dist(player.x, player.y, ball.x, ball.y);
@@ -1265,13 +1273,17 @@ function attackingPosition(
         && dist(m.x, m.y, ball.x, ball.y) < dToBall - 15,
     );
     if (!mateIsCloser) {
-      player.markingTarget = null;
-      player.forceSprint(400);
-      return {
-        state: PlayerState.PressBall,
-        tx: clamp(ball.x, field.left + 15, field.right - 15),
-        ty: clamp(ball.y, field.top + 20, field.bottom - 20),
-      };
+      const dispFactor = getDisplacementFactor(player);
+      const maxClaimRange = 55 + (350 - 55) * (1 - dispFactor);
+      if (dToBall < maxClaimRange) {
+        player.markingTarget = null;
+        player.forceSprint(400);
+        return {
+          state: PlayerState.PressBall,
+          tx: clamp(ball.x, field.left + 15, field.right - 15),
+          ty: clamp(ball.y, field.top + 20, field.bottom - 20),
+        };
+      }
     }
   }
 
@@ -1470,6 +1482,17 @@ function computeDefensiveLineOffset(ballX: number, ctx: AIContext, field: FieldB
   return clamp((distBallToOwnGoal - stepStart) / stepRange, 0, 1) * 65;
 }
 
+// How displaced is the player from their tactical base (0 = at base, 1 = fully displaced).
+// Uses the per-player Gaussian heatmap so positionFreedom (tactical profile) is respected:
+// tight spread (defender) penalises roaming sooner; wide spread (winger) gives more latitude.
+// Falls back to a fixed linear ramp if the heatmap isn't initialised yet.
+function getDisplacementFactor(player: Player): number {
+  if (player.positionHeatMap) {
+    return 1 - player.positionHeatMap.getWeight(player.x, player.y);
+  }
+  return clamp(dist(player.x, player.y, player.baseX, player.baseY) / 280, 0, 1);
+}
+
 function defendingPosition(
   player: Player,
   ctx: AIContext,
@@ -1489,6 +1512,8 @@ function defendingPosition(
 
   // Universal: any outfield player claims a loose ball when they're the closest.
   // Moved before the role switch so midfielders and forwards also compete for it.
+  // Players far from their base are less willing to chase — range shrinks with displacement.
+  // Exception: ball almost at feet (< 55px) → always claim regardless of position.
   const looseBall = !ball.owner && !ball.targetPlayer;
   if (looseBall) {
     const dToBall = dist(player.x, player.y, ball.x, ball.y);
@@ -1498,13 +1523,17 @@ function defendingPosition(
         && dist(m.x, m.y, ball.x, ball.y) < dToBall - 15,
     );
     if (!mateIsCloser) {
-      player.markingTarget = null;
-      player.forceSprint(400);
-      return {
-        state: PlayerState.PressBall,
-        tx: clamp(ball.x, field.left + 15, field.right - 15),
-        ty: clamp(ball.y, field.top + 20, field.bottom - 20),
-      };
+      const dispFactor = getDisplacementFactor(player);
+      const maxClaimRange = 55 + (350 - 55) * (1 - dispFactor);
+      if (dToBall < maxClaimRange) {
+        player.markingTarget = null;
+        player.forceSprint(400);
+        return {
+          state: PlayerState.PressBall,
+          tx: clamp(ball.x, field.left + 15, field.right - 15),
+          ty: clamp(ball.y, field.top + 20, field.bottom - 20),
+        };
+      }
     }
   }
 
@@ -1568,7 +1597,9 @@ function defendingPosition(
       const midCarrier = ctx.oppTeam.getBallCarrier();
       const canMidPress = pressCount === 0
         || (pressCount === 1 && midCarrier != null && shouldDoublePress(player, midCarrier, ctx));
-      if (dToBall < pressRange && pressCount < 2 && canMidPress) {
+      const midDispFactor = getDisplacementFactor(player);
+      const effectiveMidPressRange = pressRange * (1 - midDispFactor * 0.75);
+      if (dToBall < effectiveMidPressRange && pressCount < 2 && canMidPress) {
         // Approach from slightly ahead of the carrier (between carrier and own goal),
         // not behind — attackDir points away from own goal, so subtract to cut the path.
         const tx = clamp(ball.x - attackDir * 20 + rep.rx, field.left + 15, field.right - 15);
@@ -1604,7 +1635,9 @@ function defendingPosition(
       const basePressRange = isHighPress ? 320 : 120 + strikerPressBias * 220 + defTransBonus;
       const pressRange = basePressRange * pressRangeMultiplier(instrPressWS);
       const dToBall = dist(player.x, player.y, ball.x, ball.y);
-      if (dToBall < pressRange) {
+      const wsDispFactor = getDisplacementFactor(player);
+      const effectiveWSPressRange = pressRange * (1 - wsDispFactor * 0.75);
+      if (dToBall < effectiveWSPressRange) {
         const tx = clamp(ball.x + attackDir * 30 + rep.rx, field.left + 15, field.right - 15);
         const ty = clamp(ball.y + rep.ry, field.top + 20, field.bottom - 20);
         return { state: PlayerState.PressBall, tx, ty };

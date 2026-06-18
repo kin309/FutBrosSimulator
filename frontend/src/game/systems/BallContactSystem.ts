@@ -14,6 +14,7 @@ import { BALL_PHYSICS } from '../physics/BallPhysics';
 import { projectBallIntercept, planReceptionTarget } from '../physics/BallProjection';
 import { traitBonus, TRAITS } from '../data/PlayerTraits';
 import type { MatchContext } from './MatchContext';
+import type { DebugCollector } from '../debug/DebugCollector';
 
 const CONTACT_RADIUS: number = BALL_PHYSICS.contactRadius;
 const BALL_FRICTION: number = BALL_PHYSICS.groundFrictionPerFrame;
@@ -41,6 +42,8 @@ export class BallContactSystem {
   private recalculateRoutes: (previousTarget?: Player | null) => void;
   private _shouldSprintForRace: (player: Player, opponent: Player, targetX: number, targetY: number) => boolean;
   private _isBallInDangerArea: () => boolean;
+  private debugCollector?: DebugCollector;
+  private recordedPassOutcomeTokens = new Set<string>();
 
   constructor(ctx: MatchContext) {
     this.ball = ctx.ball;
@@ -58,6 +61,7 @@ export class BallContactSystem {
     this.recalculateRoutes = ctx.recalculateRoutesAfterBallTrajectoryChange;
     this._shouldSprintForRace = ctx.shouldSprintForRace;
     this._isBallInDangerArea = ctx.isBallInDangerArea;
+    this.debugCollector = ctx.debugCollector;
   }
 
   // Handles physical ball contact for the INTENDED receiver (targeted pass arrival).
@@ -70,6 +74,7 @@ export class BallContactSystem {
 
     // Abandon pass if ball stopped far from target (deflected / friction killed it)
     if (this.ball.getSpeed() < 1.5 && ballDist > 80) {
+      this.recordPassFailed(target, `pass stopped ${Math.round(ballDist)}px from target`);
       this.ball.targetPlayer = null;
       // Ball stopped nearby: receiver overshot or ball slowed short — guide them back to fetch it
       // rather than abandoning and leaving an easy free ball.
@@ -93,6 +98,7 @@ export class BallContactSystem {
       const dot = (this.ball.velocity.x * toTargetX + this.ball.velocity.y * toTargetY)
         / (this.ball.getSpeed() * len);
       if (dot < -0.15) {
+        this.recordPassFailed(target, 'ball moved away from intended receiver');
         this.ball.targetPlayer = null;
         target.state = PlayerState.FindSpace;
         this.recalculateRoutes(target);
@@ -108,6 +114,7 @@ export class BallContactSystem {
       for (const p of ownTeam.players) {
         if (p === target || p.role === PlayerRole.Goalkeeper || p.hasBall) continue;
         if (dist(p.x, p.y, projX, projY) < targetDistToProj * 0.5) {
+          this.recordPassFailed(target, `pass drifted closer to ${p.playerName}`);
           this.ball.targetPlayer = null;
           target.state = PlayerState.FindSpace;
           this.recalculateRoutes(target);
@@ -128,6 +135,11 @@ export class BallContactSystem {
       } else if (ballDist < 58) {
         target.sprintMs = Math.min(target.sprintMs, 80);
       }
+    }
+
+    const passer = this.getPasserForTarget(target);
+    if (passer && this.isPassPlayableForTarget(target)) {
+      this.recordPassDelivered(passer, target, 'pass reached a playable reception window');
     }
 
     // Arrival: ball physically reaches receiver. Diving GKs need swept contact because
@@ -160,6 +172,7 @@ export class BallContactSystem {
         loser.state = PlayerState.FindSpace;
         loser.aiCooldown = 500;
         if (winner === closestDef) {
+          this.recordPassFailed(target, `${closestDef.playerName} won the aerial duel`);
           closestDef.hasBall = true;
           closestDef.state = PlayerState.CarryBall;
           this.ball.attachToPlayer(closestDef);
@@ -193,6 +206,8 @@ export class BallContactSystem {
         target.hasBall = true;
         target.state = PlayerState.Clearance;
         this.ball.attachToPlayer(target);
+        this.recordPassDelivered(kicker, target, 'backpass reached the goalkeeper');
+        this.recordReceptionOutcome(kicker, target, true, 'GK controlled the backpass');
         this.scoreboard.logEvent(`${target.playerName} recebe o recuo`);
         return;
       }
@@ -200,16 +215,30 @@ export class BallContactSystem {
       const result = this.resolver.resolveGkSave(target, isDive, isStretch, this.ball.getSpeed());
 
       if (result === 'catch') {
+        this.recordShotSaved(target, 'GK caught the shot');
         target.hasBall = true;
         target.state = PlayerState.Clearance;
         this.ball.attachToPlayer(target);
         this.stats.recordSave(target.teamId);
+        this.debugCollector?.recordAction({
+          player: target,
+          kind: 'save',
+          reason: 'GK caught the ball',
+          target: { x: this.ball.x, y: this.ball.y },
+        });
         this.scoreboard.logEvent(`${target.playerName} segurou!`);
       } else if (result === 'parry') {
+        this.recordShotSaved(target, 'GK parried the shot');
         target.state = PlayerState.ReturnToShape;
         target.aiCooldown = 650;
         this.kickSystem.doParry(target);
         this.stats.recordSave(target.teamId);
+        this.debugCollector?.recordAction({
+          player: target,
+          kind: 'save',
+          reason: 'GK parried the ball',
+          target: { x: this.ball.x, y: this.ball.y },
+        });
         this.scoreboard.logEvent(isStretch
           ? `${target.playerName} espalmou na ponta!`
           : `${target.playerName} espalmou!`);
@@ -225,23 +254,154 @@ export class BallContactSystem {
 
     const oppTeam = target.teamId === 'teamA' ? this.teamB : this.teamA;
     const nearestOpp = oppTeam.getNearestPlayerTo(target.x, target.y);
-    const passer = this.ball.kickedById
-      ? this.getAllPlayers().find(p => p.id === this.ball.kickedById) ?? target
-      : target;
-    const success = this.resolver.resolveFirstTouch(target, passer, nearestOpp, this.ball.getSpeed());
+    if (passer) this.recordPassDelivered(passer, target, 'pass reached intended receiver');
+    const firstTouchPasser = passer ?? target;
+    const success = this.resolver.resolveFirstTouch(target, firstTouchPasser, nearestOpp, this.ball.getSpeed());
 
     if (success) {
-      this.stats.recordPassCompleted(target.teamId);
       target.hasBall = true;
       target.state = PlayerState.CarryBall;
       target.aiCooldown = this.kickSystem.settleTime(target, nearestOpp);
       this.ball.attachToPlayer(target);
       this.kickSystem.applyFirstTouchMovement(target, nearestOpp);
+      if (passer) this.recordReceptionOutcome(passer, target, true, 'receiver controlled the pass');
     } else {
       target.state = PlayerState.FindSpace;
       this.kickSystem.applyFailedFirstTouchDeflection(target);
       this.recalculateRoutes(target);
+      if (passer) this.recordReceptionOutcome(passer, target, false, 'receiver failed the first touch');
       this.scoreboard.logEvent(`${target.playerName} não dominou!`);
+    }
+  }
+
+  private getPasserForTarget(target: Player): Player | null {
+    const attempt = this.ball.passAttempt;
+    if (!attempt || attempt.receiverId !== target.id) return null;
+    const passer = this.getAllPlayers().find(p => p.id === attempt.passerId) ?? null;
+    return passer && passer.teamId === target.teamId ? passer : null;
+  }
+
+  private isPassPlayableForTarget(receiver: Player): boolean {
+    const attempt = this.ball.passAttempt;
+    if (!attempt || attempt.receiverId !== receiver.id || this.ball.flightHeight > BALL_HEIGHT_PASS_OVER) return false;
+
+    const ballDist = dist(this.ball.x, this.ball.y, receiver.x, receiver.y);
+    const ballSpeed = this.ball.getSpeed();
+    const travelled = dist(attempt.startedAt.x, attempt.startedAt.y, this.ball.x, this.ball.y);
+    const progress = travelled / Math.max(attempt.distance, 1);
+    const distanceFactor = clamp((attempt.distance - 160) / 360, 0, 1);
+    const slowBallFactor = clamp((4.2 - ballSpeed) / 4.2, 0, 1);
+    const lowBallFactor = clamp((BALL_HEIGHT_PASS_OVER - this.ball.flightHeight) / BALL_HEIGHT_PASS_OVER, 0, 1);
+    const receiverSkill = (receiver.stats.reactions * 0.55 + receiver.stats.dribbling * 0.45) / 100;
+    const accuracyFactor = clamp(1 - attempt.executionError / Math.max(55, attempt.distance * 0.22), 0, 1);
+    const passTypeBonus = attempt.kind === 'through' || attempt.kind === 'lofted' || attempt.kind === 'cross' ? 12 : 0;
+    const playableRadius = CONTACT_RADIUS
+      + 16
+      + distanceFactor * 34
+      + slowBallFactor * 18
+      + lowBallFactor * 8
+      + receiverSkill * 10
+      + accuracyFactor * 8
+      + passTypeBonus;
+
+    if (ballDist > playableRadius) return false;
+
+    // The ball must be meaningfully close to the intended destination. This prevents a
+    // badly misplaced long ball from counting just because the receiver chased toward it.
+    const actualTargetDist = dist(this.ball.x, this.ball.y, attempt.actualTarget.x, attempt.actualTarget.y);
+    const targetWindow = 70 + distanceFactor * 70 + slowBallFactor * 30;
+    if (actualTargetDist > targetWindow && progress < 0.72) return false;
+
+    // Fast short passes should still require a real touch; the playable window is mainly
+    // for long/lofted balls that arrive near the receiver but may not trigger contact exactly.
+    return ballSpeed <= 4.6 || distanceFactor > 0.35 || this.ball.flightHeight <= BALL_HEIGHT_GROUND_CONTACT;
+  }
+
+  private recordPassDelivered(passer: Player, receiver: Player, reason: string): void {
+    if (passer.teamId !== receiver.teamId) return;
+    if (!this.markPassOutcomeRecorded(receiver)) return;
+
+    this.stats.recordPassCompleted(passer.teamId);
+    this.debugCollector?.recordAction({
+      player: passer,
+      kind: 'pass-completed',
+      reason,
+      targetPlayer: passer === receiver ? null : receiver,
+    });
+  }
+
+  private recordPassFailed(receiver: Player, reason: string): void {
+    const passer = this.getPasserForTarget(receiver);
+    if (!passer) return;
+    if (!this.markPassOutcomeRecorded(receiver)) return;
+
+    this.debugCollector?.recordAction({
+      player: passer,
+      kind: 'pass-missed',
+      reason,
+      targetPlayer: passer === receiver ? null : receiver,
+    });
+  }
+
+  private markPassOutcomeRecorded(receiver: Player): boolean {
+    const token = this.currentPassToken(receiver);
+    if (!token) return false;
+    if (this.recordedPassOutcomeTokens.has(token)) return false;
+
+    this.recordedPassOutcomeTokens.add(token);
+    if (this.recordedPassOutcomeTokens.size > 500) {
+      this.recordedPassOutcomeTokens.clear();
+      this.recordedPassOutcomeTokens.add(token);
+    }
+    return true;
+  }
+
+  private currentPassToken(receiver: Player): string | null {
+    const attempt = this.ball.passAttempt;
+    if (!attempt || attempt.receiverId !== receiver.id) return null;
+    return attempt.id;
+  }
+
+  private recordReceptionOutcome(passer: Player, receiver: Player, controlled: boolean, reason: string): void {
+    this.debugCollector?.recordAction({
+      player: receiver,
+      kind: controlled ? 'reception-controlled' : 'reception-missed',
+      reason,
+      targetPlayer: passer === receiver ? null : passer,
+    });
+  }
+
+  private recordShotSaved(goalkeeper: Player, reason: string): void {
+    const attempt = this.ball.shotAttempt;
+    if (!attempt || attempt.result !== null) return;
+
+    const shooter = this.getAllPlayers().find(p => p.id === attempt.shooterId) ?? null;
+    attempt.result = 'Saved';
+    if (shooter) {
+      this.debugCollector?.recordAction({
+        player: shooter,
+        kind: 'shot-saved',
+        reason,
+        target: { x: this.ball.x, y: this.ball.y },
+        targetPlayer: goalkeeper,
+      });
+    }
+  }
+
+  private recordShotMissed(recoverer: Player, reason: string): void {
+    const attempt = this.ball.shotAttempt;
+    if (!attempt || attempt.result !== null) return;
+
+    const shooter = this.getAllPlayers().find(p => p.id === attempt.shooterId) ?? null;
+    attempt.result = 'Missed';
+    if (shooter) {
+      this.debugCollector?.recordAction({
+        player: shooter,
+        kind: 'shot-missed',
+        reason,
+        target: { x: this.ball.x, y: this.ball.y },
+        targetPlayer: recoverer,
+      });
     }
   }
 
@@ -303,6 +463,7 @@ export class BallContactSystem {
           + (player.stats.reactions / 100) * 0.14
           + interceptTrait) * heightFactor;
         if (Math.random() < interceptChance) {
+          this.recordPassFailed(target, `intercepted by ${player.playerName}`);
           this.stats.recordInterception(player.teamId);
           this.ball.targetPlayer = null;
           target.state = PlayerState.FindSpace;
@@ -310,6 +471,12 @@ export class BallContactSystem {
           player.hasBall = true;
           player.state = PlayerState.CarryBall;
           this.kickSystem.applyFirstTouchMovement(player, target);
+          this.debugCollector?.recordAction({
+            player,
+            kind: 'interception',
+            reason: `intercepted pass to ${target.playerName}`,
+            targetPlayer: target,
+          });
           this.scoreboard.logEvent(`${player.playerName} interceptou!`);
           return;
         }
@@ -319,6 +486,7 @@ export class BallContactSystem {
         const blockBonus = traitBonus(player, TRAITS.BLOCK, isShot ? 0.14 : 0.07, isShot ? 0.10 : 0.05);
         const deflectChance = (0.28 + (player.stats.defending / 100) * 0.18 + ballSpeedFactor * 0.22 + blockBonus) * heightFactor;
         if (Math.random() < deflectChance) {
+          this.recordPassFailed(target, `deflected by ${player.playerName}`);
           const absorbFactor = Math.random() < 0.40 ? 0.38 + Math.random() * 0.18 : 0.55 + Math.random() * 0.15;
           const spd = this.ball.getSpeed() * (isShot ? absorbFactor * 0.90 : absorbFactor);
           if (Math.random() < 0.65) {
@@ -332,6 +500,12 @@ export class BallContactSystem {
           target.state = PlayerState.FindSpace;
           this.ball.markTouchedBy(player.id, 280);
           this.recalculateRoutes(target);
+          this.debugCollector?.recordAction({
+            player,
+            kind: 'deflection',
+            reason: `deflected ball aimed at ${target.playerName}`,
+            targetPlayer: target,
+          });
           this.scoreboard.logEvent(`${player.playerName} desviou!`);
           return;
         }
@@ -364,6 +538,12 @@ export class BallContactSystem {
           player.aiCooldown = this.kickSystem.settleTime(player, oppTeamForAccident.getNearestPlayerTo(player.x, player.y));
           this.kickSystem.applyFirstTouchMovement(player, oppTeamForAccident.getNearestPlayerTo(player.x, player.y));
           this.recalculateRoutes(target);
+          this.debugCollector?.recordAction({
+            player,
+            kind: 'turnover',
+            reason: `accidentally took pass aimed at ${target.playerName}`,
+            targetPlayer: target,
+          });
           this.scoreboard.logEvent(`${player.playerName} tomou a bola sem querer!`);
           return;
         }
@@ -386,6 +566,12 @@ export class BallContactSystem {
         this.ball.targetPlayer = null;
         this.ball.markTouchedBy(player.id, 220);
         this.recalculateRoutes(target);
+        this.debugCollector?.recordAction({
+          player,
+          kind: 'deflection',
+          reason: `teammate deflection on pass to ${target.playerName}`,
+          targetPlayer: target,
+        });
         this.scoreboard.logEvent(`Desvio em ${player.playerName}!`);
       }
 
@@ -476,6 +662,15 @@ export class BallContactSystem {
     const winner = contestor
       ? this.resolver.resolveDuel(nearest, contestor)
       : nearest;
+
+    const attempt = this.ball.shotAttempt;
+    if (attempt && attempt.result === null) {
+      if (winner.teamId === attempt.teamId) {
+        this.recordShotMissed(winner, `shot became a rebound recovered by ${winner.playerName}`);
+      } else {
+        this.recordShotSaved(winner, `${winner.playerName} stopped the shot`);
+      }
+    }
 
     winner.hasBall = true;
     winner.state = PlayerState.CarryBall;

@@ -23,6 +23,8 @@ export interface LiveUpdatePayload {
 
 export interface MatchSetup {
   teams: [TeamData, TeamData];
+  /** Enables in-match Phaser debug overlays and AI decision telemetry. */
+  debugMode?: boolean;
   onMatchEnd?: (scoreA: number, scoreB: number, finalStaminas?: Record<string, number>) => void;
   onGoalScored?: (goal: GoalEvent) => void;
   /** Stamina inicial por ID de jogador (do time A). Usado para persistir cansaço entre partidas. */

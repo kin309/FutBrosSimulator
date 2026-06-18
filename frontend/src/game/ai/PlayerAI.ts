@@ -5,9 +5,10 @@ import { AIContext, decideWithBall, decideWithoutBall, findBestPassTarget } from
 import { clamp, dist, distancePointToSegment } from '../utils/MathUtils';
 import { computeGoalViewAngle } from './DecisionUtils';
 import { SetPlayKind, SetPlayRole } from './TacticalAI';
+import type { DebugDecisionKind } from '../debug/DebugTypes';
 
 const BALL_CARRIER_COOLDOWN = 260;
-const OFF_BALL_COOLDOWN = 600;
+const OFF_BALL_COOLDOWN = 350;
 const DEFENDER_PRESS_SPRINT_MIN_DISTANCE = 145;
 const DEFENDER_MARK_SPRINT_MIN_DISTANCE = 185;
 const DEFAULT_DEFENSIVE_SPRINT_MIN_DISTANCE = 105;
@@ -73,8 +74,10 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
     }
 
     player.aiCooldown = Math.round(BALL_CARRIER_COOLDOWN * tempoScale);
+    const previousState = player.state;
     const newState = decideWithBall(player, ctx);
     player.state = newState;
+    recordDebugDecision(player, ctx, previousState, newState);
     if (newState !== PlayerState.Pass) {
       player.passTargetX = null;
       player.passTargetY = null;
@@ -144,32 +147,75 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
       const dir = ctx.ownTeam.attackDirection;
       const skill = (player.stats.dribbling * 0.72 + player.stats.sprintSpeed * 0.28) / 100;
 
-      const pastDistance = 66 + skill * 34 + Math.random() * 24;
-      const lateralDistance = 46 + skill * 24 + Math.random() * 22;
-      const pastX = blocker.x + dir * pastDistance;
-      const leftY  = blocker.y - lateralDistance;
-      const rightY = blocker.y + lateralDistance;
+      const pastBase    = 60 + skill * 40 + Math.random() * 22;
+      const lateralBase = 40 + skill * 32 + Math.random() * 18;
+      // Opponents inside this radius influence the lane score (vision-scaled).
+      const awareRadius = 80 + player.stats.vision * 0.55;
 
-      // Scan both escape lanes with a wider net: check defenders near the corridor
-      // between player and escape point, not just at the destination.
-      const scanThreat = (ey: number) => ctx.oppTeam.players.filter(p => {
-        if (p === blocker) return false;
-        const dToLane = distancePointToSegment(p.x, p.y, player.x, player.y, pastX, ey);
-        return dToLane < 58 || dist(p.x, p.y, pastX, ey) < 80;
-      }).length;
-      const leftThreat  = scanThreat(leftY);
-      const rightThreat = scanThreat(rightY);
+      // Eight lateral multipliers: tight, medium, wide on each side + a straight-through probe.
+      const lateralMults = [-1.0, -0.68, -0.36, -0.12, 0.12, 0.36, 0.68, 1.0];
 
-      const escapeY = leftThreat <= rightThreat ? leftY : rightY;
+      let bestScore    = -Infinity;
+      let bestLateral  = lateralBase;
+      let bestPastDist = pastBase;
 
-      // Approach target: arrive alongside the blocker from the escape side rather
-      // than charging head-on. The carrier angles toward the blocker's flank during
-      // the commit window; the burst in doDribble carries them past.
-      const approachX = blocker.x + dir * (pastDistance * 0.20);
-      player.setTarget(
-        clamp(approachX, ctx.field.left + 15, ctx.field.right - 15),
-        clamp(escapeY, ctx.field.top + 15, ctx.field.bottom - 15),
+      for (const mult of lateralMults) {
+        const lateral   = mult * lateralBase;
+        // Wider angles reach slightly less forward — natural trade-off.
+        const pastDist  = pastBase * (1 - Math.abs(mult) * 0.18);
+        const escapeX   = blocker.x + dir * pastDist;
+        const escapeY   = blocker.y + lateral;
+
+        // Score this escape candidate against ALL nearby opponents, not just a count.
+        let score = 80;
+        for (const opp of ctx.oppTeam.players) {
+          if (opp === blocker || opp.role === PlayerRole.Goalkeeper) continue;
+          if (dist(opp.x, opp.y, player.x, player.y) > awareRadius) continue;
+
+          // Penalty proportional to how much they threaten this lane.
+          const dToLane   = distancePointToSegment(opp.x, opp.y, player.x, player.y, escapeX, escapeY);
+          const dToTarget = dist(opp.x, opp.y, escapeX, escapeY);
+          // Lateral velocity toward the lane amplifies threat.
+          const lvX = escapeX - player.x;
+          const lvY = escapeY - player.y;
+          const lvLen = Math.sqrt(lvX * lvX + lvY * lvY) || 1;
+          const perpX = -lvY / lvLen;
+          const perpY =  lvX / lvLen;
+          const latVel = Math.abs(opp.vx * perpX + opp.vy * perpY);
+          const laneThreat = Math.max(0, (60 - dToLane) / 60)
+            + Math.max(0, (78 - dToTarget) / 78)
+            + latVel * 0.5;
+          score -= laneThreat * 42;
+        }
+
+        // Reward forward progress (skill amplifies it — better dribblers push further ahead).
+        score += (escapeX - player.x) * dir * 0.10 * (0.6 + skill * 0.8);
+        // Slight preference for moderate lateral offset — extreme angles look unnatural.
+        score -= Math.max(0, Math.abs(mult) - 0.55) * 12;
+        // Hard boundary penalty.
+        const clampedY = clamp(escapeY, ctx.field.top + 15, ctx.field.bottom - 15);
+        if (Math.abs(clampedY - escapeY) > 8) score -= 30;
+
+        if (score > bestScore) {
+          bestScore    = score;
+          bestLateral  = lateral;
+          bestPastDist = pastDist;
+        }
+      }
+
+      const escapeY = clamp(blocker.y + bestLateral, ctx.field.top + 15, ctx.field.bottom - 15);
+
+      // Curved approach: target a point that is more lateral than forward relative to
+      // the blocker. This makes the carrier arc sideways first rather than charging
+      // head-on, producing a rounder path around the defender.
+      // Lower skill → wider arc (needs more space to get past).
+      const arcFactor = 0.12 + (1 - skill) * 0.18;
+      const approachX = clamp(
+        blocker.x + dir * (bestPastDist * arcFactor),
+        ctx.field.left + 15,
+        ctx.field.right - 15,
       );
+      player.setTarget(approachX, escapeY);
       player.dribbleCommitMs = Math.round(95 + skill * 165 + Math.random() * 140);
       player.dribbleContactRadius = 32 + Math.random() * 13;
       player.requestSprint(resolveSprintMs(player, 760 + Math.round(skill * 360), 0.7));
@@ -192,9 +238,17 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
     }
     if (player.state !== PlayerState.ReceivePass) {
       // GK repositions much more frequently — wide threats can appear in < 300 ms
+      const prevCooldown = player.aiCooldown;
       player.aiCooldown = player.role === PlayerRole.Goalkeeper ? 180 : Math.round(OFF_BALL_COOLDOWN * tempoScale);
+      const previousState = player.state;
       const { state, tx, ty } = decideWithoutBall(player, ctx);
       player.state = state;
+      recordDebugDecision(player, ctx, previousState, state);
+      // Bypass fired but state didn't change — restore previous cooldown so the
+      // bypass doesn't reset the timer when nothing actually changed.
+      if (state === previousState && prevCooldown > 0) {
+        player.aiCooldown = prevCooldown;
+      }
       if (state !== PlayerState.MarkOpponent) player.markingTarget = null;
       player.setTarget(tx, ty);
 
@@ -363,6 +417,62 @@ export function updatePlayerAI(player: Player, ctx: AIContext, delta: number): v
   }
 }
 
+function recordDebugDecision(
+  player: Player,
+  ctx: AIContext,
+  previousState: PlayerState,
+  nextState: PlayerState,
+): void {
+  if (!ctx.debugCollector || previousState === nextState || isNoisyDebugDecision(nextState)) return;
+
+  const targetPlayer = player.passTarget ?? player.markingTarget ?? player.dribbleTarget ?? null;
+  ctx.debugCollector.recordDecision({
+    player,
+    previousState,
+    nextState,
+    kind: decisionKindForState(nextState),
+    reason: decisionReasonForState(nextState),
+    target: { x: player.targetX, y: player.targetY },
+    targetPlayer,
+  });
+}
+
+function isNoisyDebugDecision(state: PlayerState): boolean {
+  return state === PlayerState.ReturnToShape || state === PlayerState.FindSpace;
+}
+
+function decisionKindForState(state: PlayerState): DebugDecisionKind {
+  switch (state) {
+    case PlayerState.Pass: return 'pass';
+    case PlayerState.Shoot: return 'shoot';
+    case PlayerState.CarryBall: return 'carry';
+    case PlayerState.Dribble: return 'dribble';
+    case PlayerState.MarkOpponent: return 'mark';
+    case PlayerState.PressBall: return 'press';
+    case PlayerState.Clearance: return 'clearance';
+    case PlayerState.ProtectBall: return 'protect';
+    case PlayerState.ReturnToShape: return 'shape';
+    default: return 'state-change';
+  }
+}
+
+function decisionReasonForState(state: PlayerState): string {
+  switch (state) {
+    case PlayerState.Pass: return 'AI selected a pass option';
+    case PlayerState.Shoot: return 'AI selected a shot';
+    case PlayerState.CarryBall: return 'AI chose to carry into space';
+    case PlayerState.Dribble: return 'AI chose to attack a nearby blocker';
+    case PlayerState.MarkOpponent: return 'AI assigned a marking target';
+    case PlayerState.PressBall: return 'AI chose to pressure the ball';
+    case PlayerState.Clearance: return 'AI chose a clearance/distribution';
+    case PlayerState.ProtectBall: return 'AI chose to protect possession';
+    case PlayerState.ReturnToShape: return 'AI returned to tactical shape';
+    case PlayerState.FindSpace: return 'AI searched for open space';
+    case PlayerState.ReceivePass: return 'AI moved to receive a pass';
+    default: return 'AI state changed';
+  }
+}
+
 function isDangerousArea(player: Player, goalX: number): boolean {
   return Math.abs(player.x - goalX) < 260;
 }
@@ -512,6 +622,9 @@ function chooseCarryTarget(player: Player, ctx: AIContext): { x: number; y: numb
   for (const candidate of candidates) {
     const x = clamp(candidate.x, ctx.field.left + 15, ctx.field.right - 15);
     const y = clamp(candidate.y, ctx.field.top + 15, ctx.field.bottom - 15);
+    // Discard candidates whose raw position overshoots the field boundary by more than 45px —
+    // they were aimed at empty space beyond the pitch and produce wall-hugging targets.
+    if (Math.abs(candidate.x - x) > 45 || Math.abs(candidate.y - y) > 45) continue;
     const moveDist = dist(player.x, player.y, x, y);
     if (moveDist < 22) continue;
 

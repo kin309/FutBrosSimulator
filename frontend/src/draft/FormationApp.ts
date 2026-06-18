@@ -144,6 +144,7 @@ export interface MatchContext {
   teamName?: string;
   opponentName?: string;
   opponentTeam?: TeamData;
+  debugMode?: boolean;
   matchId?: string;
   userIsHome?: boolean;
   onMatchEnd?: (scoreA: number, scoreB: number, finalStaminas?: Record<string, number>) => void;
@@ -234,6 +235,7 @@ function wireFormationScreen(
     document.body.classList.add('match-running');
     const game = createGame({
       teams: [toTeamData(state, context.teamName), context.opponentTeam ?? createOpponentTeam(context.opponentName)],
+      debugMode: context.debugMode,
       tacticalProfileA: state.tacticalProfile,
       tacticalSchemeA: state.tacticalScheme,
       playerInstructionsA: mappedInstructions.size > 0 ? mappedInstructions : undefined,

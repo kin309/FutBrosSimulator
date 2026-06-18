@@ -65,7 +65,14 @@ export class MatchVisuals {
     const scA = matchManager.scoreA;
     const scB = matchManager.scoreB;
 
-    const W = 630, H = 390;
+    const goals = stats.getGoals();
+    const goalsA = goals.filter(g => g.scorerTeamId === 'teamA');
+    const goalsB = goals.filter(g => g.scorerTeamId === 'teamB');
+    const goalRows = Math.max(1, goalsA.length, goalsB.length);
+    const goalRowH = 22;
+    const goalSectionH = 30 + goalRows * goalRowH; // separator + header + rows
+
+    const W = 630, H = 390 + goalSectionH;
     const cx = GAME_WIDTH / 2;
     const cy = (FIELD.top + FIELD.bottom) / 2;
 
@@ -124,6 +131,37 @@ export class MatchVisuals {
         fontSize: '13px', color: '#fca5a5', fontStyle: 'bold', fontFamily: 'Nunito', resolution: 2,
       }).setOrigin(0.5));
     });
+
+    // Goals & assists section
+    const gSepY = rowStartY + rows.length * rowH + 10;
+    c.add(this.scene.add.rectangle(0, gSepY, W - 60, 1, 0x334155));
+    c.add(this.scene.add.text(-205, gSepY + 12, 'GOLS / ASSIST.', {
+      fontSize: '10px', color: '#64748b', fontFamily: 'Nunito', resolution: 2,
+    }).setOrigin(0.5));
+    c.add(this.scene.add.text(205, gSepY + 12, 'GOLS / ASSIST.', {
+      fontSize: '10px', color: '#64748b', fontFamily: 'Nunito', resolution: 2,
+    }).setOrigin(0.5));
+
+    for (let i = 0; i < goalRows; i++) {
+      const y = gSepY + 24 + i * goalRowH;
+      if (i % 2 === 0) c.add(this.scene.add.rectangle(0, y, W - 60, goalRowH - 2, 0x1e293b, 0.40));
+
+      const gA = goalsA[i];
+      const gB = goalsB[i];
+
+      if (gA) {
+        const label = gA.assistName ? `⚽ ${gA.scorerName}  (A: ${gA.assistName})` : `⚽ ${gA.scorerName}`;
+        c.add(this.scene.add.text(-50, y, label, {
+          fontSize: '11px', color: '#93c5fd', fontFamily: 'Nunito', resolution: 2,
+        }).setOrigin(1, 0.5));
+      }
+      if (gB) {
+        const label = gB.assistName ? `⚽ ${gB.scorerName}  (A: ${gB.assistName})` : `⚽ ${gB.scorerName}`;
+        c.add(this.scene.add.text(50, y, label, {
+          fontSize: '11px', color: '#fca5a5', fontFamily: 'Nunito', resolution: 2,
+        }).setOrigin(0, 0.5));
+      }
+    }
 
     c.add(this.scene.add.rectangle(0, H / 2 - 40, W - 60, 1, 0x334155));
     const footerText = setup?.onMatchEnd
